@@ -70,7 +70,7 @@ export function ConfigStep() {
   useEffect(() => {
     if (ventasColumnas.length > 0 && isInitialMapping) {
       console.log('Ejecutando mapeo automático con columnas:', ventasColumnas);
-      
+
       // Crear el mapeo automático directamente
       const automaticMapping = {
         Periodo: '',
@@ -92,13 +92,13 @@ export function ConfigStep() {
         Total: '',
         DirectoIndirecto: ''
       };
-      
+
       const usedColumns = new Set<string>();
-      
+
       // Crear un mapa de todas las posibles coincidencias con su especificidad
       const createMatchMap = () => {
-        const matches: Array<{field: string, column: string, specificity: number}> = [];
-        
+        const matches: Array<{ field: string, column: string, specificity: number }> = [];
+
         const fieldMappings = [
           { field: 'Fecha', keywords: ['fecha'] },
           { field: 'Articulo', keywords: ['articulo', 'artículo', 'cod', 'cód', 'sku'] },
@@ -125,11 +125,11 @@ export function ConfigStep() {
             ventasColumnas.forEach(column => {
               const columnLower = column.toLowerCase();
               const keywordLower = keyword.toLowerCase();
-              
+
               if (columnLower.includes(keywordLower)) {
                 // Calcular especificidad: coincidencia exacta > coincidencia de palabras completas > coincidencia parcial
                 let specificity = 0;
-                
+
                 if (columnLower === keywordLower) {
                   specificity = 1000; // Coincidencia exacta
                 } else if (columnLower.split(' ').includes(keywordLower) || keywordLower.split(' ').every(word => columnLower.includes(word))) {
@@ -137,10 +137,10 @@ export function ConfigStep() {
                 } else {
                   specificity = 100; // Coincidencia parcial
                 }
-                
+
                 // Penalizar por orden de keyword (primeras keywords tienen prioridad)
                 specificity -= keywordIndex;
-                
+
                 matches.push({ field, column, specificity });
               }
             });
@@ -156,7 +156,7 @@ export function ConfigStep() {
 
       // Asignar las mejores coincidencias disponibles
       const assignedFields = new Set<string>();
-      
+
       allMatches.forEach(match => {
         if (!usedColumns.has(match.column) && !assignedFields.has(match.field)) {
           if (!automaticMapping[match.field as keyof typeof automaticMapping] || automaticMapping[match.field as keyof typeof automaticMapping] === '') {
@@ -179,25 +179,27 @@ export function ConfigStep() {
 
   useEffect(() => {
     console.log('Estado actual completo del mapeo:', mapeo);
-    const isMapeoReady = mapeo.Fecha && mapeo.Fecha !== '' && 
-                        mapeo.Articulo && mapeo.Articulo !== '' && 
-                        mapeo.Descripcion && mapeo.Descripcion !== '' &&
-                        mapeo.Cantidad && mapeo.Cantidad !== '' && 
-                        mapeo.PrecioTotal && mapeo.PrecioTotal !== '' &&
-                        mapeo.Cliente && mapeo.Cliente !== '' &&
-                        mapeo.ReferenciaVendedor && mapeo.ReferenciaVendedor !== '' &&
-                        mapeo.DescripcionZona && mapeo.DescripcionZona !== '' &&
-                        mapeo.DescRubro && mapeo.DescRubro !== '';
-    console.log('Validando mapeo completo:', { 
-      Fecha: mapeo.Fecha, 
-      Articulo: mapeo.Articulo, 
+    const isMapeoReady = mapeo.Fecha && mapeo.Fecha !== '' &&
+      mapeo.Articulo && mapeo.Articulo !== '' &&
+      mapeo.Descripcion && mapeo.Descripcion !== '' &&
+      mapeo.Cantidad && mapeo.Cantidad !== '' &&
+      mapeo.Cliente && mapeo.Cliente !== '' &&
+      mapeo.ReferenciaVendedor && mapeo.ReferenciaVendedor !== '' &&
+      mapeo.DescripcionZona && mapeo.DescripcionZona !== '' &&
+      mapeo.DescRubro && mapeo.DescRubro !== '' &&
+      mapeo.Total && mapeo.Total !== '' &&
+      mapeo.TotalCIVA && mapeo.TotalCIVA !== '';
+    console.log('Validando mapeo completo:', {
+      Fecha: mapeo.Fecha,
+      Articulo: mapeo.Articulo,
       Descripcion: mapeo.Descripcion,
-      Cantidad: mapeo.Cantidad, 
-      PrecioTotal: mapeo.PrecioTotal,
+      Cantidad: mapeo.Cantidad,
       Cliente: mapeo.Cliente,
       ReferenciaVendedor: mapeo.ReferenciaVendedor,
       DescripcionZona: mapeo.DescripcionZona,
       DescRubro: mapeo.DescRubro,
+      Total: mapeo.Total,
+      TotalCIVA: mapeo.TotalCIVA,
       isReady: !!isMapeoReady
     });
     setIsReady(!!isMapeoReady);
@@ -205,10 +207,10 @@ export function ConfigStep() {
 
   const handleMapeoChange = (field: string, value: string) => {
     const newValue = value === 'Seleccionar columna...' ? '' : value;
-    
+
     setMapeo(prev => {
       const newMapeo = { ...prev };
-      
+
       // Si se está asignando un valor que ya está en uso, limpiar el campo anterior
       if (newValue) {
         Object.keys(newMapeo).forEach(key => {
@@ -217,10 +219,10 @@ export function ConfigStep() {
           }
         });
       }
-      
+
       // Asignar el nuevo valor
       (newMapeo as Record<string, string>)[field] = newValue;
-      
+
       return newMapeo;
     });
   };
@@ -242,7 +244,7 @@ export function ConfigStep() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
             <div>
               {ventasFile && ventasPreviewData.length > 0 && (
-                <DataPreviewTable 
+                <DataPreviewTable
                   title="Previsualización de Ventas"
                   previewData={ventasPreviewData as ExcelRow[]}
                   columns={ventasColumnas}
@@ -255,11 +257,12 @@ export function ConfigStep() {
               <SelectAsignacion label="Artículo (SKU)" columnas={ventasColumnas} value={mapeo.Articulo || ''} onChange={(e) => handleMapeoChange('Articulo', e.target.value)} />
               <SelectAsignacion label="Descripción" columnas={ventasColumnas} value={mapeo.Descripcion || ''} onChange={(e) => handleMapeoChange('Descripcion', e.target.value)} />
               <SelectAsignacion label="Cantidad" columnas={ventasColumnas} value={mapeo.Cantidad || ''} onChange={(e) => handleMapeoChange('Cantidad', e.target.value)} />
-              <SelectAsignacion label="Precio Total" columnas={ventasColumnas} value={mapeo.PrecioTotal || ''} onChange={(e) => handleMapeoChange('PrecioTotal', e.target.value)} />
               <SelectAsignacion label="Cliente" columnas={ventasColumnas} value={mapeo.Cliente || ''} onChange={(e) => handleMapeoChange('Cliente', e.target.value)} />
               <SelectAsignacion label="Vendedor" columnas={ventasColumnas} value={mapeo.ReferenciaVendedor || ''} onChange={(e) => handleMapeoChange('ReferenciaVendedor', e.target.value)} />
               <SelectAsignacion label="Zona" columnas={ventasColumnas} value={mapeo.DescripcionZona || ''} onChange={(e) => handleMapeoChange('DescripcionZona', e.target.value)} />
               <SelectAsignacion label="Rubro" columnas={ventasColumnas} value={mapeo.DescRubro || ''} onChange={(e) => handleMapeoChange('DescRubro', e.target.value)} />
+              <SelectAsignacion label="Total Sin IVA" columnas={ventasColumnas} value={mapeo.Total || ''} onChange={(e) => handleMapeoChange('Total', e.target.value)} />
+              <SelectAsignacion label="Total Con IVA" columnas={ventasColumnas} value={mapeo.TotalCIVA || ''} onChange={(e) => handleMapeoChange('TotalCIVA', e.target.value)} />
             </div>
           </div>
         </div>
@@ -282,7 +285,7 @@ export function ConfigStep() {
               <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
             <p className="ml-3 text-sm font-medium text-yellow-800 dark:text-yellow-200">
-              ⚠️ Faltan campos obligatorios: Todos los campos (Fecha, Artículo, Descripción, Cantidad, Precio Total, Cliente, Vendedor, Zona y Rubro) son requeridos para continuar.
+              ⚠️ Faltan campos obligatorios: Todos los campos (Fecha, Artículo, Descripción, Cantidad, Cliente, Vendedor, Zona, Rubro y Totales) son requeridos para continuar.
             </p>
           </div>
         )}

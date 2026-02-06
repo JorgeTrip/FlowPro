@@ -18,8 +18,8 @@ export interface ReporteResultados {
   cantidadesPorRubro: Record<string, Record<string, { A: number; X: number; AX: number }>>;
   cantidadesPorZona: Record<string, Record<string, { A: number; X: number; AX: number }>>;
   cantidadesPorVendedor: {
-      resultado: Record<string, Record<string, { A: number; X: number; AX: number }>>;
-      vendedores: string[];
+    resultado: Record<string, Record<string, { A: number; X: number; AX: number }>>;
+    vendedores: string[];
   };
   // Tops
   topProductosMasVendidos: { articulo: string; descripcion: string; cantidad: number }[];
@@ -39,7 +39,7 @@ export interface ReporteResultados {
 export function generarReporte(ventas: Venta[]): ReporteResultados {
   console.log("=== INICIANDO GENERACIÓN DE REPORTE DE VENTAS ===");
   console.log(`📊 Total de ventas recibidas: ${ventas.length}`);
-  
+
   // Log de las primeras 3 ventas para verificar estructura
   if (ventas.length > 0) {
     console.log("🔍 Estructura de las primeras 3 ventas:");
@@ -59,7 +59,7 @@ export function generarReporte(ventas: Venta[]): ReporteResultados {
         DirectoIndirecto: venta.DirectoIndirecto
       });
     });
-    
+
     // Verificar si hay alguna venta con descripción no vacía
     const ventasConDescripcion = ventas.filter(v => v.Descripcion && v.Descripcion.trim().length > 0);
     console.log(`🔍 Ventas con descripción no vacía: ${ventasConDescripcion.length} de ${ventas.length}`);
@@ -74,7 +74,7 @@ export function generarReporte(ventas: Venta[]): ReporteResultados {
   const mesesConDatos = obtenerMesesConDatos(ventas);
   console.log(`📅 Meses con datos encontrados: ${mesesConDatos.length}`, mesesConDatos);
 
-  const resultado: ReporteResultados = { 
+  const resultado: ReporteResultados = {
     // Por importe
     ventasPorMes: agruparVentasPorMes(ventas),
     ventasPorRubro: agruparPorRubro(ventas),
@@ -111,25 +111,25 @@ export function generarReporte(ventas: Venta[]): ReporteResultados {
 
 // Función auxiliar para obtener los meses que tienen datos
 function obtenerMesesConDatos(ventas: Venta[]): string[] {
-    const meses = [
-        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ];
-    const mesesSet = new Set<string>();
-    ventas.forEach(v => {
-        let mesIdx = -1;
-        if (typeof v.Fecha === 'string' && v.Fecha.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-            const [, mm] = v.Fecha.split('/');
-            mesIdx = parseInt(mm, 10) - 1;
-        } else {
-            const fecha = new Date(v.Fecha);
-            mesIdx = fecha.getMonth();
-        }
-        if (mesIdx >= 0 && mesIdx < 12) {
-            mesesSet.add(meses[mesIdx]);
-        }
-    });
-    return Array.from(mesesSet);
+  const meses = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+  const mesesSet = new Set<string>();
+  ventas.forEach(v => {
+    let mesIdx = -1;
+    if (typeof v.Fecha === 'string' && v.Fecha.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+      const [, mm] = v.Fecha.split('/');
+      mesIdx = parseInt(mm, 10) - 1;
+    } else {
+      const fecha = new Date(v.Fecha);
+      mesIdx = fecha.getMonth();
+    }
+    if (mesIdx >= 0 && mesIdx < 12) {
+      mesesSet.add(meses[mesIdx]);
+    }
+  });
+  return Array.from(mesesSet);
 }
 
 
@@ -144,28 +144,29 @@ function agruparVentasPorMesCantidad(ventas: Venta[]) {
   meses.forEach(mes => {
     resultado[mes] = { A: 0, X: 0, AX: 0 };
   });
-  
+
   ventas.forEach(v => {
     let mesIdx = -1;
     if (typeof v.Fecha === 'string' && v.Fecha.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-        const [, mm] = v.Fecha.split('/');
-        mesIdx = parseInt(mm, 10) - 1;
+      const [, mm] = v.Fecha.split('/');
+      mesIdx = parseInt(mm, 10) - 1;
     } else {
-        const fecha = new Date(v.Fecha);
-        mesIdx = fecha.getMonth();
+      const fecha = new Date(v.Fecha);
+      mesIdx = fecha.getMonth();
     }
     const mes = meses[mesIdx] || '';
     if (!mes) return;
-    
-    if (v.NroComprobante.startsWith('A')) {
+
+    const comprobante = v.NroComprobante.toUpperCase();
+    if (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) {
       resultado[mes].A += v.Cantidad;
       resultado[mes].AX += v.Cantidad;
-    } else if (v.NroComprobante.startsWith('X')) {
+    } else if (comprobante.startsWith('X')) {
       resultado[mes].X += v.Cantidad;
       resultado[mes].AX += v.Cantidad;
     }
   });
-  
+
   return resultado;
 }
 
@@ -175,37 +176,38 @@ function agruparPorRubroCantidad(ventas: Venta[]) {
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
   const resultado: Record<string, Record<string, { A: number; X: number; AX: number }>> = {};
-  
+
   meses.forEach(mes => {
     resultado[mes] = {
       Distribuidores: { A: 0, X: 0, AX: 0 },
       Minoristas: { A: 0, X: 0, AX: 0 }
     };
   });
-  
+
   ventas.forEach(v => {
     let mesIdx = -1;
     if (typeof v.Fecha === 'string' && v.Fecha.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-        const [, mm] = v.Fecha.split('/');
-        mesIdx = parseInt(mm, 10) - 1;
+      const [, mm] = v.Fecha.split('/');
+      mesIdx = parseInt(mm, 10) - 1;
     } else {
-        const fecha = new Date(v.Fecha);
-        mesIdx = fecha.getMonth();
+      const fecha = new Date(v.Fecha);
+      mesIdx = fecha.getMonth();
     }
     const mes = meses[mesIdx] || '';
     if (!mes) return;
-    
+
     const rubro = v.DescRubro === 'DISTRIBUIDOR' ? 'Distribuidores' : 'Minoristas';
-    
-    if (v.NroComprobante.startsWith('A')) {
+
+    const comprobante = v.NroComprobante.toUpperCase();
+    if (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) {
       resultado[mes][rubro].A += v.Cantidad;
       resultado[mes][rubro].AX += v.Cantidad;
-    } else if (v.NroComprobante.startsWith('X')) {
+    } else if (comprobante.startsWith('X')) {
       resultado[mes][rubro].X += v.Cantidad;
       resultado[mes][rubro].AX += v.Cantidad;
     }
   });
-  
+
   return resultado;
 }
 
@@ -215,7 +217,7 @@ function agruparPorZonaCantidad(ventas: Venta[]) {
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
   const resultado: Record<string, Record<string, { A: number; X: number; AX: number }>> = {};
-  
+
   meses.forEach(mes => {
     resultado[mes] = {
       Interior: { A: 0, X: 0, AX: 0 },
@@ -224,19 +226,19 @@ function agruparPorZonaCantidad(ventas: Venta[]) {
       CABA: { A: 0, X: 0, AX: 0 }
     };
   });
-  
+
   ventas.forEach(v => {
     let mesIdx = -1;
     if (typeof v.Fecha === 'string' && v.Fecha.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-        const [, mm] = v.Fecha.split('/');
-        mesIdx = parseInt(mm, 10) - 1;
+      const [, mm] = v.Fecha.split('/');
+      mesIdx = parseInt(mm, 10) - 1;
     } else {
-        const fecha = new Date(v.Fecha);
-        mesIdx = fecha.getMonth();
+      const fecha = new Date(v.Fecha);
+      mesIdx = fecha.getMonth();
     }
     const mes = meses[mesIdx] || '';
     if (!mes) return;
-    
+
     let zona = '';
     const descZona = v.DescripcionZona ? normalizeForComparison(v.DescripcionZona) : '';
     if (descZona.includes('provincia')) zona = 'G.B.A.';
@@ -244,16 +246,17 @@ function agruparPorZonaCantidad(ventas: Venta[]) {
     else if (descZona.includes('expreso')) zona = 'Interior';
     else if (normalizeForComparison(v.DescripcionZona || '') === 'hierbas del oasis - la boca') zona = 'Retiro de cliente';
     else return;
-    
-    if (v.NroComprobante.startsWith('A')) {
+
+    const comprobante = v.NroComprobante.toUpperCase();
+    if (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) {
       resultado[mes][zona].A += v.Cantidad;
       resultado[mes][zona].AX += v.Cantidad;
-    } else if (v.NroComprobante.startsWith('X')) {
+    } else if (comprobante.startsWith('X')) {
       resultado[mes][zona].X += v.Cantidad;
       resultado[mes][zona].AX += v.Cantidad;
     }
   });
-  
+
   return resultado;
 }
 
@@ -264,41 +267,42 @@ function agruparPorVendedorCantidad(ventas: Venta[]) {
   ];
   const vendedores = Array.from(new Set(ventas.map(v => v.ReferenciaVendedor).filter(Boolean)));
   const resultado: Record<string, Record<string, { A: number; X: number; AX: number }>> = {};
-  
+
   meses.forEach(mes => {
     resultado[mes] = {};
     vendedores.forEach(vend => {
       resultado[mes][vend] = { A: 0, X: 0, AX: 0 };
     });
   });
-  
+
   ventas.forEach(v => {
     let mesIdx = -1;
     if (typeof v.Fecha === 'string' && v.Fecha.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
-        const [, mm] = v.Fecha.split('/');
-        mesIdx = parseInt(mm, 10) - 1;
+      const [, mm] = v.Fecha.split('/');
+      mesIdx = parseInt(mm, 10) - 1;
     } else {
-        const fecha = new Date(v.Fecha);
-        mesIdx = fecha.getMonth();
+      const fecha = new Date(v.Fecha);
+      mesIdx = fecha.getMonth();
     }
     const mes = meses[mesIdx] || '';
     if (!mes) return;
-    
+
     const vend = v.ReferenciaVendedor;
     if (!vend) return;
 
     if (!resultado[mes][vend]) {
       resultado[mes][vend] = { A: 0, X: 0, AX: 0 };
     }
-    if (v.NroComprobante.startsWith('A')) {
+    const comprobante = v.NroComprobante.toUpperCase();
+    if (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) {
       resultado[mes][vend].A += v.Cantidad;
       resultado[mes][vend].AX += v.Cantidad;
-    } else if (v.NroComprobante.startsWith('X')) {
+    } else if (comprobante.startsWith('X')) {
       resultado[mes][vend].X += v.Cantidad;
       resultado[mes][vend].AX += v.Cantidad;
     }
   });
-  
+
   return { resultado, vendedores };
 }
 
@@ -325,10 +329,11 @@ function agruparVentasPorMes(ventas: Venta[]) {
     }
     const mes = meses[mesIdx] || '';
     if (!mes) return;
-    if (v.NroComprobante.startsWith('A')) {
+    const comprobante = v.NroComprobante.toUpperCase();
+    if (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) {
       resultado[mes].A += v.TotalCIVA;
       resultado[mes].AX += v.TotalCIVA;
-    } else if (v.NroComprobante.startsWith('X')) {
+    } else if (comprobante.startsWith('X')) {
       resultado[mes].X += v.Total;
       resultado[mes].AX += v.Total;
     }
@@ -360,10 +365,11 @@ function agruparPorRubro(ventas: Venta[]) {
     const mes = meses[mesIdx] || '';
     if (!mes) return;
     const rubro = v.DescRubro === 'DISTRIBUIDOR' ? 'Distribuidores' : 'Minoristas';
-    if (v.NroComprobante.startsWith('A')) {
+    const comprobante = v.NroComprobante.toUpperCase();
+    if (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) {
       resultado[mes][rubro].A += v.TotalCIVA;
       resultado[mes][rubro].AX += v.TotalCIVA;
-    } else if (v.NroComprobante.startsWith('X')) {
+    } else if (comprobante.startsWith('X')) {
       resultado[mes][rubro].X += v.Total;
       resultado[mes][rubro].AX += v.Total;
     }
@@ -403,10 +409,11 @@ function agruparPorZona(ventas: Venta[]) {
     else if (descZona.includes('expreso')) zona = 'Interior';
     else if (normalizeForComparison(v.DescripcionZona || '') === 'hierbas del oasis - la boca') zona = 'Retiro de cliente';
     else return;
-    if (v.NroComprobante.startsWith('A')) {
+    const comprobante = v.NroComprobante.toUpperCase();
+    if (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) {
       resultado[mes][zona].A += v.TotalCIVA;
       resultado[mes][zona].AX += v.TotalCIVA;
-    } else if (v.NroComprobante.startsWith('X')) {
+    } else if (comprobante.startsWith('X')) {
       resultado[mes][zona].X += v.Total;
       resultado[mes][zona].AX += v.Total;
     }
@@ -415,8 +422,8 @@ function agruparPorZona(ventas: Venta[]) {
 }
 
 function topProductosMasVendidosImporte(
-  ventas: Venta[], 
-  n: number = 20, 
+  ventas: Venta[],
+  n: number = 20,
   filtroMes: string = 'todos',
   mesesConDatos: string[] = []
 ) {
@@ -427,18 +434,20 @@ function topProductosMasVendidosImporte(
     if (!map[v.Articulo]) {
       map[v.Articulo] = { total: 0, descripcion: v.Descripcion || '' };
     }
-    map[v.Articulo].total += v.PrecioTotal;
+    const comprobante = v.NroComprobante.toUpperCase();
+    const importe = (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) ? v.TotalCIVA : v.Total;
+    map[v.Articulo].total += importe;
     // Actualizar descripción si la actual está vacía y la nueva no
     if (!map[v.Articulo].descripcion && v.Descripcion) {
       map[v.Articulo].descripcion = v.Descripcion;
     }
   });
-  
+
   const resultado = Object.entries(map)
     .sort((a, b) => b[1].total - a[1].total)
     .slice(0, n)
     .map(([articulo, data]) => ({ articulo, descripcion: data.descripcion, total: data.total }));
-    
+
   console.log('🔍 topProductosMasVendidosImporte - primeros 3 resultados:', resultado.slice(0, 3));
   return resultado;
 }
@@ -475,13 +484,13 @@ const categorias: Record<string, string> = {
  */
 function obtenerCategoria(codigoArticulo: string): string {
   if (!codigoArticulo) return 'OTROS';
-  
+
   // Buscar el patrón de 2 dígitos al inicio del código
   const match = codigoArticulo.match(/^(\d{2})/i);
   if (match && match[1]) {
     return categorias[match[1]] || 'OTROS';
   }
-  
+
   // Si no hay 2 dígitos al inicio, intentar extraer los primeros 2 caracteres
   const prefijo = codigoArticulo.substring(0, 2);
   return categorias[prefijo] || 'OTROS';
@@ -498,11 +507,11 @@ function topProductosPorCategoria(
   console.log('🔍 topProductosPorCategoria - ventas.length:', ventas.length);
   console.log('🔍 topProductosPorCategoria - filtroMes:', filtroMes);
   console.log('🔍 topProductosPorCategoria - sortBy:', sortBy);
-  
+
   const ventasFiltradas = filtrarVentasPorMes(ventas, filtroMes, mesesConDatos);
   console.log('🔍 topProductosPorCategoria - ventasFiltradas.length:', ventasFiltradas.length);
 
-  const categoriasMap: Record<string, { 
+  const categoriasMap: Record<string, {
     productos: Record<string, { articulo: string; descripcion: string; cantidad: number; total: number; }>,
     cantidadCategoria: number;
     totalCategoria: number;
@@ -510,25 +519,26 @@ function topProductosPorCategoria(
 
   ventasFiltradas.forEach(v => {
     if (!v.Articulo) return;
-    
+
     // Obtener categoría del artículo usando el código
     const categoria = obtenerCategoria(v.Articulo);
-    
+
     if (!categoriasMap[categoria]) {
       categoriasMap[categoria] = { productos: {}, cantidadCategoria: 0, totalCategoria: 0 };
     }
 
     const producto = categoriasMap[categoria].productos[v.Articulo];
     if (!producto) {
-      categoriasMap[categoria].productos[v.Articulo] = { 
-        articulo: v.Articulo, 
-        descripcion: v.Descripcion, 
-        cantidad: 0, 
-        total: 0 
+      categoriasMap[categoria].productos[v.Articulo] = {
+        articulo: v.Articulo,
+        descripcion: v.Descripcion,
+        cantidad: 0,
+        total: 0
       };
     }
 
-    const importe = v.NroComprobante.startsWith('A') ? v.TotalCIVA : v.Total;
+    const comprobante = v.NroComprobante.toUpperCase();
+    const importe = (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) ? v.TotalCIVA : v.Total;
     categoriasMap[categoria].productos[v.Articulo].cantidad += v.Cantidad;
     categoriasMap[categoria].productos[v.Articulo].total += importe;
     categoriasMap[categoria].cantidadCategoria += v.Cantidad;
@@ -592,10 +602,11 @@ function agruparPorVendedor(ventas: Venta[]) {
     if (!mes) return;
     const vend = v.ReferenciaVendedor;
     if (!vend) return;
-    if (v.NroComprobante.startsWith('A')) {
+    const comprobante = v.NroComprobante.toUpperCase();
+    if (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) {
       resultado[mes][vend].A += v.TotalCIVA;
       resultado[mes][vend].AX += v.TotalCIVA;
-    } else if (v.NroComprobante.startsWith('X')) {
+    } else if (comprobante.startsWith('X')) {
       resultado[mes][vend].X += v.Total;
       resultado[mes][vend].AX += v.Total;
     }
@@ -604,8 +615,8 @@ function agruparPorVendedor(ventas: Venta[]) {
 }
 
 function topProductosMasVendidos(
-  ventas: Venta[], 
-  n: number = 20, 
+  ventas: Venta[],
+  n: number = 20,
   filtroMes: string = 'todos',
   mesesConDatos: string[] = []
 ) {
@@ -622,18 +633,18 @@ function topProductosMasVendidos(
       map[v.Articulo].descripcion = v.Descripcion;
     }
   });
-  
+
   const resultado = Object.entries(map)
     .sort((a, b) => b[1].cantidad - a[1].cantidad)
     .slice(0, n)
     .map(([articulo, data]) => ({ articulo, descripcion: data.descripcion, cantidad: data.cantidad }));
-    
+
   console.log('🔍 topProductosMasVendidos - primeros 3 resultados:', resultado.slice(0, 3));
   return resultado;
 }
 
 function topProductosMenosVendidos(
-  ventas: Venta[], 
+  ventas: Venta[],
   n: number = 20,
   filtroMes: string = 'todos',
   mesesConDatos: string[] = []
@@ -655,8 +666,8 @@ function topProductosMenosVendidos(
 }
 
 function topClientesPorRubro(
-  ventas: Venta[], 
-  tipo: 'Minoristas' | 'Distribuidores', 
+  ventas: Venta[],
+  tipo: 'Minoristas' | 'Distribuidores',
   n: number = 20,
   metrica: 'importe' | 'cantidad' = 'importe',
   orden: 'mas' | 'menos' = 'mas',
@@ -666,25 +677,26 @@ function topClientesPorRubro(
   const ventasFiltradas = filtrarVentasPorMes(ventas, filtroMes, mesesConDatos);
   const mapImporte: Record<string, number> = {};
   const mapCantidad: Record<string, number> = {};
-  
+
   ventasFiltradas.forEach(v => {
     const esDistribuidor = v.DescRubro === 'DISTRIBUIDOR';
     if ((tipo === 'Distribuidores' && !esDistribuidor) || (tipo === 'Minoristas' && esDistribuidor)) return;
     if (!v.Cliente) return;
-    
-    const importe = v.NroComprobante.startsWith('A') ? v.TotalCIVA : v.Total;
+
+    const comprobante = v.NroComprobante.toUpperCase();
+    const importe = (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) ? v.TotalCIVA : v.Total;
     mapImporte[v.Cliente] = (mapImporte[v.Cliente] || 0) + importe;
     mapCantidad[v.Cliente] = (mapCantidad[v.Cliente] || 0) + v.Cantidad;
   });
-  
+
   const map = metrica === 'importe' ? mapImporte : mapCantidad;
-  
+
   const entries = Object.entries(map).filter(([_, value]) => value > 0);
-  
+
   const sortedEntries = orden === 'mas'
     ? entries.sort((a, b) => b[1] - a[1])
     : entries.sort((a, b) => a[1] - b[1]);
-  
+
   return sortedEntries
     .slice(0, n)
     .map(([cliente, total]) => ({
@@ -716,7 +728,7 @@ function filtrarVentasPorMes(
       const fecha = new Date(v.Fecha);
       mesVenta = meses[fecha.getMonth()] || '';
     }
-    
+
     if (filtroMes === 'conDatos') {
       return mesesConDatos.includes(mesVenta);
     } else {
