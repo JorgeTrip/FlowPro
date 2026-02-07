@@ -23,15 +23,15 @@ export const VentasMensualesTable = ({ ventasPorMes, cantidadesPorMes }: VentasM
         return meses.filter(mes => {
             const ventas = ventasPorMes[mes];
             const cantidades = cantidadesPorMes[mes];
-            return (ventas?.A || 0) > 0 || (ventas?.X || 0) > 0 || 
-                   (cantidades?.A || 0) > 0 || (cantidades?.X || 0) > 0;
+            return (ventas?.A || 0) > 0 || (ventas?.X || 0) > 0 ||
+                (cantidades?.A || 0) > 0 || (cantidades?.X || 0) > 0;
         });
     }, [ventasPorMes, cantidadesPorMes, meses]);
 
     // Datos filtrados según la selección
     const datosFiltrados = useMemo(() => {
         let mesesAMostrar: string[] = [];
-        
+
         switch (filtroMeses) {
             case 'todos':
                 mesesAMostrar = meses;
@@ -75,10 +75,10 @@ export const VentasMensualesTable = ({ ventasPorMes, cantidadesPorMes }: VentasM
     }, [datosFiltrados]);
 
     const formatCurrency = (value: number) => {
-        return value.toLocaleString('es-AR', { 
-            style: 'currency', 
-            currency: 'ARS', 
-            maximumFractionDigits: 0 
+        return value.toLocaleString('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+            maximumFractionDigits: 0
         });
     };
 
@@ -87,18 +87,18 @@ export const VentasMensualesTable = ({ ventasPorMes, cantidadesPorMes }: VentasM
     };
 
     const _handleMesToggle = (mes: string) => {
-        setMesesSeleccionados(prev => 
-            prev.includes(mes) 
+        setMesesSeleccionados(prev =>
+            prev.includes(mes)
                 ? prev.filter(m => m !== mes)
                 : [...prev, mes]
         );
     };
 
     const exportarDatos = () => {
-        const headers = mostrarCantidad 
-            ? ['Mes', 'Cantidad A', 'Cantidad X', 'Total Cantidad']
-            : ['Mes', 'Importe A', 'Importe X', 'Total Importe'];
-        
+        const headers = mostrarCantidad
+            ? ['Mes', 'Cant. Facturas', 'Cant. Remitos', 'Total Cantidad']
+            : ['Mes', 'Imp. Facturas', 'Imp. Remitos', 'Total Importe'];
+
         const rows = datosFiltrados.map(item => mostrarCantidad
             ? [item.mes, item.cantidadA, item.cantidadX, item.totalCantidad]
             : [item.mes, item.importeA, item.importeX, item.total]
@@ -132,7 +132,7 @@ export const VentasMensualesTable = ({ ventasPorMes, cantidadesPorMes }: VentasM
                     <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
                         Ventas Mensuales
                     </h4>
-                    
+
                     <div className="flex flex-wrap items-center gap-3">
                         {/* Filtro de meses */}
                         <select
@@ -217,10 +217,10 @@ export const VentasMensualesTable = ({ ventasPorMes, cantidadesPorMes }: VentasM
                             {mostrarCantidad ? (
                                 <>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                        Cantidad A
+                                        Cant. Facturas
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                        Cantidad X
+                                        Cant. Remitos
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                         Total Cantidad
@@ -229,10 +229,10 @@ export const VentasMensualesTable = ({ ventasPorMes, cantidadesPorMes }: VentasM
                             ) : (
                                 <>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                        Importe A
+                                        Imp. Facturas
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                        Importe X
+                                        Imp. Remitos
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                         Total Importe
@@ -274,7 +274,7 @@ export const VentasMensualesTable = ({ ventasPorMes, cantidadesPorMes }: VentasM
                                 )}
                             </tr>
                         ))}
-                        
+
                         {/* Fila de totales */}
                         {mostrarTotales && (
                             <tr className="bg-blue-50 dark:bg-blue-900/20 border-t-2 border-blue-200 dark:border-blue-700">

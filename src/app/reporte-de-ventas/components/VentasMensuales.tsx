@@ -8,37 +8,37 @@ import { exportChartAsPNG } from '../lib/exportUtils';
 
 // --- Helper Functions ---
 const formatCurrency = (value: number, compacto: boolean = false) => {
-  if (compacto) {
-    if (value >= 1000000) {
-      const valorFormateado = (value / 1000000).toLocaleString('es-AR', {
-        minimumFractionDigits: 1,
-        maximumFractionDigits: 1
-      });
-      return `$${valorFormateado} mill.`;
-    } else if (value >= 1000) {
-      return `$${value.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`;
+    if (compacto) {
+        if (value >= 1000000) {
+            const valorFormateado = (value / 1000000).toLocaleString('es-AR', {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1
+            });
+            return `$${valorFormateado} mill.`;
+        } else if (value >= 1000) {
+            return `$${value.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`;
+        } else {
+            return `$${value.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`;
+        }
     } else {
-      return `$${value.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`;
+        return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
     }
-  } else {
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
-  }
 };
 
 const formatQuantity = (value: number, compacto: boolean = false) => {
-  if (compacto) {
-    if (value >= 1000000) {
-      const valorFormateado = (value / 1000000).toLocaleString('es-AR', {
-        minimumFractionDigits: 1,
-        maximumFractionDigits: 1
-      });
-      return `${valorFormateado} mill.`;
+    if (compacto) {
+        if (value >= 1000000) {
+            const valorFormateado = (value / 1000000).toLocaleString('es-AR', {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1
+            });
+            return `${valorFormateado} mill.`;
+        } else {
+            return value.toLocaleString('es-AR', { maximumFractionDigits: 0 });
+        }
     } else {
-      return value.toLocaleString('es-AR', { maximumFractionDigits: 0 });
+        return new Intl.NumberFormat('es-AR').format(value);
     }
-  } else {
-    return new Intl.NumberFormat('es-AR').format(value);
-  }
 };
 
 interface VentasMensualesProps {
@@ -52,12 +52,12 @@ export const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: VentasMensua
     const [mesSeleccionado, setMesSeleccionado] = useState<string | null>(null);
     const [mesesConDatos, setMesesConDatos] = useState<string[]>([]);
     const chartRef = useRef<HTMLDivElement>(null);
-    
+
     const meses = useMemo(() => [
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
     ], []);
-    
+
     // Identificar meses que tienen datos
     useEffect(() => {
         const mesesDisponibles = meses.filter(mes => {
@@ -65,7 +65,7 @@ export const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: VentasMensua
             return mesData && (mesData.A > 0 || mesData.X > 0 || mesData.AX > 0);
         });
         setMesesConDatos(mesesDisponibles);
-        
+
         if (filtroMeses === 'individual' && !mesSeleccionado && mesesDisponibles.length > 0) {
             setMesSeleccionado(mesesDisponibles[0]);
         }
@@ -73,7 +73,7 @@ export const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: VentasMensua
 
     const data = useMemo(() => {
         let mesesAMostrar: string[] = [];
-        
+
         if (filtroMeses === 'todos') {
             mesesAMostrar = meses;
         } else if (filtroMeses === 'conDatos') {
@@ -81,7 +81,7 @@ export const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: VentasMensua
         } else if (filtroMeses === 'individual' && mesSeleccionado) {
             mesesAMostrar = [mesSeleccionado];
         }
-        
+
         return mesesAMostrar.map(mes => {
             const mesData = ventasPorMes[mes] || { A: 0, X: 0, AX: 0 };
             const cantidadData = cantidadesPorMes[mes] || { A: 0, X: 0, AX: 0 };
@@ -112,8 +112,8 @@ export const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: VentasMensua
                         <p key={index} style={{ color: entry.color }} className="text-sm">
                             <span>{entry.name}: </span>
                             <span className="font-bold">
-                                {entry.name.includes('cantidad') 
-                                    ? formatQuantity(entry.value) 
+                                {entry.name.includes('cantidad')
+                                    ? formatQuantity(entry.value)
                                     : formatCurrency(entry.value)}
                             </span>
                         </p>
@@ -154,7 +154,7 @@ export const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: VentasMensua
                         <option value="conDatos">Solo meses con datos</option>
                         <option value="individual">Seleccionar mes</option>
                     </select>
-                    
+
                     {filtroMeses === 'individual' && (
                         <select
                             value={mesSeleccionado || (mesesConDatos.length > 0 ? mesesConDatos[0] : meses[0])}
@@ -168,9 +168,9 @@ export const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: VentasMensua
                             ))}
                         </select>
                     )}
-                    
+
                     <div className="border-l border-gray-300 dark:border-gray-600 h-8 mx-2"></div>
-                    
+
                     <select
                         value={metrica}
                         onChange={(e) => setMetrica(e.target.value as 'importe' | 'cantidad')}
@@ -181,7 +181,7 @@ export const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: VentasMensua
                     </select>
                 </div>
             </div>
-            
+
             <ResponsiveContainer width="100%" height={400}>
                 <BarChart
                     data={data}
@@ -191,16 +191,16 @@ export const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: VentasMensua
                 >
                     <defs>
                         <linearGradient id="colorBarA" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#8884d8" stopOpacity={0.9}/>
-                            <stop offset="100%" stopColor="#6c5ce7" stopOpacity={0.8}/>
+                            <stop offset="0%" stopColor="#8884d8" stopOpacity={0.9} />
+                            <stop offset="100%" stopColor="#6c5ce7" stopOpacity={0.8} />
                         </linearGradient>
                         <linearGradient id="colorBarX" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#82ca9d" stopOpacity={0.9}/>
-                            <stop offset="100%" stopColor="#6eb58a" stopOpacity={0.8}/>
+                            <stop offset="0%" stopColor="#82ca9d" stopOpacity={0.9} />
+                            <stop offset="100%" stopColor="#6eb58a" stopOpacity={0.8} />
                         </linearGradient>
                         <linearGradient id="colorBarAX" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#ffc658" stopOpacity={0.9}/>
-                            <stop offset="100%" stopColor="#ff9f40" stopOpacity={0.8}/>
+                            <stop offset="0%" stopColor="#ffc658" stopOpacity={0.9} />
+                            <stop offset="100%" stopColor="#ff9f40" stopOpacity={0.8} />
                         </linearGradient>
                         <filter id="shadowVentasMensuales" x="-10%" y="-10%" width="120%" height="130%">
                             <feOffset result="offOut" in="SourceGraphic" dx="3" dy="3" />
@@ -211,41 +211,41 @@ export const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: VentasMensua
                         </filter>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                        dataKey="mes" 
+                    <XAxis
+                        dataKey="mes"
                         angle={-45}
                         textAnchor="end"
                         height={70}
                         interval={0}
                     />
-                    <YAxis 
+                    <YAxis
                         tickFormatter={(value) => metrica === 'importe' ? formatCurrency(value, true) : formatQuantity(value, true)}
                     />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend />
-                    
+
                     {metrica === 'importe' ? (
                         <>
-                            <Bar 
-                                dataKey="A" 
-                                fill="url(#colorBarA)" 
-                                name="A" 
+                            <Bar
+                                dataKey="A"
+                                fill="url(#colorBarA)"
+                                name="Facturas"
                                 stroke="#6c5ce7"
                                 strokeWidth={1}
                                 filter="url(#shadowVentasMensuales)"
                             />
-                            <Bar 
-                                dataKey="X" 
-                                fill="url(#colorBarX)" 
-                                name="X" 
+                            <Bar
+                                dataKey="X"
+                                fill="url(#colorBarX)"
+                                name="Remitos"
                                 stroke="#6eb58a"
                                 strokeWidth={1}
                                 filter="url(#shadowVentasMensuales)"
                             />
-                            <Bar 
-                                dataKey="AX" 
-                                fill="url(#colorBarAX)" 
-                                name="A+X" 
+                            <Bar
+                                dataKey="AX"
+                                fill="url(#colorBarAX)"
+                                name="Facturas + Remitos"
                                 stroke="#ff9f40"
                                 strokeWidth={1}
                                 filter="url(#shadowVentasMensuales)"
@@ -253,26 +253,26 @@ export const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: VentasMensua
                         </>
                     ) : (
                         <>
-                            <Bar 
-                                dataKey="cantidadA" 
-                                fill="url(#colorBarA)" 
-                                name="A (cantidad)" 
+                            <Bar
+                                dataKey="cantidadA"
+                                fill="url(#colorBarA)"
+                                name="Facturas (cantidad)"
                                 stroke="#6c5ce7"
                                 strokeWidth={1}
                                 filter="url(#shadowVentasMensuales)"
                             />
-                            <Bar 
-                                dataKey="cantidadX" 
-                                fill="url(#colorBarX)" 
-                                name="X (cantidad)" 
+                            <Bar
+                                dataKey="cantidadX"
+                                fill="url(#colorBarX)"
+                                name="Remitos (cantidad)"
                                 stroke="#6eb58a"
                                 strokeWidth={1}
                                 filter="url(#shadowVentasMensuales)"
                             />
-                            <Bar 
-                                dataKey="cantidadAX" 
-                                fill="url(#colorBarAX)" 
-                                name="A+X (cantidad)" 
+                            <Bar
+                                dataKey="cantidadAX"
+                                fill="url(#colorBarAX)"
+                                name="Facturas + Remitos (cantidad)"
                                 stroke="#ff9f40"
                                 strokeWidth={1}
                                 filter="url(#shadowVentasMensuales)"

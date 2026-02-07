@@ -158,11 +158,11 @@ function agruparVentasPorMesCantidad(ventas: Venta[]) {
     if (!mes) return;
 
     const comprobante = v.NroComprobante.toUpperCase();
-    if (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) {
-      resultado[mes].A += v.Cantidad;
-      resultado[mes].AX += v.Cantidad;
-    } else if (comprobante.startsWith('X')) {
+    if (comprobante.startsWith('X')) {
       resultado[mes].X += v.Cantidad;
+      resultado[mes].AX += v.Cantidad;
+    } else {
+      resultado[mes].A += v.Cantidad;
       resultado[mes].AX += v.Cantidad;
     }
   });
@@ -199,11 +199,11 @@ function agruparPorRubroCantidad(ventas: Venta[]) {
     const rubro = v.DescRubro === 'DISTRIBUIDOR' ? 'Distribuidores' : 'Minoristas';
 
     const comprobante = v.NroComprobante.toUpperCase();
-    if (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) {
-      resultado[mes][rubro].A += v.Cantidad;
-      resultado[mes][rubro].AX += v.Cantidad;
-    } else if (comprobante.startsWith('X')) {
+    if (comprobante.startsWith('X')) {
       resultado[mes][rubro].X += v.Cantidad;
+      resultado[mes][rubro].AX += v.Cantidad;
+    } else {
+      resultado[mes][rubro].A += v.Cantidad;
       resultado[mes][rubro].AX += v.Cantidad;
     }
   });
@@ -248,11 +248,11 @@ function agruparPorZonaCantidad(ventas: Venta[]) {
     else return;
 
     const comprobante = v.NroComprobante.toUpperCase();
-    if (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) {
-      resultado[mes][zona].A += v.Cantidad;
-      resultado[mes][zona].AX += v.Cantidad;
-    } else if (comprobante.startsWith('X')) {
+    if (comprobante.startsWith('X')) {
       resultado[mes][zona].X += v.Cantidad;
+      resultado[mes][zona].AX += v.Cantidad;
+    } else {
+      resultado[mes][zona].A += v.Cantidad;
       resultado[mes][zona].AX += v.Cantidad;
     }
   });
@@ -294,11 +294,11 @@ function agruparPorVendedorCantidad(ventas: Venta[]) {
       resultado[mes][vend] = { A: 0, X: 0, AX: 0 };
     }
     const comprobante = v.NroComprobante.toUpperCase();
-    if (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) {
-      resultado[mes][vend].A += v.Cantidad;
-      resultado[mes][vend].AX += v.Cantidad;
-    } else if (comprobante.startsWith('X')) {
+    if (comprobante.startsWith('X')) {
       resultado[mes][vend].X += v.Cantidad;
+      resultado[mes][vend].AX += v.Cantidad;
+    } else {
+      resultado[mes][vend].A += v.Cantidad;
       resultado[mes][vend].AX += v.Cantidad;
     }
   });
@@ -330,12 +330,12 @@ function agruparVentasPorMes(ventas: Venta[]) {
     const mes = meses[mesIdx] || '';
     if (!mes) return;
     const comprobante = v.NroComprobante.toUpperCase();
-    if (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) {
-      resultado[mes].A += v.TotalCIVA;
-      resultado[mes].AX += v.TotalCIVA;
-    } else if (comprobante.startsWith('X')) {
+    if (comprobante.startsWith('X')) {
       resultado[mes].X += v.Total;
       resultado[mes].AX += v.Total;
+    } else {
+      resultado[mes].A += v.TotalCIVA;
+      resultado[mes].AX += v.TotalCIVA;
     }
   });
   return resultado;
@@ -366,12 +366,12 @@ function agruparPorRubro(ventas: Venta[]) {
     if (!mes) return;
     const rubro = v.DescRubro === 'DISTRIBUIDOR' ? 'Distribuidores' : 'Minoristas';
     const comprobante = v.NroComprobante.toUpperCase();
-    if (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) {
-      resultado[mes][rubro].A += v.TotalCIVA;
-      resultado[mes][rubro].AX += v.TotalCIVA;
-    } else if (comprobante.startsWith('X')) {
+    if (comprobante.startsWith('X')) {
       resultado[mes][rubro].X += v.Total;
       resultado[mes][rubro].AX += v.Total;
+    } else {
+      resultado[mes][rubro].A += v.TotalCIVA;
+      resultado[mes][rubro].AX += v.TotalCIVA;
     }
   });
   return resultado;
@@ -410,12 +410,12 @@ function agruparPorZona(ventas: Venta[]) {
     else if (normalizeForComparison(v.DescripcionZona || '') === 'hierbas del oasis - la boca') zona = 'Retiro de cliente';
     else return;
     const comprobante = v.NroComprobante.toUpperCase();
-    if (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) {
-      resultado[mes][zona].A += v.TotalCIVA;
-      resultado[mes][zona].AX += v.TotalCIVA;
-    } else if (comprobante.startsWith('X')) {
+    if (comprobante.startsWith('X')) {
       resultado[mes][zona].X += v.Total;
       resultado[mes][zona].AX += v.Total;
+    } else {
+      resultado[mes][zona].A += v.TotalCIVA;
+      resultado[mes][zona].AX += v.TotalCIVA;
     }
   });
   return resultado;
@@ -435,7 +435,7 @@ function topProductosMasVendidosImporte(
       map[v.Articulo] = { total: 0, descripcion: v.Descripcion || '' };
     }
     const comprobante = v.NroComprobante.toUpperCase();
-    const importe = (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) ? v.TotalCIVA : v.Total;
+    const importe = comprobante.startsWith('X') ? v.Total : v.TotalCIVA;
     map[v.Articulo].total += importe;
     // Actualizar descripción si la actual está vacía y la nueva no
     if (!map[v.Articulo].descripcion && v.Descripcion) {
@@ -538,7 +538,7 @@ function topProductosPorCategoria(
     }
 
     const comprobante = v.NroComprobante.toUpperCase();
-    const importe = (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) ? v.TotalCIVA : v.Total;
+    const importe = comprobante.startsWith('X') ? v.Total : v.TotalCIVA;
     categoriasMap[categoria].productos[v.Articulo].cantidad += v.Cantidad;
     categoriasMap[categoria].productos[v.Articulo].total += importe;
     categoriasMap[categoria].cantidadCategoria += v.Cantidad;
@@ -603,12 +603,12 @@ function agruparPorVendedor(ventas: Venta[]) {
     const vend = v.ReferenciaVendedor;
     if (!vend) return;
     const comprobante = v.NroComprobante.toUpperCase();
-    if (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) {
-      resultado[mes][vend].A += v.TotalCIVA;
-      resultado[mes][vend].AX += v.TotalCIVA;
-    } else if (comprobante.startsWith('X')) {
+    if (comprobante.startsWith('X')) {
       resultado[mes][vend].X += v.Total;
       resultado[mes][vend].AX += v.Total;
+    } else {
+      resultado[mes][vend].A += v.TotalCIVA;
+      resultado[mes][vend].AX += v.TotalCIVA;
     }
   });
   return { resultado, vendedores };
@@ -684,7 +684,7 @@ function topClientesPorRubro(
     if (!v.Cliente) return;
 
     const comprobante = v.NroComprobante.toUpperCase();
-    const importe = (comprobante.startsWith('A') || comprobante.startsWith('B') || comprobante.startsWith('E')) ? v.TotalCIVA : v.Total;
+    const importe = comprobante.startsWith('X') ? v.Total : v.TotalCIVA;
     mapImporte[v.Cliente] = (mapImporte[v.Cliente] || 0) + importe;
     mapCantidad[v.Cliente] = (mapCantidad[v.Cliente] || 0) + v.Cantidad;
   });

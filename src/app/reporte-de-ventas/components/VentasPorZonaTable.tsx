@@ -91,10 +91,10 @@ export const VentasPorZonaTable = ({ ventasPorZona, cantidadesPorZona }: VentasP
     }, [datosProcesados]);
 
     const formatCurrency = (value: number) => {
-        return value.toLocaleString('es-AR', { 
-            style: 'currency', 
-            currency: 'ARS', 
-            maximumFractionDigits: 0 
+        return value.toLocaleString('es-AR', {
+            style: 'currency',
+            currency: 'ARS',
+            maximumFractionDigits: 0
         });
     };
 
@@ -103,8 +103,8 @@ export const VentasPorZonaTable = ({ ventasPorZona, cantidadesPorZona }: VentasP
     };
 
     const handleZonaToggle = (zona: string) => {
-        setZonasSeleccionadas(prev => 
-            prev.includes(zona) 
+        setZonasSeleccionadas(prev =>
+            prev.includes(zona)
                 ? prev.filter(z => z !== zona)
                 : [...prev, zona]
         );
@@ -119,10 +119,10 @@ export const VentasPorZonaTable = ({ ventasPorZona, cantidadesPorZona }: VentasP
     };
 
     const exportarDatos = () => {
-        const headers = mostrarCantidad 
-            ? ['Zona', 'Cantidad A', 'Cantidad X', 'Total Cantidad']
-            : ['Zona', 'Importe A', 'Importe X', 'Total Importe'];
-        
+        const headers = mostrarCantidad
+            ? ['Zona', 'Cant. Facturas', 'Cant. Remitos', 'Total Cantidad']
+            : ['Zona', 'Imp. Facturas', 'Imp. Remitos', 'Total Importe'];
+
         const rows = datosProcesados.map(item => mostrarCantidad
             ? [item.zona, item.cantidadA, item.cantidadX, item.totalCantidad]
             : [item.zona, item.importeA, item.importeX, item.total]
@@ -156,7 +156,7 @@ export const VentasPorZonaTable = ({ ventasPorZona, cantidadesPorZona }: VentasP
                     <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
                         Ventas por Zona
                     </h4>
-                    
+
                     <div className="flex flex-wrap items-center gap-3">
                         {/* Filtro de zonas */}
                         <div className="relative">
@@ -169,7 +169,7 @@ export const VentasPorZonaTable = ({ ventasPorZona, cantidadesPorZona }: VentasP
                             >
                                 Zonas ({zonasSeleccionadas.length})
                             </button>
-                            
+
                             <div id="zonas-popup" className="hidden absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
                                 <div className="p-3">
                                     <div className="flex gap-2 mb-3">
@@ -186,7 +186,7 @@ export const VentasPorZonaTable = ({ ventasPorZona, cantidadesPorZona }: VentasP
                                             Limpiar
                                         </button>
                                     </div>
-                                    
+
                                     {todasLasZonas.map(zona => (
                                         <label key={zona} className="flex items-center mb-2 cursor-pointer">
                                             <input
@@ -268,10 +268,10 @@ export const VentasPorZonaTable = ({ ventasPorZona, cantidadesPorZona }: VentasP
                             {mostrarCantidad ? (
                                 <>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                        Cantidad A
+                                        Cant. Facturas
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                        Cantidad X
+                                        Cant. Remitos
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                         Total Cantidad
@@ -280,10 +280,10 @@ export const VentasPorZonaTable = ({ ventasPorZona, cantidadesPorZona }: VentasP
                             ) : (
                                 <>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                        Importe A
+                                        Imp. Facturas
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                        Importe X
+                                        Imp. Remitos
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                         Total Importe
@@ -325,7 +325,7 @@ export const VentasPorZonaTable = ({ ventasPorZona, cantidadesPorZona }: VentasP
                                 )}
                             </tr>
                         ))}
-                        
+
                         {/* Fila de totales */}
                         {mostrarTotales && (
                             <tr className="bg-blue-50 dark:bg-blue-900/20 border-t-2 border-blue-200 dark:border-blue-700">

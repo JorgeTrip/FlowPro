@@ -7,37 +7,37 @@ import { exportChartAsPNG } from '../lib/exportUtils';
 
 // --- Helper Functions ---
 const formatCurrency = (value: number, compacto: boolean = false) => {
-  if (compacto) {
-    if (value >= 1000000) {
-      const valorFormateado = (value / 1000000).toLocaleString('es-AR', {
-        minimumFractionDigits: 1,
-        maximumFractionDigits: 1
-      });
-      return `$${valorFormateado} mill.`;
-    } else if (value >= 1000) {
-      return `$${value.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`;
+    if (compacto) {
+        if (value >= 1000000) {
+            const valorFormateado = (value / 1000000).toLocaleString('es-AR', {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1
+            });
+            return `$${valorFormateado} mill.`;
+        } else if (value >= 1000) {
+            return `$${value.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`;
+        } else {
+            return `$${value.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`;
+        }
     } else {
-      return `$${value.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`;
+        return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
     }
-  } else {
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
-  }
 };
 
 const formatQuantity = (value: number, compacto: boolean = false) => {
-  if (compacto) {
-    if (value >= 1000000) {
-      const valorFormateado = (value / 1000000).toLocaleString('es-AR', {
-        minimumFractionDigits: 1,
-        maximumFractionDigits: 1
-      });
-      return `${valorFormateado} mill.`;
+    if (compacto) {
+        if (value >= 1000000) {
+            const valorFormateado = (value / 1000000).toLocaleString('es-AR', {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1
+            });
+            return `${valorFormateado} mill.`;
+        } else {
+            return value.toLocaleString('es-AR', { maximumFractionDigits: 0 });
+        }
     } else {
-      return value.toLocaleString('es-AR', { maximumFractionDigits: 0 });
+        return new Intl.NumberFormat('es-AR').format(value);
     }
-  } else {
-    return new Intl.NumberFormat('es-AR').format(value);
-  }
 };
 
 interface VentasPromedioProps {
@@ -51,12 +51,12 @@ export const VentasPromedio = ({ ventasPorMes, cantidadesPorMes }: VentasPromedi
     const [mesSeleccionado, setMesSeleccionado] = useState<string | null>(null);
     const [mesesConDatos, setMesesConDatos] = useState<string[]>([]);
     const chartRef = useRef<HTMLDivElement>(null);
-    
+
     const meses = useMemo(() => [
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
     ], []);
-    
+
     // Identificar meses que tienen datos
     useEffect(() => {
         const mesesDisponibles = meses.filter(mes => {
@@ -64,7 +64,7 @@ export const VentasPromedio = ({ ventasPorMes, cantidadesPorMes }: VentasPromedi
             return mesData && (mesData.A > 0 || mesData.X > 0 || mesData.AX > 0);
         });
         setMesesConDatos(mesesDisponibles);
-        
+
         if (filtroMeses === 'individual' && !mesSeleccionado && mesesDisponibles.length > 0) {
             setMesSeleccionado(mesesDisponibles[0]);
         }
@@ -72,7 +72,7 @@ export const VentasPromedio = ({ ventasPorMes, cantidadesPorMes }: VentasPromedi
 
     const promedios = useMemo(() => {
         let mesesACalcular: string[] = [];
-        
+
         if (filtroMeses === 'todos') {
             mesesACalcular = meses;
         } else if (filtroMeses === 'conDatos') {
@@ -80,19 +80,19 @@ export const VentasPromedio = ({ ventasPorMes, cantidadesPorMes }: VentasPromedi
         } else if (filtroMeses === 'individual' && mesSeleccionado) {
             mesesACalcular = [mesSeleccionado];
         }
-        
+
         const totales = { A: 0, X: 0, AX: 0, cantidadA: 0, cantidadX: 0, cantidadAX: 0 };
         let mesesValidos = 0;
-        
+
         mesesACalcular.forEach(mes => {
             const mesData = ventasPorMes[mes];
             const cantidadData = cantidadesPorMes[mes];
-            
+
             if (mesData && (mesData.A > 0 || mesData.X > 0 || mesData.AX > 0)) {
                 totales.A += mesData.A;
                 totales.X += mesData.X;
                 totales.AX += mesData.AX;
-                
+
                 if (cantidadData) {
                     totales.cantidadA += cantidadData.A;
                     totales.cantidadX += cantidadData.X;
@@ -101,11 +101,11 @@ export const VentasPromedio = ({ ventasPorMes, cantidadesPorMes }: VentasPromedi
                 mesesValidos++;
             }
         });
-        
+
         if (mesesValidos === 0) {
             return { A: 0, X: 0, AX: 0, cantidadA: 0, cantidadX: 0, cantidadAX: 0, mesesValidos: 0 };
         }
-        
+
         return {
             A: totales.A / mesesValidos,
             X: totales.X / mesesValidos,
@@ -163,7 +163,7 @@ export const VentasPromedio = ({ ventasPorMes, cantidadesPorMes }: VentasPromedi
                         <option value="conDatos">Solo meses con datos</option>
                         <option value="individual">Seleccionar mes</option>
                     </select>
-                    
+
                     {filtroMeses === 'individual' && (
                         <select
                             value={mesSeleccionado || (mesesConDatos.length > 0 ? mesesConDatos[0] : meses[0])}
@@ -177,9 +177,9 @@ export const VentasPromedio = ({ ventasPorMes, cantidadesPorMes }: VentasPromedi
                             ))}
                         </select>
                     )}
-                    
+
                     <div className="border-l border-gray-300 dark:border-gray-600 h-8 mx-2"></div>
-                    
+
                     <select
                         value={metrica}
                         onChange={(e) => setMetrica(e.target.value as 'importe' | 'cantidad')}
@@ -190,28 +190,28 @@ export const VentasPromedio = ({ ventasPorMes, cantidadesPorMes }: VentasPromedi
                     </select>
                 </div>
             </div>
-            
+
             <div className="space-y-4">
-                <StatCard 
-                    label={metrica === 'importe' ? 'Promedio A' : 'Promedio A (cantidad)'}
+                <StatCard
+                    label={metrica === 'importe' ? 'Promedio Facturas' : 'Promedio Facturas (cantidad)'}
                     value={metrica === 'importe' ? promedios.A : promedios.cantidadA}
                     color="#8884d8"
                 />
-                <StatCard 
-                    label={metrica === 'importe' ? 'Promedio X' : 'Promedio X (cantidad)'}
+                <StatCard
+                    label={metrica === 'importe' ? 'Promedio Remitos' : 'Promedio Remitos (cantidad)'}
                     value={metrica === 'importe' ? promedios.X : promedios.cantidadX}
                     color="#82ca9d"
                 />
-                <StatCard 
-                    label={metrica === 'importe' ? 'Promedio A+X' : 'Promedio A+X (cantidad)'}
+                <StatCard
+                    label={metrica === 'importe' ? 'Promedio Facturas + Remitos' : 'Promedio Facturas + Remitos (cantidad)'}
                     value={metrica === 'importe' ? promedios.AX : promedios.cantidadAX}
                     color="#ffc658"
                 />
             </div>
-            
+
             <div className="text-center mt-4">
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {filtroMeses === 'individual' 
+                    {filtroMeses === 'individual'
                         ? `Datos del mes: ${mesSeleccionado}`
                         : `Promedio calculado sobre ${promedios.mesesValidos} ${promedios.mesesValidos === 1 ? 'mes' : 'meses'} con datos`
                     }

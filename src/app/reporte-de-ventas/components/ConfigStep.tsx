@@ -55,7 +55,6 @@ export function ConfigStep() {
     Descripcion: '',
     Cantidad: '',
     PrecioUnitario: '',
-    PrecioTotal: '',
     Total: '',
     TotalCIVA: '',
     DirectoIndirecto: '',
@@ -81,7 +80,6 @@ export function ConfigStep() {
         Articulo: '',
         Descripcion: '',
         Cantidad: '',
-        PrecioTotal: '',
         Cliente: '',
         RazonSocial: '',
         TotalCIVA: '',
@@ -104,7 +102,6 @@ export function ConfigStep() {
           { field: 'Articulo', keywords: ['articulo', 'artículo', 'cod', 'cód', 'sku'] },
           { field: 'Descripcion', keywords: ['descripcion', 'descripción'] },
           { field: 'Cantidad', keywords: ['cantidad', 'cant'] },
-          { field: 'PrecioTotal', keywords: ['total', 'precio total', 'subtotal'] },
           { field: 'Cliente', keywords: ['razon social', 'razón social', 'razon', 'razón', 'cliente'] },
           { field: 'ReferenciaVendedor', keywords: ['vendedor', 'referencia'] },
           { field: 'DescripcionZona', keywords: ['descripcion zona', 'descripción zona', 'zona'] },
@@ -116,7 +113,7 @@ export function ConfigStep() {
           { field: 'Direccion', keywords: ['direccion', 'dirección'] },
           { field: 'PrecioUnitario', keywords: ['precio unitario', 'unitario'] },
           { field: 'Total', keywords: ['total'] },
-          { field: 'TotalCIVA', keywords: ['total c/iva', 'total con iva'] },
+          { field: 'TotalCIVA', keywords: ['total c/iva', 'total con iva', 'total coniva'] },
           { field: 'DirectoIndirecto', keywords: ['directo', 'indirecto'] }
         ];
 
