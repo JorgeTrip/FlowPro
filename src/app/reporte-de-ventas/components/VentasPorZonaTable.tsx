@@ -33,7 +33,7 @@ export const VentasPorZonaTable = ({ ventasPorZona, cantidadesPorZona }: VentasP
 
     // Procesar y filtrar datos
     const datosProcesados = useMemo(() => {
-        const datos: Array<{
+        const mapaAgrupado: Record<string, {
             zona: string;
             importeA: number;
             importeX: number;
@@ -41,25 +41,39 @@ export const VentasPorZonaTable = ({ ventasPorZona, cantidadesPorZona }: VentasP
             cantidadX: number;
             total: number;
             totalCantidad: number;
-        }> = [];
+        }> = {};
 
-        Object.entries(ventasPorZona).forEach(([_zona, subzonas]) => {
+        // Iterar por cada mes en los resultados
+        Object.entries(ventasPorZona).forEach(([mes, subzonas]) => {
             Object.entries(subzonas).forEach(([subzona, data]) => {
                 const nombreZona = subzona || 'Sin zona';
+
                 if (zonasSeleccionadas.includes(nombreZona)) {
-                    const cantidades = cantidadesPorZona[_zona]?.[subzona] || { A: 0, X: 0 };
-                    datos.push({
-                        zona: nombreZona,
-                        importeA: data.A || 0,
-                        importeX: data.X || 0,
-                        cantidadA: cantidades.A || 0,
-                        cantidadX: cantidades.X || 0,
-                        total: (data.A || 0) + (data.X || 0),
-                        totalCantidad: (cantidades.A || 0) + (cantidades.X || 0)
-                    });
+                    if (!mapaAgrupado[nombreZona]) {
+                        mapaAgrupado[nombreZona] = {
+                            zona: nombreZona,
+                            importeA: 0,
+                            importeX: 0,
+                            cantidadA: 0,
+                            cantidadX: 0,
+                            total: 0,
+                            totalCantidad: 0
+                        };
+                    }
+
+                    const cantidades = cantidadesPorZona[mes]?.[subzona] || { A: 0, X: 0 };
+
+                    mapaAgrupado[nombreZona].importeA += data.A || 0;
+                    mapaAgrupado[nombreZona].importeX += data.X || 0;
+                    mapaAgrupado[nombreZona].cantidadA += cantidades.A || 0;
+                    mapaAgrupado[nombreZona].cantidadX += cantidades.X || 0;
+                    mapaAgrupado[nombreZona].total += (data.A || 0) + (data.X || 0);
+                    mapaAgrupado[nombreZona].totalCantidad += (cantidades.A || 0) + (cantidades.X || 0);
                 }
             });
         });
+
+        const datos = Object.values(mapaAgrupado);
 
         // Ordenar datos
         datos.sort((a, b) => {

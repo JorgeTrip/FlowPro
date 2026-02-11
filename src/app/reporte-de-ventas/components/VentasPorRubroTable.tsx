@@ -33,7 +33,7 @@ export const VentasPorRubroTable = ({ ventasPorRubro, cantidadesPorRubro }: Vent
 
     // Procesar y filtrar datos
     const datosProcesados = useMemo(() => {
-        const datos: Array<{
+        const mapaAgrupado: Record<string, {
             rubro: string;
             importeA: number;
             importeX: number;
@@ -41,25 +41,39 @@ export const VentasPorRubroTable = ({ ventasPorRubro, cantidadesPorRubro }: Vent
             cantidadX: number;
             total: number;
             totalCantidad: number;
-        }> = [];
+        }> = {};
 
-        Object.entries(ventasPorRubro).forEach(([_rubro, subrubros]) => {
+        // Iterar por cada mes en los resultados
+        Object.entries(ventasPorRubro).forEach(([mes, subrubros]) => {
             Object.entries(subrubros).forEach(([subrubro, data]) => {
                 const nombreRubro = subrubro || 'Sin rubro';
+
                 if (rubrosSeleccionados.includes(nombreRubro)) {
-                    const cantidades = cantidadesPorRubro[_rubro]?.[subrubro] || { A: 0, X: 0 };
-                    datos.push({
-                        rubro: nombreRubro,
-                        importeA: data.A || 0,
-                        importeX: data.X || 0,
-                        cantidadA: cantidades.A || 0,
-                        cantidadX: cantidades.X || 0,
-                        total: (data.A || 0) + (data.X || 0),
-                        totalCantidad: (cantidades.A || 0) + (cantidades.X || 0)
-                    });
+                    if (!mapaAgrupado[nombreRubro]) {
+                        mapaAgrupado[nombreRubro] = {
+                            rubro: nombreRubro,
+                            importeA: 0,
+                            importeX: 0,
+                            cantidadA: 0,
+                            cantidadX: 0,
+                            total: 0,
+                            totalCantidad: 0
+                        };
+                    }
+
+                    const cantidades = cantidadesPorRubro[mes]?.[subrubro] || { A: 0, X: 0 };
+
+                    mapaAgrupado[nombreRubro].importeA += data.A || 0;
+                    mapaAgrupado[nombreRubro].importeX += data.X || 0;
+                    mapaAgrupado[nombreRubro].cantidadA += cantidades.A || 0;
+                    mapaAgrupado[nombreRubro].cantidadX += cantidades.X || 0;
+                    mapaAgrupado[nombreRubro].total += (data.A || 0) + (data.X || 0);
+                    mapaAgrupado[nombreRubro].totalCantidad += (cantidades.A || 0) + (cantidades.X || 0);
                 }
             });
         });
+
+        const datos = Object.values(mapaAgrupado);
 
         // Ordenar datos
         datos.sort((a, b) => {
