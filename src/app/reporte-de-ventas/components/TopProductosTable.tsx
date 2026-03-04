@@ -18,6 +18,15 @@ export const TopProductosTable = ({ topProductosMasVendidos, topProductosMenosVe
     const [topN, setTopN] = useState<number>(10);
     const [ordenAscendente, setOrdenAscendente] = useState<boolean>(false);
     const [mostrarPorcentajes, setMostrarPorcentajes] = useState<boolean>(true);
+    const [excluirAjustes, setExcluirAjustes] = useState<boolean>(false);
+
+    // Determina si un código de artículo debe excluirse (ajustes y variantes)
+    const debeExcluirProducto = (articulo: string): boolean => {
+        const cod = articulo.trim().toUpperCase();
+        if (cod === '50AJU003') return true;
+        if (cod.endsWith('G') || cod.endsWith('C') || cod.endsWith('M')) return true;
+        return false;
+    };
 
     // Datos según el tipo seleccionado
     const datosOriginales = tipoProductos === 'mas' ? topProductosMasVendidos : topProductosMenosVendidos;
@@ -25,10 +34,15 @@ export const TopProductosTable = ({ topProductosMasVendidos, topProductosMenosVe
     // Procesar y filtrar datos
     const datosProcesados = useMemo(() => {
         let datos = [...datosOriginales];
-        
+
+        // Filtrar ajustes si está activo
+        if (excluirAjustes) {
+            datos = datos.filter(item => !debeExcluirProducto(item.articulo));
+        }
+
         // Limitar cantidad
         datos = datos.slice(0, topN);
-        
+
         // Ordenar si es necesario
         if (ordenAscendente) {
             datos.sort((a, b) => a.cantidad - b.cantidad);
@@ -37,7 +51,7 @@ export const TopProductosTable = ({ topProductosMasVendidos, topProductosMenosVe
         }
 
         return datos;
-    }, [datosOriginales, topN, ordenAscendente]);
+    }, [datosOriginales, topN, ordenAscendente, excluirAjustes]);
 
     // Calcular total para porcentajes
     const totalCantidad = useMemo(() => {
@@ -53,10 +67,10 @@ export const TopProductosTable = ({ topProductosMasVendidos, topProductosMenosVe
     };
 
     const exportarDatos = () => {
-        const headers = mostrarPorcentajes 
+        const headers = mostrarPorcentajes
             ? ['Posición', 'Artículo', 'Descripción', 'Cantidad', '% del Total']
             : ['Posición', 'Artículo', 'Descripción', 'Cantidad'];
-        
+
         const rows = datosProcesados.map((item, index) => {
             const fila = [
                 index + 1,
@@ -64,11 +78,11 @@ export const TopProductosTable = ({ topProductosMasVendidos, topProductosMenosVe
                 item.descripcion,
                 item.cantidad
             ];
-            
+
             if (mostrarPorcentajes) {
                 fila.push(calcularPorcentaje(item.cantidad, totalCantidad));
             }
-            
+
             return fila;
         });
 
@@ -93,7 +107,7 @@ export const TopProductosTable = ({ topProductosMasVendidos, topProductosMenosVe
                     <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
                         Top Productos {tipoProductos === 'mas' ? 'Más' : 'Menos'} Vendidos
                     </h4>
-                    
+
                     <div className="flex flex-wrap items-center gap-3">
                         {/* Selector tipo de productos */}
                         <select
@@ -142,6 +156,17 @@ export const TopProductosTable = ({ topProductosMasVendidos, topProductosMenosVe
                             <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">
                                 %
                             </span>
+                        </label>
+
+                        {/* Checkbox excluir ajustes */}
+                        <label className="inline-flex items-center cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <input
+                                type="checkbox"
+                                checked={excluirAjustes}
+                                onChange={(e) => setExcluirAjustes(e.target.checked)}
+                                className="mr-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            Excluir ajustes
                         </label>
 
                         {/* Botón exportar */}

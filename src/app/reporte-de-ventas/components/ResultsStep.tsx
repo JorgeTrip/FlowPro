@@ -49,23 +49,22 @@ export function ResultsStep() {
 
   if (isGenerating) {
     return (
-        <div className="flex justify-center items-center h-64">
-            <div className="text-center">
-                <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">Generando reporte...</p>
-                <ArrowPathIcon className="animate-spin h-8 w-8 mx-auto mt-4 text-blue-500" />
-            </div>
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">Generando reporte...</p>
+          <ArrowPathIcon className="animate-spin h-8 w-8 mx-auto mt-4 text-blue-500" />
         </div>
+      </div>
     );
   }
 
   const TabButton = ({ tab, label }: { tab: 'graficos' | 'tablas'; label: string }) => (
     <button
       onClick={() => setActiveTab(tab)}
-      className={`px-6 py-3 text-sm font-medium transition-all duration-200 rounded-t-lg ${
-        activeTab === tab
-          ? 'bg-blue-400 dark:bg-blue-400 text-white border-b-4 border-blue-600 dark:border-blue-300 shadow-lg shadow-blue-500/50 dark:shadow-blue-400/50'
-          : 'bg-gray-50 dark:bg-gray-700 text-gray-400 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-shadow-sm hover:shadow-lg'
-      }`}
+      className={`px-6 py-3 text-sm font-medium transition-all duration-200 rounded-t-lg ${activeTab === tab
+        ? 'bg-blue-400 dark:bg-blue-400 text-white border-b-4 border-blue-600 dark:border-blue-300 shadow-lg shadow-blue-500/50 dark:shadow-blue-400/50'
+        : 'bg-gray-50 dark:bg-gray-700 text-gray-400 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-600 hover:text-shadow-sm hover:shadow-lg'
+        }`}
       style={activeTab !== tab ? {
         textShadow: 'none',
         transition: 'all 0.2s ease-in-out'
@@ -126,7 +125,7 @@ export function ResultsStep() {
                   topProductosMasVendidosPorImporte={resultados.topProductosMasVendidosPorImporte}
                   topProductosMenosVendidos={resultados.topProductosMenosVendidos}
                 />
-                <TopClientes 
+                <TopClientes
                   topClientesMinoristas={resultados.topClientesMinoristas}
                   topClientesDistribuidores={resultados.topClientesDistribuidores}
                   topClientesMinoristasPorCantidad={resultados.topClientesMinoristasPorCantidad}
@@ -150,43 +149,44 @@ export function ResultsStep() {
                 {/* Tablas de datos */}
                 <div className="grid grid-cols-1 gap-8">
                   {/* Tabla de Ventas Mensuales Interactiva */}
-                  <VentasMensualesTable 
+                  <VentasMensualesTable
                     ventasPorMes={resultados.ventasPorMes}
                     cantidadesPorMes={resultados.cantidadesPorMes}
                   />
 
                   {/* Tabla de Top Productos por Categoría Interactiva */}
-                  <TopProductosPorCategoriaTable 
+                  <TopProductosPorCategoriaTable
                     topProductosPorCategoria={resultados.topProductosPorCategoriaPorCantidad}
                     topProductosPorCategoriaImporte={resultados.topProductosPorCategoriaPorImporte}
                   />
 
                   {/* Tabla de Ventas por Rubro Interactiva */}
-                  <VentasPorRubroTable 
+                  <VentasPorRubroTable
                     ventasPorRubro={resultados.ventasPorRubro}
                     cantidadesPorRubro={resultados.cantidadesPorRubro}
                   />
 
                   {/* Tabla de Ventas por Zona Interactiva */}
-                  <VentasPorZonaTable 
+                  <VentasPorZonaTable
                     ventasPorZona={resultados.ventasPorZona}
                     cantidadesPorZona={resultados.cantidadesPorZona}
                   />
 
                   {/* Tabla de Ventas por Vendedor Interactiva */}
-                  <VentasPorVendedorTable 
+                  <VentasPorVendedorTable
                     ventasPorVendedor={resultados.ventasPorVendedor}
                     cantidadesPorVendedor={resultados.cantidadesPorVendedor}
+                    vendedorDebugLog={resultados.vendedorDebugLog}
                   />
 
                   {/* Tabla de Top Productos Interactiva */}
-                  <TopProductosTable 
+                  <TopProductosTable
                     topProductosMasVendidos={resultados.topProductosMasVendidos}
                     topProductosMenosVendidos={resultados.topProductosMenosVendidos}
                   />
 
                   {/* Tabla de Top Clientes Interactiva */}
-                  <TopClientesTable 
+                  <TopClientesTable
                     topClientesMinoristas={resultados.topClientesMinoristas}
                     topClientesDistribuidores={resultados.topClientesDistribuidores}
                   />

@@ -72,7 +72,16 @@ export const TopProductos = ({
     const [tipo, setTipo] = useState<'mas' | 'menos'>('mas');
     const [metric, setMetric] = useState<'importe' | 'cantidad'>('cantidad');
     const [numProductos, setNumProductos] = useState<number>(10);
+    const [excluirAjustes, setExcluirAjustes] = useState<boolean>(false);
     const chartRef = useRef<HTMLDivElement>(null);
+
+    // Función para determinar si un código de artículo debe excluirse
+    const debeExcluirProducto = (articulo: string): boolean => {
+        const cod = articulo.trim().toUpperCase();
+        if (cod === '50AJU003') return true;
+        if (cod.endsWith('G') || cod.endsWith('C') || cod.endsWith('M')) return true;
+        return false;
+    };
 
     const data = useMemo(() => {
         let sourceData;
@@ -85,17 +94,18 @@ export const TopProductos = ({
         console.log('🔍 TopProductos - sourceData:', sourceData);
         console.log('🔍 TopProductos - tipo:', tipo, 'metric:', metric);
 
-        return sourceData
+        // Aplicar filtro de productos si está activo
+        const filteredData = excluirAjustes
+            ? sourceData.filter((item: { articulo: string }) => !debeExcluirProducto(item.articulo))
+            : sourceData;
+
+        return filteredData
             .map((item: { articulo: string; descripcion: string; total?: number; cantidad?: number }) => {
-                console.log('🔍 TopProductos - item completo:', JSON.stringify(item, null, 2));
-                console.log('🔍 TopProductos - item.descripcion:', item.descripcion);
-                console.log('🔍 TopProductos - typeof descripcion:', typeof item.descripcion);
-                
                 // Usar artículo como fallback si descripción está vacía
-                const displayName = item.descripcion && item.descripcion.trim() ? 
-                    formatName(item.descripcion) : 
+                const displayName = item.descripcion && item.descripcion.trim() ?
+                    formatName(item.descripcion) :
                     item.articulo;
-                
+
                 return {
                     name: displayName,
                     value: metric === 'importe' ? (item.total || 0) : (item.cantidad || 0),
@@ -103,7 +113,7 @@ export const TopProductos = ({
             })
             .slice(0, numProductos);
 
-    }, [tipo, metric, numProductos, topProductosMasVendidos, topProductosMasVendidosPorImporte, topProductosMenosVendidos]);
+    }, [tipo, metric, numProductos, excluirAjustes, topProductosMasVendidos, topProductosMasVendidosPorImporte, topProductosMenosVendidos]);
 
     const maxValue = useMemo(() => {
         if (data.length === 0) return 0;
@@ -171,14 +181,24 @@ export const TopProductos = ({
                         <option value={15}>Top 15</option>
                         <option value={20}>Top 20</option>
                     </select>
+                    {/* Checkbox para excluir ajustes y variantes */}
+                    <label className="inline-flex items-center cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <input
+                            type="checkbox"
+                            checked={excluirAjustes}
+                            onChange={(e) => setExcluirAjustes(e.target.checked)}
+                            className="mr-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        Excluir ajustes
+                    </label>
                 </div>
             </div>
             <ResponsiveContainer width="100%" height={400}>
                 <BarChart data={data} layout="vertical" margin={{ top: 5, right: 120, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                        type="number" 
-                        domain={[0, maxValue]} 
+                    <XAxis
+                        type="number"
+                        domain={[0, maxValue]}
                         tickFormatter={(value) => {
                             if (metric === 'importe') {
                                 if (value >= 1000000) {
@@ -199,9 +219,9 @@ export const TopProductos = ({
                     <Tooltip content={<CustomTooltip />} />
                     <defs>
                         <linearGradient id="colorBarProducto" x1="0" y1="0" x2="1" y2="0">
-                            <stop offset="0%" stopColor="#98e3b5" stopOpacity={1}/>
-                            <stop offset="75%" stopColor="#82ca9d" stopOpacity={1}/>
-                            <stop offset="100%" stopColor="#6eb58a" stopOpacity={1}/>
+                            <stop offset="0%" stopColor="#98e3b5" stopOpacity={1} />
+                            <stop offset="75%" stopColor="#82ca9d" stopOpacity={1} />
+                            <stop offset="100%" stopColor="#6eb58a" stopOpacity={1} />
                         </linearGradient>
                         <filter id="shadowProductos" x="-10%" y="-10%" width="120%" height="130%">
                             <feOffset result="offOut" in="SourceGraphic" dx="3" dy="3" />
@@ -211,10 +231,10 @@ export const TopProductos = ({
                             <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
                         </filter>
                     </defs>
-                    <Bar 
-                        dataKey="value" 
-                        name={metric === 'importe' ? 'Ventas' : 'Cantidad'} 
-                        fill="url(#colorBarProducto)" 
+                    <Bar
+                        dataKey="value"
+                        name={metric === 'importe' ? 'Ventas' : 'Cantidad'}
+                        fill="url(#colorBarProducto)"
                         stroke="#6eb58a"
                         strokeWidth={1}
                         radius={[0, 4, 4, 0]}

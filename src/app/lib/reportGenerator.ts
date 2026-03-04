@@ -31,12 +31,119 @@ export interface ReporteResultados {
   topClientesDistribuidores: { cliente: string; total: number }[];
   topClientesMinoristasPorCantidad: { cliente: string; total: number }[];
   topClientesDistribuidoresPorCantidad: { cliente: string; total: number }[];
+  // Debug log del cruce de vendedores
+  vendedorDebugLog: string[];
 }
 
 /**
  * Genera un reporte completo a partir de los datos de ventas.
+ * @param clienteVendorMap - Mapa opcional de Cód. cliente → vendedor real (desde nómina de clientes)
  */
-export function generarReporte(ventas: Venta[]): ReporteResultados {
+export function generarReporte(ventas: Venta[], clienteVendorMap?: Map<string, string>): ReporteResultados {
+  const debugLog: string[] = [];
+  debugLog.push(`=== LOG DE CRUCE DE VENDEDORES ===${new Date().toLocaleString('es-AR')}`);
+  debugLog.push(`Total de ventas recibidas: ${ventas.length}`);
+  debugLog.push(`clienteVendorMap recibido: ${clienteVendorMap ? 'SÍ' : 'NO'}`);
+  if (clienteVendorMap) {
+    debugLog.push(`Entradas en el mapa: ${clienteVendorMap.size}`);
+    // Mostrar primeras 10 entradas del mapa
+    let count = 0;
+    clienteVendorMap.forEach((vendedor, razonSocial) => {
+      if (count < 10) {
+        debugLog.push(`  Mapa[${count}]: "${razonSocial}" → "${vendedor}"`);
+      }
+      count++;
+    });
+    if (count > 10) debugLog.push(`  ... y ${count - 10} entradas más`);
+  }
+
+  // Muestra de las primeras 10 ventas con ReferenciaVendedor y Cliente
+  debugLog.push(`\n--- Muestra de ventas (primeras 10) ---`);
+  ventas.slice(0, 10).forEach((v, i) => {
+    const override = clienteVendorMap ? clienteVendorMap.get(v.Cliente?.trim() || '') : undefined;
+    const esHDO = v.ReferenciaVendedor?.trim().toLowerCase() === 'hierbas del oasis';
+    const vendedorFinal = esHDO && override ? override : v.ReferenciaVendedor;
+    debugLog.push(`  Venta[${i}]: Cliente="${v.Cliente}" | VendedorVentas="${v.ReferenciaVendedor}" | EsHDO=${esHDO} | OverrideNomina="${override || '(no encontrado)'}" | VendedorFinal="${vendedorFinal}"`);
+  });
+
+  // Contar overrides con detalle
+  let totalOverridesReales = 0; // HDO → vendedor real (cambio efectivo)
+  let totalOverridesIguales = 0; // HDO → HDO (sin cambio real)
+  let totalHDO = 0;
+  let totalSinOverride = 0;
+  const vendedoresReasignados: Map<string, number> = new Map();
+  const muestraCambiosReales: string[] = [];
+
+  ventas.forEach(v => {
+    const esHDO = v.ReferenciaVendedor?.trim().toLowerCase() === 'hierbas del oasis';
+    if (esHDO) {
+      totalHDO++;
+      const override = clienteVendorMap ? clienteVendorMap.get(v.Cliente?.trim() || '') : undefined;
+      if (override) {
+        const overrideEsHDO = override.trim().toLowerCase() === 'hierbas del oasis';
+        if (overrideEsHDO) {
+          totalOverridesIguales++;
+        } else {
+          totalOverridesReales++;
+          vendedoresReasignados.set(override, (vendedoresReasignados.get(override) || 0) + 1);
+          // Guardar muestra de cambios reales (máximo 5)
+          if (muestraCambiosReales.length < 5) {
+            muestraCambiosReales.push(`    "${v.Cliente}" | HDO → "${override}"`);
+          }
+        }
+      } else {
+        totalSinOverride++;
+      }
+    }
+  });
+
+  debugLog.push(`\n--- Resumen de overrides ---`);
+  debugLog.push(`Total de ventas: ${ventas.length}`);
+  debugLog.push(`Ventas con "Hierbas del Oasis" como vendedor: ${totalHDO}`);
+  debugLog.push(`  → CAMBIO REAL (HDO → vendedor real): ${totalOverridesReales}`);
+  debugLog.push(`  → SIN CAMBIO (HDO → HDO en nómina): ${totalOverridesIguales}`);
+  debugLog.push(`  → Sin match en nómina: ${totalSinOverride}`);
+  debugLog.push(`Ventas con vendedor real (no HDO): ${ventas.length - totalHDO} (sin cambios)`);
+
+  if (muestraCambiosReales.length > 0) {
+    debugLog.push(`\n--- Muestra de cambios reales (HDO → vendedor real) ---`);
+    muestraCambiosReales.forEach(l => debugLog.push(l));
+  }
+
+  if (vendedoresReasignados.size > 0) {
+    debugLog.push(`\n--- Vendedores que recibieron ventas reasignadas ---`);
+    Array.from(vendedoresReasignados.entries())
+      .sort((a, b) => b[1] - a[1])
+      .forEach(([vend, cant]) => {
+        debugLog.push(`  "${vend}": ${cant} ventas reasignadas`);
+      });
+  }
+
+  // Mostrar vendedores únicos en la nómina (no HDO)
+  if (clienteVendorMap) {
+    const vendedoresRealesNomina = new Set<string>();
+    clienteVendorMap.forEach(v => {
+      if (v.trim().toLowerCase() !== 'hierbas del oasis') vendedoresRealesNomina.add(v);
+    });
+    debugLog.push(`\n--- Vendedores reales en la nómina (${vendedoresRealesNomina.size}) ---`);
+    Array.from(vendedoresRealesNomina).forEach(v => debugLog.push(`  - "${v}"`));
+  }
+
+  // Mostrar todos los vendedores únicos del archivo de ventas con conteo
+  const vendedoresEnVentas = new Map<string, number>();
+  ventas.forEach(v => {
+    const vend = v.ReferenciaVendedor?.trim() || '(vacío)';
+    vendedoresEnVentas.set(vend, (vendedoresEnVentas.get(vend) || 0) + 1);
+  });
+  debugLog.push(`\n--- Vendedores en archivo de ventas (${vendedoresEnVentas.size} únicos) ---`);
+  Array.from(vendedoresEnVentas.entries())
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([vend, cant]) => {
+      // Mostrar también el vendedor final (después del cruce)
+      const esHDO = vend.toLowerCase() === 'hierbas del oasis';
+      debugLog.push(`  "${vend}": ${cant} ventas${esHDO ? ' → sujeto a override por nómina' : ' → se mantiene (no es HDO)'}`);
+    });
+
   console.log("=== INICIANDO GENERACIÓN DE REPORTE DE VENTAS ===");
   console.log(`📊 Total de ventas recibidas: ${ventas.length}`);
 
@@ -79,12 +186,12 @@ export function generarReporte(ventas: Venta[]): ReporteResultados {
     ventasPorMes: agruparVentasPorMes(ventas),
     ventasPorRubro: agruparPorRubro(ventas),
     ventasPorZona: agruparPorZona(ventas),
-    ventasPorVendedor: agruparPorVendedor(ventas),
+    ventasPorVendedor: agruparPorVendedor(ventas, clienteVendorMap),
     // Por cantidad
     cantidadesPorMes: agruparVentasPorMesCantidad(ventas),
     cantidadesPorRubro: agruparPorRubroCantidad(ventas),
     cantidadesPorZona: agruparPorZonaCantidad(ventas),
-    cantidadesPorVendedor: agruparPorVendedorCantidad(ventas),
+    cantidadesPorVendedor: agruparPorVendedorCantidad(ventas, clienteVendorMap),
     // Tops
     topProductosMasVendidos: topProductosMasVendidos(ventas, 20, 'conDatos', mesesConDatos),
     topProductosMasVendidosPorImporte: topProductosMasVendidosImporte(ventas, 20, 'conDatos', mesesConDatos),
@@ -95,6 +202,8 @@ export function generarReporte(ventas: Venta[]): ReporteResultados {
     topClientesDistribuidores: topClientesPorRubro(ventas, 'Distribuidores', 20, 'importe', 'mas', 'conDatos', mesesConDatos),
     topClientesMinoristasPorCantidad: topClientesPorRubro(ventas, 'Minoristas', 20, 'cantidad', 'mas', 'conDatos', mesesConDatos),
     topClientesDistribuidoresPorCantidad: topClientesPorRubro(ventas, 'Distribuidores', 20, 'cantidad', 'mas', 'conDatos', mesesConDatos),
+    // Log de debug del cruce de vendedores
+    vendedorDebugLog: debugLog,
   };
 
   console.log("📊 Resultados de la agregación final:");
@@ -260,14 +369,49 @@ function agruparPorZonaCantidad(ventas: Venta[]) {
   return resultado;
 }
 
-function agruparPorVendedorCantidad(ventas: Venta[]) {
+/**
+ * Determina el vendedor real para una venta, aplicando la lógica de reasignación:
+ * - Si el vendedor en ventas es "Hierbas del Oasis" y la nómina tiene otro vendedor → usa el de la nómina
+ * - Si el vendedor en ventas ya es un nombre real (no "Hierbas del Oasis") → se queda con el de ventas
+ */
+function resolverVendedor(
+  referenciaVendedor: string,
+  razonSocialCliente: string,
+  clienteVendorMap?: Map<string, string>
+): string {
+  const vendedorVentas = referenciaVendedor?.trim() || '';
+  if (!vendedorVentas) return '';
+
+  // Solo sobrescribir si el vendedor original es "Hierbas del Oasis"
+  const esHierbasDelOasis = vendedorVentas.toLowerCase() === 'hierbas del oasis';
+  if (esHierbasDelOasis && clienteVendorMap) {
+    const vendorNomina = clienteVendorMap.get(razonSocialCliente?.trim() || '');
+    if (vendorNomina) return vendorNomina;
+  }
+
+  // En cualquier otro caso, el vendedor del reporte de ventas prevalece
+  return vendedorVentas;
+}
+
+/**
+ * Agrupa ventas por vendedor y mes (cantidad).
+ * Si se provee clienteVendorMap, reasigna el vendedor según la nómina de clientes.
+ */
+function agruparPorVendedorCantidad(ventas: Venta[], clienteVendorMap?: Map<string, string>) {
   const meses = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
-  const vendedores = Array.from(new Set(ventas.map(v => v.ReferenciaVendedor).filter(Boolean)));
-  const resultado: Record<string, Record<string, { A: number; X: number; AX: number }>> = {};
 
+  // Determinar vendedores reales según la lógica de reasignación
+  const vendedoresSet = new Set<string>();
+  ventas.forEach(v => {
+    const vend = resolverVendedor(v.ReferenciaVendedor, v.Cliente, clienteVendorMap);
+    if (vend) vendedoresSet.add(vend);
+  });
+  const vendedores = Array.from(vendedoresSet);
+
+  const resultado: Record<string, Record<string, { A: number; X: number; AX: number }>> = {};
   meses.forEach(mes => {
     resultado[mes] = {};
     vendedores.forEach(vend => {
@@ -287,7 +431,8 @@ function agruparPorVendedorCantidad(ventas: Venta[]) {
     const mes = meses[mesIdx] || '';
     if (!mes) return;
 
-    const vend = v.ReferenciaVendedor;
+    // Reasignar vendedor solo si el original es "Hierbas del Oasis"
+    const vend = resolverVendedor(v.ReferenciaVendedor, v.Cliente, clienteVendorMap);
     if (!vend) return;
 
     if (!resultado[mes][vend]) {
@@ -576,12 +721,24 @@ function topProductosPorCategoria(
   return resultado;
 }
 
-function agruparPorVendedor(ventas: Venta[]) {
+/**
+ * Agrupa ventas por vendedor y mes (importe).
+ * Si se provee clienteVendorMap, reasigna el vendedor según la nómina de clientes.
+ */
+function agruparPorVendedor(ventas: Venta[], clienteVendorMap?: Map<string, string>) {
   const meses = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
-  const vendedores = Array.from(new Set(ventas.map(v => v.ReferenciaVendedor).filter(Boolean)));
+
+  // Determinar vendedores reales según la lógica de reasignación
+  const vendedoresSet = new Set<string>();
+  ventas.forEach(v => {
+    const vend = resolverVendedor(v.ReferenciaVendedor, v.Cliente, clienteVendorMap);
+    if (vend) vendedoresSet.add(vend);
+  });
+  const vendedores = Array.from(vendedoresSet);
+
   const resultado: Record<string, Record<string, { A: number; X: number; AX: number }>> = {};
   meses.forEach(mes => {
     resultado[mes] = {};
@@ -600,8 +757,14 @@ function agruparPorVendedor(ventas: Venta[]) {
     }
     const mes = meses[mesIdx] || '';
     if (!mes) return;
-    const vend = v.ReferenciaVendedor;
+
+    // Reasignar vendedor solo si el original es "Hierbas del Oasis"
+    const vend = resolverVendedor(v.ReferenciaVendedor, v.Cliente, clienteVendorMap);
     if (!vend) return;
+
+    if (!resultado[mes][vend]) {
+      resultado[mes][vend] = { A: 0, X: 0, AX: 0 };
+    }
     const comprobante = v.NroComprobante.toUpperCase();
     if (comprobante.startsWith('X')) {
       resultado[mes][vend].X += v.Total;

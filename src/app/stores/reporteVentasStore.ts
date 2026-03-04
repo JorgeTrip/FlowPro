@@ -10,15 +10,22 @@ export interface ExcelRow {
   [key: string]: CellValue;
 }
 
+// Mapeo de columnas de la nómina de clientes
+export interface NominaMapeo {
+  RazonSocial: string;
+  Vendedor: string;
+}
+
 // Configuración específica para el reporte de ventas
 interface Configuracion {
   mapeo: {
     [key in keyof Venta]?: string;
   };
+  nominaMapeo?: NominaMapeo;
 }
 
 export interface ReporteVentasState {
-  // State
+  // State - Archivo de ventas
   step: number;
   ventasFile: File | null;
   ventasData: ExcelRow[];
@@ -29,11 +36,20 @@ export interface ReporteVentasState {
   isGenerating: boolean;
   error: string | null;
 
+  // State - Nómina de clientes (planilla de asignación de vendedores)
+  nominaFile: File | null;
+  nominaData: ExcelRow[];
+  nominaPreviewData: ExcelRow[];
+  nominaColumnas: string[];
+
   // Actions
   setStep: (step: number) => void;
   setVentasFile: (file: File | null) => void;
   setVentasData: (data: ExcelRow[], columnas: string[], previewData: ExcelRow[]) => void;
+  setNominaFile: (file: File | null) => void;
+  setNominaData: (data: ExcelRow[], columnas: string[], previewData: ExcelRow[]) => void;
   setConfiguracion: (configuracion: Configuracion) => void;
+  setNominaMapeo: (nominaMapeo: NominaMapeo) => void;
   setResultados: (resultados: ReporteResultados | null) => void;
   setIsGenerating: (generating: boolean) => void;
   setError: (error: string | null) => void;
@@ -41,7 +57,7 @@ export interface ReporteVentasState {
   reset: () => void;
 }
 
-const initialState: Omit<ReporteVentasState, 'setStep' | 'setVentasFile' | 'setVentasData' | 'setConfiguracion' | 'setResultados' | 'setIsGenerating' | 'setError' | 'generarReporte' | 'reset'> = {
+const initialState: Omit<ReporteVentasState, 'setStep' | 'setVentasFile' | 'setVentasData' | 'setNominaFile' | 'setNominaData' | 'setConfiguracion' | 'setNominaMapeo' | 'setResultados' | 'setIsGenerating' | 'setError' | 'generarReporte' | 'reset'> = {
   step: 1,
   ventasFile: null,
   ventasData: [],
@@ -51,6 +67,11 @@ const initialState: Omit<ReporteVentasState, 'setStep' | 'setVentasFile' | 'setV
   resultados: null,
   isGenerating: false,
   error: null,
+  // Nómina de clientes
+  nominaFile: null,
+  nominaData: [],
+  nominaPreviewData: [],
+  nominaColumnas: [],
 };
 
 export const useReporteVentasStore = create<ReporteVentasState>()((set, get) => ({
@@ -58,12 +79,16 @@ export const useReporteVentasStore = create<ReporteVentasState>()((set, get) => 
   setStep: (step) => set({ step }),
   setVentasFile: (file) => set({ ventasFile: file, resultados: null, step: 1 }),
   setVentasData: (data, columnas, previewData) => set({ ventasData: data, ventasColumnas: columnas, ventasPreviewData: previewData }),
+  setNominaFile: (file) => set({ nominaFile: file }),
+  setNominaData: (data, columnas, previewData) => set({ nominaData: data, nominaColumnas: columnas, nominaPreviewData: previewData }),
   setConfiguracion: (configuracion) => set({ configuracion }),
+  setNominaMapeo: (nominaMapeo) => set((state) => ({ configuracion: { ...state.configuracion!, nominaMapeo } })),
   setResultados: (resultados) => set({ resultados }),
   setIsGenerating: (isGenerating) => set({ isGenerating }),
   setError: (error) => set({ error }),
   generarReporte: () => {
-    const { ventasData, configuracion } = get();
+    const { ventasData, configuracion, nominaData } = get();
+    const nominaMapeo = configuracion?.nominaMapeo;
     if (!ventasData.length || !configuracion?.mapeo) {
       set({ error: 'No hay datos o configuración para generar el reporte.' });
       return;
@@ -81,7 +106,7 @@ export const useReporteVentasStore = create<ReporteVentasState>()((set, get) => 
           if (!descripcion && mapeo.Descripcion === 'Descripción') {
             descripcion = String(row['Descripcion'] || ''); // Sin tilde como fallback
           }
-          
+
           return {
             Periodo: String(row[mapeo.Periodo || ''] || ''),
             Fecha: String(row[mapeo.Fecha || ''] || ''),
@@ -104,7 +129,39 @@ export const useReporteVentasStore = create<ReporteVentasState>()((set, get) => 
           };
         });
 
-        const nuevosResultados = generarReporte(ventasProcesadas);
+        // DEBUG: Estado de la configuración de nómina
+        console.log('🔍 [STORE DEBUG] nominaData.length:', nominaData.length);
+        console.log('🔍 [STORE DEBUG] nominaMapeo:', nominaMapeo);
+        console.log('🔍 [STORE DEBUG] configuracion.nominaMapeo:', configuracion?.nominaMapeo);
+        if (nominaData.length > 0) {
+          console.log('🔍 [STORE DEBUG] Primera fila nómina keys:', Object.keys(nominaData[0]));
+          console.log('🔍 [STORE DEBUG] Primera fila nómina:', nominaData[0]);
+        }
+
+        // Construir mapa cliente → vendedor desde la nómina de clientes
+        // Se usa para reasignar ventas que figuran como "Hierbas del Oasis" al vendedor real
+        let clienteVendorMap: Map<string, string> | undefined;
+        if (nominaData.length > 0 && nominaMapeo?.RazonSocial && nominaMapeo?.Vendedor) {
+          clienteVendorMap = new Map<string, string>();
+          const colRazonSocial = nominaMapeo.RazonSocial;
+          const colVendedor = nominaMapeo.Vendedor;
+          console.log(`🔍 [STORE DEBUG] Buscando columnas: RazonSocial="${colRazonSocial}", Vendedor="${colVendedor}"`);
+          nominaData.forEach((row: ExcelRow) => {
+            // Usamos las columnas mapeadas por el usuario en la UI
+            // El cruce se hace por Razón Social, que coincide con v.Cliente en las ventas
+            const razonSocial = String(row[colRazonSocial] || '').trim();
+            const vendedor = String(row[colVendedor] || '').trim();
+            if (razonSocial && vendedor) {
+              clienteVendorMap!.set(razonSocial, vendedor);
+            }
+          });
+          console.log(`📋 Nómina de clientes: ${clienteVendorMap.size} clientes con vendedor asignado (columnas: ${colRazonSocial} → ${colVendedor})`);
+        } else {
+          console.warn('⚠️ [STORE DEBUG] NO se construyó clienteVendorMap. Condiciones:',
+            { nominaDataLength: nominaData.length, nominaMapeoRazonSocial: nominaMapeo?.RazonSocial, nominaMapeoVendedor: nominaMapeo?.Vendedor });
+        }
+
+        const nuevosResultados = generarReporte(ventasProcesadas, clienteVendorMap);
         set({ resultados: nuevosResultados, isGenerating: false, step: 3 });
       } catch (err) {
         console.error('Error durante la generación del reporte:', err);

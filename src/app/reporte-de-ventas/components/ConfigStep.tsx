@@ -37,6 +37,10 @@ export function ConfigStep() {
     ventasFile,
     ventasColumnas,
     ventasPreviewData,
+    nominaFile,
+    nominaData,
+    nominaColumnas,
+    nominaPreviewData,
     setStep,
     setConfiguracion,
     generarReporte,
@@ -65,6 +69,13 @@ export function ConfigStep() {
   const [isInitialMapping, setIsInitialMapping] = useState(true);
 
   const [isReady, setIsReady] = useState(false);
+
+  // Estado del mapeo de la nómina de clientes (Cód. cliente y Vendedor)
+  const [nominaMapeoLocal, setNominaMapeoLocal] = useState({
+    RazonSocial: '',
+    Vendedor: '',
+  });
+  const [isNominaInitialMapping, setIsNominaInitialMapping] = useState(true);
 
   useEffect(() => {
     if (ventasColumnas.length > 0 && isInitialMapping) {
@@ -174,6 +185,31 @@ export function ConfigStep() {
     }
   }, [ventasColumnas, isInitialMapping]);
 
+  // Auto-detección de columnas de la nómina de clientes
+  useEffect(() => {
+    if (nominaColumnas.length > 0 && isNominaInitialMapping) {
+      const autoNominaMapeo = { RazonSocial: '', Vendedor: '' };
+
+      // Buscar la columna de razón social
+      const razonSocialMatch = nominaColumnas.find(col =>
+        col.toLowerCase().includes('razón social') ||
+        col.toLowerCase().includes('razon social') ||
+        col.toLowerCase() === 'razón social'
+      );
+      if (razonSocialMatch) autoNominaMapeo.RazonSocial = razonSocialMatch;
+
+      // Buscar la columna de vendedor
+      const vendedorMatch = nominaColumnas.find(col =>
+        col.toLowerCase() === 'vendedor'
+      );
+      if (vendedorMatch) autoNominaMapeo.Vendedor = vendedorMatch;
+
+      console.log('Mapeo automático de nómina:', autoNominaMapeo);
+      setNominaMapeoLocal(autoNominaMapeo);
+      setIsNominaInitialMapping(false);
+    }
+  }, [nominaColumnas, isNominaInitialMapping]);
+
   useEffect(() => {
     console.log('Estado actual completo del mapeo:', mapeo);
     const isMapeoReady = mapeo.Fecha && mapeo.Fecha !== '' &&
@@ -226,7 +262,13 @@ export function ConfigStep() {
 
   const handleAnalizar = () => {
     if (!isReady) return;
-    setConfiguracion({ mapeo });
+    // Guardamos el mapeo de ventas y el de la nómina juntos en la configuración
+    setConfiguracion({
+      mapeo,
+      nominaMapeo: nominaMapeoLocal.RazonSocial && nominaMapeoLocal.Vendedor
+        ? nominaMapeoLocal
+        : undefined,
+    });
     generarReporte();
   };
 
@@ -263,6 +305,55 @@ export function ConfigStep() {
             </div>
           </div>
         </div>
+
+        {/* Mapeo de columnas de la nómina de clientes */}
+        {nominaFile && (
+          <div className="rounded-md border border-gray-300 p-6 dark:border-gray-600">
+            <h4 className="text-lg font-medium text-gray-800 dark:text-gray-200">
+              Nómina de Clientes: <span className="font-normal text-gray-600 dark:text-gray-400">{nominaFile.name}</span>
+            </h4>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+              📋 <strong>{nominaData.length}</strong> registros. Asigne las columnas para el cruce de vendedores.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+              <div>
+                {nominaPreviewData.length > 0 && (
+                  <DataPreviewTable
+                    title="Previsualización de Nómina"
+                    previewData={nominaPreviewData as ExcelRow[]}
+                    columns={nominaColumnas}
+                    highlightedColumns={[nominaMapeoLocal.RazonSocial, nominaMapeoLocal.Vendedor].filter(Boolean)}
+                  />
+                )}
+              </div>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <SelectAsignacion
+                  label="Razón Social (para cruce)"
+                  columnas={nominaColumnas}
+                  value={nominaMapeoLocal.RazonSocial || ''}
+                  onChange={(e) => setNominaMapeoLocal(prev => ({ ...prev, RazonSocial: e.target.value === 'Seleccionar columna...' ? '' : e.target.value }))}
+                />
+                <SelectAsignacion
+                  label="Vendedor"
+                  columnas={nominaColumnas}
+                  value={nominaMapeoLocal.Vendedor || ''}
+                  onChange={(e) => setNominaMapeoLocal(prev => ({ ...prev, Vendedor: e.target.value === 'Seleccionar columna...' ? '' : e.target.value }))}
+                />
+              </div>
+            </div>
+
+            {nominaMapeoLocal.RazonSocial && nominaMapeoLocal.Vendedor ? (
+              <p className="mt-3 text-xs text-green-600 dark:text-green-400">
+                ✅ Al generar el reporte, se reasignarán las ventas al vendedor real según esta nómina.
+              </p>
+            ) : (
+              <p className="mt-3 text-xs text-yellow-600 dark:text-yellow-400">
+                ⚠️ Asigne ambas columnas para activar la reasignación de vendedores.
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Mensaje de estado del mapeo */}

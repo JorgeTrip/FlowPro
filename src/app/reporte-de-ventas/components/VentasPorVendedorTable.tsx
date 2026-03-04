@@ -1,17 +1,32 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { ClipboardDocumentIcon, ClipboardDocumentCheckIcon } from '@heroicons/react/24/outline';
 
 interface VentasPorVendedorTableProps {
     ventasPorVendedor: { resultado: Record<string, Record<string, { A: number; X: number }>> };
     cantidadesPorVendedor: { resultado: Record<string, Record<string, { A: number; X: number }>> };
+    vendedorDebugLog?: string[];
 }
 
-export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedor }: VentasPorVendedorTableProps) => {
+export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedor, vendedorDebugLog }: VentasPorVendedorTableProps) => {
     const [mostrarCantidad, setMostrarCantidad] = useState<boolean>(false);
     const [mostrarTotales, setMostrarTotales] = useState<boolean>(true);
     const [ordenAscendente, setOrdenAscendente] = useState<boolean>(false);
     const [vendedoresSeleccionados, setVendedoresSeleccionados] = useState<string[]>([]);
+    const [copied, setCopied] = useState(false);
+
+    // Copiar el log de debug al portapapeles
+    const handleCopyLog = useCallback(async () => {
+        if (!vendedorDebugLog?.length) return;
+        try {
+            await navigator.clipboard.writeText(vendedorDebugLog.join('\n'));
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            console.error('Error al copiar al portapapeles');
+        }
+    }, [vendedorDebugLog]);
 
     // Obtener todos los vendedores disponibles
     const todosLosVendedores = useMemo(() => {
@@ -172,6 +187,20 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
                     </h4>
 
                     <div className="flex flex-wrap items-center gap-3">
+                        {/* Botón de debug log */}
+                        {vendedorDebugLog && vendedorDebugLog.length > 0 && (
+                            <button
+                                onClick={handleCopyLog}
+                                className="inline-flex items-center px-2 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-400 dark:border-gray-500 dark:hover:bg-gray-500 transition-colors"
+                                title="Copiar log de cruce de vendedores al portapapeles"
+                            >
+                                {copied ? (
+                                    <><ClipboardDocumentCheckIcon className="w-3.5 h-3.5 mr-1 text-green-500" /> Copiado</>
+                                ) : (
+                                    <><ClipboardDocumentIcon className="w-3.5 h-3.5 mr-1" /> Log debug</>
+                                )}
+                            </button>
+                        )}
                         {/* Filtro de vendedores */}
                         <div className="relative">
                             <button

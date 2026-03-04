@@ -21,3 +21,14 @@ export interface Venta {
   DescRubro: string;
   DescripcionZona: string;
 }
+
+/**
+ * Representa una fila de la planilla "Nómina de clientes".
+ * Se usa para cruzar con ventas por Cód. cliente y reasignar el vendedor real.
+ */
+export interface ClienteNomina {
+  CodCliente: string;
+  RazonSocial: string;
+  CodVendedor: string;
+  Vendedor: string;
+}

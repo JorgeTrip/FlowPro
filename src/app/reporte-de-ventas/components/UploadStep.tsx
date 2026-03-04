@@ -7,18 +7,29 @@ import { FileUpload, ProcessedExcelData } from '@/app/components/shared/FileUplo
 export function UploadStep() {
   const {
     ventasFile,
+    nominaFile,
     setVentasFile,
     setVentasData,
+    setNominaFile,
+    setNominaData,
     setIsGenerating,
     setError,
     setStep,
   } = useReporteVentasStore();
 
-  const handleFileLoad = (file: File, { data, columns, previewData }: ProcessedExcelData<ExcelRow>) => {
+  // Callback al cargar el archivo de ventas
+  const handleVentasFileLoad = (file: File, { data, columns, previewData }: ProcessedExcelData<ExcelRow>) => {
     setVentasFile(file);
     setVentasData(data, columns, previewData);
   };
 
+  // Callback al cargar la nómina de clientes
+  const handleNominaFileLoad = (file: File, { data, columns, previewData }: ProcessedExcelData<ExcelRow>) => {
+    setNominaFile(file);
+    setNominaData(data, columns, previewData);
+  };
+
+  // Solo el archivo de ventas es obligatorio, la nómina es opcional
   const handleNextStep = () => {
     if (ventasFile) {
       setStep(2);
@@ -30,8 +41,18 @@ export function UploadStep() {
       <div className="space-y-8">
         <FileUpload<ExcelRow>
           title="1. Cargar Archivo de Ventas"
+          description="Planilla de facturación con el detalle de ventas del período."
           file={ventasFile}
-          onFileLoad={handleFileLoad}
+          onFileLoad={handleVentasFileLoad}
+          setIsLoading={setIsGenerating}
+          setError={setError}
+        />
+
+        <FileUpload<ExcelRow>
+          title="2. Cargar Nómina de Clientes"
+          description="Planilla con la asignación de vendedores por cliente. Se usa para reasignar ventas al vendedor real."
+          file={nominaFile}
+          onFileLoad={handleNominaFileLoad}
           setIsLoading={setIsGenerating}
           setError={setError}
         />

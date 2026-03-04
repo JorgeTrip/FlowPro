@@ -13,49 +13,49 @@ const formatQuantity = (value: number) => new Intl.NumberFormat('es-AR').format(
 const formatName = (name: string) => name.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 
 interface VendedorData {
-    name: string;
-    value: number;
-    importe: number;
-    cantidad: number;
-    porcentaje: string;
+  name: string;
+  value: number;
+  importe: number;
+  cantidad: number;
+  porcentaje: string;
 }
 
 interface CustomizedLabelProps {
-    x?: string | number;
-    y?: string | number;
-    width?: string | number;
-    height?: string | number;
-    index?: number;
-    data: VendedorData[];
+  x?: string | number;
+  y?: string | number;
+  width?: string | number;
+  height?: string | number;
+  index?: number;
+  data: VendedorData[];
 }
 
 const CustomizedLabel = (props: CustomizedLabelProps) => {
-    const { x = 0, y = 0, width = 0, height = 0, index, data } = props;
+  const { x = 0, y = 0, width = 0, height = 0, index, data } = props;
 
-    if (index === undefined || !data || !data[index]) {
-        return null;
-    }
+  if (index === undefined || !data || !data[index]) {
+    return null;
+  }
 
-    const numX = typeof x === 'string' ? parseFloat(x) : x;
-    const numY = typeof y === 'string' ? parseFloat(y) : y;
-    const numWidth = typeof width === 'string' ? parseFloat(width) : width;
-    const numHeight = typeof height === 'string' ? parseFloat(height) : height;
-    const item = data[index];
+  const numX = typeof x === 'string' ? parseFloat(x) : x;
+  const numY = typeof y === 'string' ? parseFloat(y) : y;
+  const numWidth = typeof width === 'string' ? parseFloat(width) : width;
+  const numHeight = typeof height === 'string' ? parseFloat(height) : height;
+  const item = data[index];
 
-    const porcentaje = item.porcentaje || '0%';
-    const importeFormateado = formatCurrency(item.importe);
-    const cantidadFormateada = formatQuantity(item.cantidad);
+  const porcentaje = item.porcentaje || '0%';
+  const importeFormateado = formatCurrency(item.importe);
+  const cantidadFormateada = formatQuantity(item.cantidad);
 
-    return (
-        <g>
-            <text x={numX + numWidth + 8} y={numY + numHeight / 2 - 7} textAnchor="start" dominantBaseline="middle" className="fill-gray-800 dark:fill-gray-200 font-bold text-sm">
-                {porcentaje}
-            </text>
-            <text x={numX + numWidth + 8} y={numY + numHeight / 2 + 9} textAnchor="start" dominantBaseline="middle" className="fill-gray-600 dark:fill-gray-400 text-xs">
-                {`${importeFormateado} | ${cantidadFormateada} u.`}
-            </text>
-        </g>
-    );
+  return (
+    <g>
+      <text x={numX + numWidth + 8} y={numY + numHeight / 2 - 7} textAnchor="start" dominantBaseline="middle" className="fill-gray-800 dark:fill-gray-200 font-bold text-sm">
+        {porcentaje}
+      </text>
+      <text x={numX + numWidth + 8} y={numY + numHeight / 2 + 9} textAnchor="start" dominantBaseline="middle" className="fill-gray-600 dark:fill-gray-400 text-xs">
+        {`${importeFormateado} | ${cantidadFormateada} u.`}
+      </text>
+    </g>
+  );
 };
 
 export const VentasPorVendedor = ({ ventasPorVendedor, cantidadesPorVendedor }: {
@@ -193,9 +193,9 @@ export const VentasPorVendedor = ({ ventasPorVendedor, cantidadesPorVendedor }: 
           <Legend />
           <defs>
             <linearGradient id="colorBarVendedor" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#9F9AE3" stopOpacity={1}/>
-              <stop offset="75%" stopColor="#6F6BB8" stopOpacity={1}/>
-              <stop offset="100%" stopColor="#5A57A6" stopOpacity={1}/>
+              <stop offset="0%" stopColor="#9F9AE3" stopOpacity={1} />
+              <stop offset="75%" stopColor="#6F6BB8" stopOpacity={1} />
+              <stop offset="100%" stopColor="#5A57A6" stopOpacity={1} />
             </linearGradient>
             <filter id="shadowVendedor" x="-10%" y="-10%" width="120%" height="130%">
               <feOffset result="offOut" in="SourceGraphic" dx="3" dy="3" />
