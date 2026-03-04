@@ -266,7 +266,7 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
             headers.push('TOTAL GLOBAL');
 
             rows = (datosProcesados as FilaVendedorComparativo[]).map((item: FilaVendedorComparativo) => {
-                const row: any[] = [item.vendedor];
+                const row: (string | number)[] = [item.vendedor];
                 mesesSeleccionados.forEach((mes, index) => {
                     const d = item.meses[mes];
                     let variacionStr = '-';
@@ -287,7 +287,7 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
             });
 
             if (mostrarTotales && totalesComparativos) {
-                const totalRow: any[] = ['TOTAL'];
+                const totalRow: (string | number)[] = ['TOTAL'];
                 mesesSeleccionados.forEach((mes, index) => {
                     const d = totalesComparativos.meses[mes];
                     let variacionStr = '-';
