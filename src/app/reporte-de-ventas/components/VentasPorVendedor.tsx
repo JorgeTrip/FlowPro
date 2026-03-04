@@ -1,7 +1,7 @@
 // 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LabelList } from 'recharts';
 import { CameraIcon } from '@heroicons/react/24/outline';
 import { exportChartAsPNG } from '../lib/exportUtils';
@@ -12,12 +12,19 @@ const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style
 const formatQuantity = (value: number) => new Intl.NumberFormat('es-AR').format(value);
 const formatName = (name: string) => name.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
 
+// Paleta de colores para los diferentes meses en el gráfico comparativo
+const monthColors = [
+  '#9F9AE3', '#6F6BB8', '#5A57A6', '#4B88A2', '#D34E24', '#C59B76', '#78A1BB', '#283D3B', '#197278', '#EDDDD4', '#C44536', '#772E25'
+];
+
 interface VendedorData {
   name: string;
-  value: number;
-  importe: number;
-  cantidad: number;
-  porcentaje: string;
+  value?: number;
+  importe?: number;
+  cantidad?: number;
+  porcentaje?: string;
+  total?: number;
+  [key: string]: any; // Para los valores dinámicos por mes
 }
 
 interface CustomizedLabelProps {
@@ -27,12 +34,14 @@ interface CustomizedLabelProps {
   height?: string | number;
   index?: number;
   data: VendedorData[];
+  dataKey?: string;
+  metric?: 'importe' | 'cantidad';
 }
 
 const CustomizedLabel = (props: CustomizedLabelProps) => {
-  const { x = 0, y = 0, width = 0, height = 0, index, data } = props;
+  const { x = 0, y = 0, width = 0, height = 0, index, data, dataKey, metric } = props;
 
-  if (index === undefined || !data || !data[index]) {
+  if (index === undefined || !data || !data[index] || !dataKey) {
     return null;
   }
 
@@ -42,19 +51,18 @@ const CustomizedLabel = (props: CustomizedLabelProps) => {
   const numHeight = typeof height === 'string' ? parseFloat(height) : height;
   const item = data[index];
 
-  const porcentaje = item.porcentaje || '0%';
-  const importeFormateado = formatCurrency(item.importe);
-  const cantidadFormateada = formatQuantity(item.cantidad);
+  // Solo mostramos labels si el ancho de la barra es suficientemente grande
+  if (numWidth < 20) return null;
+
+  const value = item[dataKey];
+  if (!value) return null;
+
+  const formattedValue = metric === 'importe' ? formatCurrency(value) : formatQuantity(value);
 
   return (
-    <g>
-      <text x={numX + numWidth + 8} y={numY + numHeight / 2 - 7} textAnchor="start" dominantBaseline="middle" className="fill-gray-800 dark:fill-gray-200 font-bold text-sm">
-        {porcentaje}
-      </text>
-      <text x={numX + numWidth + 8} y={numY + numHeight / 2 + 9} textAnchor="start" dominantBaseline="middle" className="fill-gray-600 dark:fill-gray-400 text-xs">
-        {`${importeFormateado} | ${cantidadFormateada} u.`}
-      </text>
-    </g>
+    <text x={numX + numWidth + 5} y={numY + numHeight / 2} textAnchor="start" dominantBaseline="middle" className="fill-gray-600 dark:fill-gray-400 text-xs font-medium">
+      {formattedValue}
+    </text>
   );
 };
 
@@ -63,8 +71,10 @@ export const VentasPorVendedor = ({ ventasPorVendedor, cantidadesPorVendedor }: 
   cantidadesPorVendedor: ReporteResultados['cantidadesPorVendedor'];
 }) => {
   const [metric, setMetric] = useState<'importe' | 'cantidad'>('importe');
-  const [mesSeleccionado, setMesSeleccionado] = useState<string>('Total');
+  const [mesesSeleccionados, setMesesSeleccionados] = useState<string[]>([]);
+  const [modoVista, setModoVista] = useState<'acumulado' | 'comparativo'>('acumulado');
   const chartRef = useRef<HTMLDivElement>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const mesesConDatos = useMemo(() => {
     const meses = new Set<string>();
@@ -73,79 +83,130 @@ export const VentasPorVendedor = ({ ventasPorVendedor, cantidadesPorVendedor }: 
     return Array.from(meses);
   }, [ventasPorVendedor, cantidadesPorVendedor]);
 
-  const data = useMemo(() => {
-    const totalsByVendor: Record<string, { importe: number; cantidad: number }> = {};
+  useEffect(() => {
+    if (mesesSeleccionados.length === 0 && mesesConDatos.length > 0) {
+      setMesesSeleccionados(mesesConDatos);
+    }
+  }, [mesesConDatos, mesesSeleccionados.length]);
 
-    if (mesSeleccionado !== 'Total') {
-      const vendorsInMonth = new Set([
-        ...Object.keys(ventasPorVendedor.resultado[mesSeleccionado] || {}),
-        ...Object.keys(cantidadesPorVendedor.resultado[mesSeleccionado] || {}),
-      ]);
+  const toggleMes = (mes: string) => {
+    setMesesSeleccionados(prev =>
+      prev.includes(mes) ? prev.filter(m => m !== mes) : [...prev, mes]
+    );
+  };
 
-      vendorsInMonth.forEach(vendor => {
-        const importe = ventasPorVendedor.resultado[mesSeleccionado]?.[vendor]?.AX || 0;
-        const cantidad = cantidadesPorVendedor.resultado[mesSeleccionado]?.[vendor]?.AX || 0;
-        totalsByVendor[vendor] = { importe, cantidad };
-      });
-    } else {
-      // --- Lógica para 'Total' ---
-      const allVendors = new Set([
-        ...Object.values(ventasPorVendedor.resultado).flatMap(Object.keys),
-        ...Object.values(cantidadesPorVendedor.resultado).flatMap(Object.keys),
-      ]);
+  const data: VendedorData[] = useMemo(() => {
+    if (mesesSeleccionados.length === 0) return [];
+
+    const vendorsSet = new Set<string>();
+    mesesSeleccionados.forEach(mes => {
+      Object.keys(ventasPorVendedor.resultado[mes] || {}).forEach(v => vendorsSet.add(v));
+      Object.keys(cantidadesPorVendedor.resultado[mes] || {}).forEach(v => vendorsSet.add(v));
+    });
+
+    const allVendors = Array.from(vendorsSet);
+
+    if (modoVista === 'acumulado') {
+      const totalsByVendor: Record<string, { importe: number; cantidad: number }> = {};
 
       allVendors.forEach(vendor => {
         totalsByVendor[vendor] = { importe: 0, cantidad: 0 };
-        Object.values(ventasPorVendedor.resultado).forEach(monthlyData => {
-          if (monthlyData[vendor]) {
-            totalsByVendor[vendor].importe += monthlyData[vendor].AX;
-          }
-        });
-        Object.values(cantidadesPorVendedor.resultado).forEach(monthlyData => {
-          if (monthlyData[vendor]) {
-            totalsByVendor[vendor].cantidad += monthlyData[vendor].AX;
-          }
+        mesesSeleccionados.forEach(mes => {
+          totalsByVendor[vendor].importe += ventasPorVendedor.resultado[mes]?.[vendor]?.AX || 0;
+          totalsByVendor[vendor].cantidad += cantidadesPorVendedor.resultado[mes]?.[vendor]?.AX || 0;
         });
       });
+
+      const totalGeneral = Object.values(totalsByVendor).reduce((sum, data) => sum + (metric === 'importe' ? data.importe : data.cantidad), 0);
+
+      const result: VendedorData[] = Object.entries(totalsByVendor)
+        .map(([name, data]) => {
+          const value = metric === 'importe' ? data.importe : data.cantidad;
+          const item: VendedorData = {
+            name: formatName(name),
+            value,
+            importe: data.importe,
+            cantidad: data.cantidad,
+            porcentaje: totalGeneral > 0 ? `${((value / totalGeneral) * 100).toFixed(1)}%` : '0%',
+          };
+          return item;
+        })
+        .filter(item => (item.value || 0) > 0)
+        .sort((a, b) => (b.value || 0) - (a.value || 0))
+        .slice(0, 10);
+      return result;
+    } else {
+      // Modo Comparativo
+      const comparativeData: VendedorData[] = allVendors.map(vendor => {
+        const vendorData: VendedorData = { name: formatName(vendor), total: 0 };
+        let totalVal = 0;
+
+        mesesSeleccionados.forEach(mes => {
+          const importe = ventasPorVendedor.resultado[mes]?.[vendor]?.AX || 0;
+          const cantidad = cantidadesPorVendedor.resultado[mes]?.[vendor]?.AX || 0;
+          const val = metric === 'importe' ? importe : cantidad;
+          vendorData[mes] = val;
+          totalVal += val;
+        });
+
+        vendorData.total = totalVal;
+        return vendorData;
+      });
+
+      return comparativeData
+        .filter(item => (item.total || 0) > 0)
+        .sort((a, b) => (b.total || 0) - (a.total || 0))
+        .slice(0, 10);
     }
-
-    const totalGeneral = Object.values(totalsByVendor).reduce((sum, data) => sum + (metric === 'importe' ? data.importe : data.cantidad), 0);
-
-    return Object.entries(totalsByVendor)
-      .map(([name, data]) => {
-        const value = metric === 'importe' ? data.importe : data.cantidad;
-        return {
-          name: formatName(name),
-          value,
-          importe: data.importe,
-          cantidad: data.cantidad,
-          porcentaje: totalGeneral > 0 ? `${((value / totalGeneral) * 100).toFixed(1)}%` : '0%',
-        };
-      })
-      .filter(item => item.value > 0)
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 10);
-  }, [metric, mesSeleccionado, ventasPorVendedor, cantidadesPorVendedor]);
+  }, [metric, mesesSeleccionados, modoVista, ventasPorVendedor, cantidadesPorVendedor]);
 
   const maxValue = useMemo(() => {
     if (data.length === 0) return 0;
-    return Math.max(...data.map(item => item.value)) * 1.3;
-  }, [data]);
+    if (modoVista === 'acumulado') {
+      return Math.max(...data.map(item => item.value || 0)) * 1.3;
+    } else {
+      let max = 0;
+      data.forEach(item => {
+        mesesSeleccionados.forEach(mes => {
+          if (item[mes] && item[mes] > max) max = item[mes];
+        });
+      });
+      return max * 1.3;
+    }
+  }, [data, modoVista, mesesSeleccionados]);
 
   interface CustomTooltipProps {
     active?: boolean;
-    payload?: { value: number }[];
+    payload?: any[];
     label?: string;
   }
 
   const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
-      return (
-        <div className="p-2 bg-gray-700 text-white rounded-md border border-gray-600 shadow-lg">
-          <p className="font-bold">{label}</p>
-          <p>{`${metric === 'importe' ? 'Importe' : 'Cantidad'}: ${metric === 'importe' ? formatCurrency(payload[0].value) : formatQuantity(payload[0].value)}`}</p>
-        </div>
-      );
+      if (modoVista === 'acumulado') {
+        const item = payload[0].payload;
+        return (
+          <div className="p-3 bg-gray-800 text-white rounded-lg shadow-xl border border-gray-700">
+            <p className="font-bold mb-1 text-blue-300">{label}</p>
+            <p className="text-sm">{`Porcentaje: ${item.porcentaje}`}</p>
+            <p className="text-sm">{`Importe: ${formatCurrency(item.importe)}`}</p>
+            <p className="text-sm">{`Cantidad: ${formatQuantity(item.cantidad)} u.`}</p>
+          </div>
+        );
+      } else {
+        return (
+          <div className="p-3 bg-gray-800 text-white rounded-lg shadow-xl border border-gray-700">
+            <p className="font-bold mb-2 text-blue-300">{label}</p>
+            {payload.map((entry, index) => (
+              <p key={index} className="text-sm flex items-center gap-2 mb-1">
+                <span className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }}></span>
+                <span className="font-medium">{entry.name}:</span>
+                {metric === 'importe' ? formatCurrency(entry.value) : formatQuantity(entry.value)}
+              </p>
+            ))}
+          </div>
+        );
+      }
     }
     return null;
   };
@@ -157,7 +218,11 @@ export const VentasPorVendedor = ({ ventasPorVendedor, cantidadesPorVendedor }: 
   return (
     <div ref={chartRef} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="flex justify-between items-center mb-4">
-        <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Top 10 Vendedores</h4>
+        <div>
+          <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+            Top 10 Vendedores
+          </h4>
+        </div>
         <div className="flex items-center space-x-4 chart-controls">
           <button
             onClick={handleExport}
@@ -166,14 +231,55 @@ export const VentasPorVendedor = ({ ventasPorVendedor, cantidadesPorVendedor }: 
           >
             <CameraIcon className="w-4 h-4" />
           </button>
-          <select
-            value={mesSeleccionado}
-            onChange={(e) => setMesSeleccionado(e.target.value)}
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-40 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-          >
-            <option value="Total">Todos los meses</option>
-            {mesesConDatos.map(mes => <option key={mes} value={mes}>{mes}</option>)}
-          </select>
+
+          {/* Selector Múltiple de Meses */}
+          <div className="relative">
+            <button
+              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-40 p-2.5 text-left dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+            >
+              Meses ({mesesSeleccionados.length})
+            </button>
+
+            {dropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setDropdownOpen(false)}></div>
+                <div className="absolute top-full right-0 mt-1 w-56 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
+                  <div className="p-3">
+                    <div className="flex gap-2 mb-3">
+                      <button
+                        onClick={() => setMesesSeleccionados(mesesConDatos)}
+                        className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+                      >
+                        Todos
+                      </button>
+                      <button
+                        onClick={() => setMesesSeleccionados([])}
+                        className="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600"
+                      >
+                        Ninguno
+                      </button>
+                    </div>
+
+                    {mesesConDatos.map(mes => (
+                      <label key={mes} className="flex items-center mb-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={mesesSeleccionados.includes(mes)}
+                          onChange={() => toggleMes(mes)}
+                          className="mr-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm text-gray-900 dark:text-white">
+                          {mes}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
           <select
             value={metric}
             onChange={(e) => setMetric(e.target.value as 'importe' | 'cantidad')}
@@ -182,34 +288,41 @@ export const VentasPorVendedor = ({ ventasPorVendedor, cantidadesPorVendedor }: 
             <option value="importe">Importe</option>
             <option value="cantidad">Cantidad</option>
           </select>
+
+          <select
+            value={modoVista}
+            onChange={(e) => setModoVista(e.target.value as 'acumulado' | 'comparativo')}
+            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+          >
+            <option value="acumulado">Acumulado</option>
+            <option value="comparativo" disabled={mesesSeleccionados.length < 2}>Comparativo</option>
+          </select>
         </div>
       </div>
-      <ResponsiveContainer width="100%" height={400}>
-        <BarChart data={data} layout="vertical" margin={{ top: 5, right: 120, left: 20, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis type="number" domain={[0, maxValue]} tickFormatter={(value) => metric === 'importe' ? formatCurrency(value as number) : formatQuantity(value as number)} />
-          <YAxis type="category" dataKey="name" width={100} />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend />
-          <defs>
-            <linearGradient id="colorBarVendedor" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#9F9AE3" stopOpacity={1} />
-              <stop offset="75%" stopColor="#6F6BB8" stopOpacity={1} />
-              <stop offset="100%" stopColor="#5A57A6" stopOpacity={1} />
-            </linearGradient>
-            <filter id="shadowVendedor" x="-10%" y="-10%" width="120%" height="130%">
-              <feOffset result="offOut" in="SourceGraphic" dx="3" dy="3" />
-              <feColorMatrix result="matrixOut" in="offOut" type="matrix"
-                values="0.2 0 0 0 0 0 0.2 0 0 0 0 0 0.2 0 0 0 0 0 1 0" />
-              <feGaussianBlur result="blurOut" in="matrixOut" stdDeviation="3" />
-              <feBlend in="SourceGraphic" in2="blurOut" mode="normal" />
-            </filter>
-          </defs>
-          <Bar dataKey="value" name={metric === 'importe' ? 'Ventas' : 'Cantidad'} fill="url(#colorBarVendedor)" filter="url(#shadowVendedor)" radius={[0, 4, 4, 0]}>
-            <LabelList dataKey="value" content={(props) => <CustomizedLabel {...props} data={data} />} />
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+
+      <div className="w-full">
+        <ResponsiveContainer width="100%" height={modoVista === 'comparativo' ? 500 : 400}>
+          <BarChart data={data} layout="vertical" margin={{ top: 5, right: 120, left: 20, bottom: 5 }} barGap={2} barCategoryGap={modoVista === 'comparativo' ? "10%" : "20%"}>
+            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E5E7EB" />
+            <XAxis type="number" domain={[0, maxValue]} tickFormatter={(value) => metric === 'importe' ? formatCurrency(value as number) : formatQuantity(value as number)} tickLine={false} axisLine={false} tick={{ fill: '#6B7280', fontSize: 12 }} />
+            <YAxis type="category" dataKey="name" width={110} tickLine={false} axisLine={false} tick={{ fill: '#4B5563', fontSize: 12, fontWeight: 500 }} />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(156, 163, 175, 0.1)' }} />
+            <Legend wrapperStyle={{ paddingTop: '20px' }} />
+
+            {modoVista === 'acumulado' ? (
+              <Bar dataKey="value" name={metric === 'importe' ? 'Ventas' : 'Cantidad'} fill="#6F6BB8" radius={[0, 4, 4, 0]}>
+                <LabelList dataKey="value" content={(props) => <CustomizedLabel {...props} data={data} dataKey="value" metric={metric} />} />
+              </Bar>
+            ) : (
+              mesesSeleccionados.map((mes, index) => (
+                <Bar key={mes} dataKey={mes} name={mes} fill={monthColors[index % monthColors.length]} radius={[0, 4, 4, 0]}>
+                  <LabelList dataKey={mes} content={(props) => <CustomizedLabel {...props} data={data} dataKey={mes} metric={metric} />} />
+                </Bar>
+              ))
+            )}
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 };
