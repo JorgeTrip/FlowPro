@@ -16,7 +16,7 @@ export function ModulosDisponiblesPanel() {
       <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Amplíe las capacidades de FlowPro activando nuevos módulos.</p>
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {modulosInactivos.map(modulo => (
-          <div key={modulo.id} className="rounded-md border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700">
+          <div key={modulo.id} className="h-full rounded-md border border-gray-200 bg-gray-50 p-4 dark:border-gray-600 dark:bg-gray-700">
             <div className="flex items-center space-x-3">
               <span className="text-2xl">{modulo.icono}</span>
               <div>

@@ -4,15 +4,15 @@ import Link from 'next/link';
 
 export function ModuloDashboardWidget({ modulo }: { modulo: Modulo }) {
   return (
-    <div className="group relative">
-      <Link 
-        href={modulo.ruta} 
-        className="group relative block rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 overflow-hidden"
+    <div className="group relative h-full">
+      <Link
+        href={modulo.ruta}
+        className="group relative block h-full rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 overflow-hidden"
       >
         {/* LED Diffuse Glow Effect */}
         <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-blue-400/20 via-cyan-400/15 to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-000"></div>
         <div className="absolute inset-0 rounded-lg shadow-[inset_0_0_30px_rgba(59,130,246,0.3)] opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-500"></div>
-        
+
         <div className="relative flex items-center space-x-4">
           <span className="text-3xl">{modulo.icono}</span>
           <div>
@@ -21,7 +21,7 @@ export function ModuloDashboardWidget({ modulo }: { modulo: Modulo }) {
           </div>
         </div>
       </Link>
-      
+
       {/* Tooltip */}
       {modulo.tooltip && (
         <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 w-96 rounded-lg bg-gray-900 p-4 text-sm text-white shadow-xl opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 delay-300">

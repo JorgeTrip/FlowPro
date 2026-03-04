@@ -24,7 +24,8 @@ interface VendedorData {
   cantidad?: number;
   porcentaje?: string;
   total?: number;
-  [key: string]: any; // Para los valores dinámicos por mes
+  // Valores dinámicos por mes (clave = nombre del mes)
+  [key: string]: string | number | undefined;
 }
 
 interface CustomizedLabelProps {
@@ -54,7 +55,7 @@ const CustomizedLabel = (props: CustomizedLabelProps) => {
   // Solo mostramos labels si el ancho de la barra es suficientemente grande
   if (numWidth < 20) return null;
 
-  const value = item[dataKey];
+  const value = item[dataKey] as number | undefined;
   if (!value) return null;
 
   const formattedValue = metric === 'importe' ? formatCurrency(value) : formatQuantity(value);
@@ -168,16 +169,24 @@ export const VentasPorVendedor = ({ ventasPorVendedor, cantidadesPorVendedor }: 
       let max = 0;
       data.forEach(item => {
         mesesSeleccionados.forEach(mes => {
-          if (item[mes] && item[mes] > max) max = item[mes];
+          const val = item[mes] as number | undefined;
+          if (val && val > max) max = val;
         });
       });
       return max * 1.3;
     }
   }, [data, modoVista, mesesSeleccionados]);
 
+  interface TooltipPayloadEntry {
+    color: string;
+    name: string;
+    value: number;
+    payload: VendedorData;
+  }
+
   interface CustomTooltipProps {
     active?: boolean;
-    payload?: any[];
+    payload?: TooltipPayloadEntry[];
     label?: string;
   }
 
@@ -189,8 +198,8 @@ export const VentasPorVendedor = ({ ventasPorVendedor, cantidadesPorVendedor }: 
           <div className="p-3 bg-gray-800 text-white rounded-lg shadow-xl border border-gray-700">
             <p className="font-bold mb-1 text-blue-300">{label}</p>
             <p className="text-sm">{`Porcentaje: ${item.porcentaje}`}</p>
-            <p className="text-sm">{`Importe: ${formatCurrency(item.importe)}`}</p>
-            <p className="text-sm">{`Cantidad: ${formatQuantity(item.cantidad)} u.`}</p>
+            <p className="text-sm">{`Importe: ${formatCurrency(item.importe ?? 0)}`}</p>
+            <p className="text-sm">{`Cantidad: ${formatQuantity(item.cantidad ?? 0)} u.`}</p>
           </div>
         );
       } else {

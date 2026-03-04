@@ -2,11 +2,40 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { ClipboardDocumentIcon, ClipboardDocumentCheckIcon } from '@heroicons/react/24/outline';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 interface VentasPorVendedorTableProps {
     ventasPorVendedor: { resultado: Record<string, Record<string, { A: number; X: number }>> };
     cantidadesPorVendedor: { resultado: Record<string, Record<string, { A: number; X: number }>> };
     vendedorDebugLog?: string[];
+}
+
+// Tipos internos para el procesamiento de datos
+interface FilaVendedorAcumulado {
+    vendedor: string;
+    importeA: number;
+    importeX: number;
+    cantidadA: number;
+    cantidadX: number;
+    total: number;
+    totalCantidad: number;
+}
+
+interface MesDato {
+    importeA: number;
+    importeX: number;
+    cantidadA: number;
+    cantidadX: number;
+    totalImporte: number;
+    totalCantidad: number;
+}
+
+interface FilaVendedorComparativo {
+    vendedor: string;
+    totalGlobalImporte: number;
+    totalGlobalCantidad: number;
+    meses: Record<string, MesDato>;
 }
 
 export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedor, vendedorDebugLog }: VentasPorVendedorTableProps) => {
@@ -78,7 +107,7 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
     // Procesar y filtrar datos
     const datosProcesados = useMemo(() => {
         if (modoVista === 'acumulado') {
-            const mapaAgrupado: Record<string, any> = {};
+            const mapaAgrupado: Record<string, FilaVendedorAcumulado> = {};
 
             mesesSeleccionados.forEach(mes => {
                 const subvendedores = ventasPorVendedor.resultado[mes] || {};
@@ -113,7 +142,7 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
             return datos;
         } else {
             // Modo Comparativo
-            const mapaComparativo: Record<string, any> = {};
+            const mapaComparativo: Record<string, FilaVendedorComparativo> = {};
 
             vendedoresSeleccionados.forEach(vendedor => {
                 mapaComparativo[vendedor] = {
@@ -159,7 +188,7 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
 
     const totalesAcumulados = useMemo(() => {
         if (modoVista !== 'acumulado') return null;
-        return datosProcesados.reduce((acc, item) => ({
+        return (datosProcesados as FilaVendedorAcumulado[]).reduce((acc, item) => ({
             importeA: acc.importeA + item.importeA,
             importeX: acc.importeX + item.importeX,
             cantidadA: acc.cantidadA + item.cantidadA,
@@ -175,14 +204,14 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
         const totales = {
             totalGlobalImporte: 0,
             totalGlobalCantidad: 0,
-            meses: {} as Record<string, any>
+            meses: {} as Record<string, MesDato>
         };
 
         mesesSeleccionados.forEach(mes => {
             totales.meses[mes] = { importeA: 0, importeX: 0, cantidadA: 0, cantidadX: 0, totalImporte: 0, totalCantidad: 0 };
         });
 
-        datosProcesados.forEach(item => {
+        (datosProcesados as FilaVendedorComparativo[]).forEach(item => {
             totales.totalGlobalImporte += item.totalGlobalImporte;
             totales.totalGlobalCantidad += item.totalGlobalCantidad;
 
@@ -205,16 +234,16 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
     const formatCurrency = (value: number) => value.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
     const formatQuantity = (value: number) => value.toLocaleString('es-AR');
 
-    const exportarDatos = () => {
+    const exportarDatos = async () => {
         let headers: string[] = [];
-        let rows: any[] = [];
+        let rows: (string | number)[][] = [];
 
         if (modoVista === 'acumulado') {
             headers = mostrarCantidad
                 ? ['Vendedor', 'Cant. Facturas', 'Cant. Remitos', 'Total Cantidad']
                 : ['Vendedor', 'Imp. Facturas', 'Imp. Remitos', 'Total Importe'];
 
-            rows = datosProcesados.map(item => mostrarCantidad
+            rows = (datosProcesados as FilaVendedorAcumulado[]).map((item: FilaVendedorAcumulado) => mostrarCantidad
                 ? [item.vendedor, item.cantidadA, item.cantidadX, item.totalCantidad]
                 : [item.vendedor, item.importeA, item.importeX, item.total]
             );
@@ -232,17 +261,25 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
                 headers.push(`${mes} (Facturas)`);
                 headers.push(`${mes} (Remitos)`);
                 headers.push(`${mes} (Total)`);
+                headers.push(`${mes} (Var %)`);
             });
             headers.push('TOTAL GLOBAL');
 
-            rows = datosProcesados.map(item => {
+            rows = (datosProcesados as FilaVendedorComparativo[]).map((item: FilaVendedorComparativo) => {
                 const row: any[] = [item.vendedor];
-                mesesSeleccionados.forEach(mes => {
+                mesesSeleccionados.forEach((mes, index) => {
                     const d = item.meses[mes];
+                    let variacionStr = '-';
+                    if (index > 0) {
+                        const dataAnt = item.meses[mesesSeleccionados[index - 1]];
+                        const valAct = mostrarCantidad ? d.totalCantidad : d.totalImporte;
+                        const valAnt = mostrarCantidad ? dataAnt.totalCantidad : dataAnt.totalImporte;
+                        if (valAnt > 0) variacionStr = (((valAct - valAnt) / valAnt) * 100).toFixed(1) + '%';
+                    }
                     if (mostrarCantidad) {
-                        row.push(d.cantidadA, d.cantidadX, d.totalCantidad);
+                        row.push(d.cantidadA, d.cantidadX, d.totalCantidad, variacionStr);
                     } else {
-                        row.push(d.importeA, d.importeX, d.totalImporte);
+                        row.push(d.importeA, d.importeX, d.totalImporte, variacionStr);
                     }
                 });
                 row.push(mostrarCantidad ? item.totalGlobalCantidad : item.totalGlobalImporte);
@@ -251,12 +288,19 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
 
             if (mostrarTotales && totalesComparativos) {
                 const totalRow: any[] = ['TOTAL'];
-                mesesSeleccionados.forEach(mes => {
+                mesesSeleccionados.forEach((mes, index) => {
                     const d = totalesComparativos.meses[mes];
+                    let variacionStr = '-';
+                    if (index > 0) {
+                        const dataAnt = totalesComparativos.meses[mesesSeleccionados[index - 1]];
+                        const valAct = mostrarCantidad ? d.totalCantidad : d.totalImporte;
+                        const valAnt = mostrarCantidad ? dataAnt.totalCantidad : dataAnt.totalImporte;
+                        if (valAnt > 0) variacionStr = (((valAct - valAnt) / valAnt) * 100).toFixed(1) + '%';
+                    }
                     if (mostrarCantidad) {
-                        totalRow.push(d.cantidadA, d.cantidadX, d.totalCantidad);
+                        totalRow.push(d.cantidadA, d.cantidadX, d.totalCantidad, variacionStr);
                     } else {
-                        totalRow.push(d.importeA, d.importeX, d.totalImporte);
+                        totalRow.push(d.importeA, d.importeX, d.totalImporte, variacionStr);
                     }
                 });
                 totalRow.push(mostrarCantidad ? totalesComparativos.totalGlobalCantidad : totalesComparativos.totalGlobalImporte);
@@ -264,14 +308,18 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
             }
         }
 
-        const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `ventas-por-vendedor-${mostrarCantidad ? 'cantidad' : 'importe'}-${modoVista}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Ventas');
+
+        // Estilo de encabezado básico (opcional)
+        const headerRow = sheet.addRow(headers);
+        headerRow.font = { bold: true };
+
+        rows.forEach(row => sheet.addRow(row));
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        saveAs(blob, `ventas-por-vendedor-${mostrarCantidad ? 'cantidad' : 'importe'}-${modoVista}.xlsx`);
     };
 
     return (
@@ -424,7 +472,7 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
                                     Vendedor
                                 </th>
                                 {mesesSeleccionados.map(mes => (
-                                    <th key={mes} colSpan={3} className="px-4 py-2 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                                    <th key={mes} colSpan={4} className="px-4 py-2 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
                                         {mes}
                                     </th>
                                 ))}
@@ -446,14 +494,17 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
                                         <th className="px-4 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
                                             Total
                                         </th>
+                                        <th className="px-4 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                                            Var %
+                                        </th>
                                     </React.Fragment>
                                 ))}
                             </tr>
                         )}
                     </thead>
                     <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
-                        {datosProcesados.map((item, index) => (
-                            modoVista === 'acumulado' ? (
+                        {modoVista === 'acumulado' ? (
+                            (datosProcesados as FilaVendedorAcumulado[]).map((item, index) => (
                                 <tr key={item.vendedor} className={index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'}>
                                     <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                                         👤 {item.vendedor}
@@ -468,13 +519,27 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
                                         {mostrarCantidad ? formatQuantity(item.totalCantidad) : formatCurrency(item.total)}
                                     </td>
                                 </tr>
-                            ) : (
+                            ))
+                        ) : (
+                            (datosProcesados as FilaVendedorComparativo[]).map((item, index) => (
                                 <tr key={item.vendedor} className={index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'}>
                                     <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
                                         👤 {item.vendedor}
                                     </td>
-                                    {mesesSeleccionados.map(mes => {
+                                    {mesesSeleccionados.map((mes, mesIndex) => {
                                         const mesData = item.meses[mes];
+                                        let variacion = 0;
+                                        let tieneVariacion = false;
+                                        if (mesIndex > 0) {
+                                            const dataAnt = item.meses[mesesSeleccionados[mesIndex - 1]];
+                                            const valAct = mostrarCantidad ? mesData.totalCantidad : mesData.totalImporte;
+                                            const valAnt = mostrarCantidad ? dataAnt.totalCantidad : dataAnt.totalImporte;
+                                            if (valAnt > 0) {
+                                                variacion = ((valAct - valAnt) / valAnt) * 100;
+                                                tieneVariacion = true;
+                                            }
+                                        }
+
                                         return (
                                             <React.Fragment key={`${item.vendedor}-${mes}`}>
                                                 <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-gray-500 dark:text-gray-400">
@@ -483,8 +548,17 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
                                                 <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-gray-500 dark:text-gray-400">
                                                     {mostrarCantidad ? formatQuantity(mesData.cantidadX) : formatCurrency(mesData.importeX)}
                                                 </td>
-                                                <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
+                                                <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-gray-900 dark:text-white">
                                                     {mostrarCantidad ? formatQuantity(mesData.totalCantidad) : formatCurrency(mesData.totalImporte)}
+                                                </td>
+                                                <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium border-r border-gray-200 dark:border-gray-700">
+                                                    {tieneVariacion ? (
+                                                        <span className={variacion > 0 ? 'text-green-600 dark:text-green-400' : variacion < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}>
+                                                            {variacion > 0 ? '+' : ''}{variacion.toFixed(1)}%
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-gray-400 dark:text-gray-600">-</span>
+                                                    )}
                                                 </td>
                                             </React.Fragment>
                                         );
@@ -493,8 +567,8 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
                                         {mostrarCantidad ? formatQuantity(item.totalGlobalCantidad) : formatCurrency(item.totalGlobalImporte)}
                                     </td>
                                 </tr>
-                            )
-                        ))}
+                            ))
+                        )}
 
                         {/* Fila de totales */}
                         {mostrarTotales && modoVista === 'acumulado' && totalesAcumulados && (
@@ -518,8 +592,20 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
                                 <td className="whitespace-nowrap px-6 py-4 text-sm font-bold text-blue-900 dark:text-blue-300 border-r border-blue-200 dark:border-blue-700">
                                     TOTAL
                                 </td>
-                                {mesesSeleccionados.map(mes => {
+                                {mesesSeleccionados.map((mes, mesIndex) => {
                                     const mesTotal = totalesComparativos.meses[mes];
+                                    let variacion = 0;
+                                    let tieneVariacion = false;
+                                    if (mesIndex > 0) {
+                                        const totalAnt = totalesComparativos.meses[mesesSeleccionados[mesIndex - 1]];
+                                        const valAct = mostrarCantidad ? mesTotal.totalCantidad : mesTotal.totalImporte;
+                                        const valAnt = mostrarCantidad ? totalAnt.totalCantidad : totalAnt.totalImporte;
+                                        if (valAnt > 0) {
+                                            variacion = ((valAct - valAnt) / valAnt) * 100;
+                                            tieneVariacion = true;
+                                        }
+                                    }
+
                                     return (
                                         <React.Fragment key={`total-${mes}`}>
                                             <td className="whitespace-nowrap px-4 py-4 text-right text-sm font-bold text-blue-900 dark:text-blue-300">
@@ -528,8 +614,17 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
                                             <td className="whitespace-nowrap px-4 py-4 text-right text-sm font-bold text-blue-900 dark:text-blue-300">
                                                 {mostrarCantidad ? formatQuantity(mesTotal.cantidadX) : formatCurrency(mesTotal.importeX)}
                                             </td>
-                                            <td className="whitespace-nowrap px-4 py-4 text-right text-sm font-bold text-blue-900 dark:text-blue-300 border-r border-blue-200 dark:border-blue-700">
+                                            <td className="whitespace-nowrap px-4 py-4 text-right text-sm font-bold text-blue-900 dark:text-blue-300">
                                                 {mostrarCantidad ? formatQuantity(mesTotal.totalCantidad) : formatCurrency(mesTotal.totalImporte)}
+                                            </td>
+                                            <td className="whitespace-nowrap px-4 py-4 text-right text-sm font-bold border-r border-blue-200 dark:border-blue-700">
+                                                {tieneVariacion ? (
+                                                    <span className={variacion > 0 ? 'text-green-600 dark:text-green-400' : variacion < 0 ? 'text-red-600 dark:text-red-400' : 'text-blue-800 dark:text-blue-400'}>
+                                                        {variacion > 0 ? '+' : ''}{variacion.toFixed(1)}%
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-blue-400 dark:text-blue-600">-</span>
+                                                )}
                                             </td>
                                         </React.Fragment>
                                     );

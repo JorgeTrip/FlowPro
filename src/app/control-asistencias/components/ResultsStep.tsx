@@ -162,7 +162,7 @@ export function ResultsStep() {
       if (faltas.length > 0) out.push({ empleado: emp, cantidad: faltas.length, fechas: faltas.sort() });
     });
     return out.sort((a, b) => a.empleado.localeCompare(b.empleado));
-  }, [config, empleados, eventos, selectedDates, allFechas, fullRangeDates]);
+  }, [config, empleados, eventos, selectedDates, fullRangeDates]);
 
   const formatMin = (m?: number) => (m !== undefined ? `${m} min` : '-');
   const dayName = (iso: string) => {
@@ -235,10 +235,10 @@ export function ResultsStep() {
       const desvio = r.tardanzaMin > 0
         ? 'Llegada tarde'
         : r.retiroAnticipadoMin > 0
-        ? 'Salida antes'
-        : r.almuerzoFueraFranja
-        ? 'Almuerzo fuera franja'
-        : 'Almuerzo excedido';
+          ? 'Salida antes'
+          : r.almuerzoFueraFranja
+            ? 'Almuerzo fuera franja'
+            : 'Almuerzo excedido';
       let programado = '-';
       let real = '-';
       let minutos: number | undefined = undefined;
@@ -331,63 +331,63 @@ export function ResultsStep() {
           <button onClick={exportDashboardExcel} className="inline-flex items-center rounded-md bg-green-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-green-700">Exportar Excel</button>
         </div>
         {openDash && (
-        <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-6">
-          <Kpi title="Días" value={kpis.total} />
-          <Kpi title="Llegadas tarde" value={kpis.tardes} />
-          <Kpi title="Retiros anticipados" value={kpis.retiros} />
-          <Kpi title="Almuerzo fuera franja" value={kpis.almFuera} />
-          <Kpi title="Almuerzo excedido" value={kpis.almExced} />
-          <Kpi title="Prom. tardanza" value={formatMin(kpis.promTarde)} />
-        </div>
+          <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-6">
+            <Kpi title="Días" value={kpis.total} />
+            <Kpi title="Llegadas tarde" value={kpis.tardes} />
+            <Kpi title="Retiros anticipados" value={kpis.retiros} />
+            <Kpi title="Almuerzo fuera franja" value={kpis.almFuera} />
+            <Kpi title="Almuerzo excedido" value={kpis.almExced} />
+            <Kpi title="Prom. tardanza" value={formatMin(kpis.promTarde)} />
+          </div>
         )}
 
         {openDash && (
-        <div className="mt-6 rounded-md border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
-          <div className="text-sm text-red-800 dark:text-red-200 font-medium">Días ausentes (excluye francos): {kpis.ausentes}</div>
-        </div>
+          <div className="mt-6 rounded-md border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950">
+            <div className="text-sm text-red-800 dark:text-red-200 font-medium">Días ausentes (excluye francos): {kpis.ausentes}</div>
+          </div>
         )}
 
         {openDash && (
-        <div className="mt-6 overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <Th>Fecha</Th>
-                <Th>Entrada prog.</Th>
-                <Th>Entrada real</Th>
-                <Th>Tardanza</Th>
-                <Th>Salida prog.</Th>
-                <Th>Salida real</Th>
-                <Th>Retiro anticip.</Th>
-                <Th>Alm. salida</Th>
-                <Th>Alm. entrada</Th>
-                <Th>Duración alm.</Th>
-                <Th>Fuera franja</Th>
-                <Th>Excedido</Th>
-                <Th>Ausente</Th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {analisisEmpleado.map((r) => (
-                <tr key={`${r.empleado}-${r.fecha}`} className="bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700">
-                  <Td className={classNames(r.ausente ? 'text-red-700 dark:text-red-300 font-medium' : '')}>{renderFecha(r.fecha)}</Td>
-                  <Td>{r.entradaProgramada}</Td>
-                  <Td className={classNames(r.tardanzaMin > 0 ? 'text-red-600 dark:text-red-400 font-medium' : '', r.ausente ? 'line-through opacity-60' : '')}>{r.horaEntrada || '-'}</Td>
-                  <Td className={classNames(r.tardanzaMin > 0 ? 'text-red-600 dark:text-red-400 font-medium' : '')}>{formatMin(r.tardanzaMin)}</Td>
-                  <Td>{r.salidaProgramada}</Td>
-                  <Td className={classNames(r.retiroAnticipadoMin > 0 ? 'text-orange-600 dark:text-orange-400 font-medium' : '', r.ausente ? 'line-through opacity-60' : '')}>{r.horaSalida || '-'}</Td>
-                  <Td className={classNames(r.retiroAnticipadoMin > 0 ? 'text-orange-600 dark:text-orange-400 font-medium' : '')}>{formatMin(r.retiroAnticipadoMin)}</Td>
-                  <Td>{r.almuerzoInicio || '-'}</Td>
-                  <Td>{r.almuerzoFin || '-'}</Td>
-                  <Td>{r.almuerzoDuracionMin !== undefined ? `${r.almuerzoDuracionMin} min` : '-'}</Td>
-                  <Td className={classNames(r.almuerzoFueraFranja ? 'text-yellow-700 dark:text-yellow-300 font-medium' : '')}>{r.almuerzoFueraFranja ? 'Sí' : 'No'}</Td>
-                  <Td className={classNames(r.almuerzoExcedido ? 'text-yellow-700 dark:text-yellow-300 font-medium' : '')}>{r.almuerzoExcedido ? 'Sí' : 'No'}</Td>
-                  <Td className={classNames(r.ausente ? 'text-red-700 dark:text-red-300 font-medium' : '')}>{r.ausente ? 'Sí' : 'No'}</Td>
+          <div className="mt-6 overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <Th>Fecha</Th>
+                  <Th>Entrada prog.</Th>
+                  <Th>Entrada real</Th>
+                  <Th>Tardanza</Th>
+                  <Th>Salida prog.</Th>
+                  <Th>Salida real</Th>
+                  <Th>Retiro anticip.</Th>
+                  <Th>Alm. salida</Th>
+                  <Th>Alm. entrada</Th>
+                  <Th>Duración alm.</Th>
+                  <Th>Fuera franja</Th>
+                  <Th>Excedido</Th>
+                  <Th>Ausente</Th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {analisisEmpleado.map((r) => (
+                  <tr key={`${r.empleado}-${r.fecha}`} className="bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700">
+                    <Td className={classNames(r.ausente ? 'text-red-700 dark:text-red-300 font-medium' : '')}>{renderFecha(r.fecha)}</Td>
+                    <Td>{r.entradaProgramada}</Td>
+                    <Td className={classNames(r.tardanzaMin > 0 ? 'text-red-600 dark:text-red-400 font-medium' : '', r.ausente ? 'line-through opacity-60' : '')}>{r.horaEntrada || '-'}</Td>
+                    <Td className={classNames(r.tardanzaMin > 0 ? 'text-red-600 dark:text-red-400 font-medium' : '')}>{formatMin(r.tardanzaMin)}</Td>
+                    <Td>{r.salidaProgramada}</Td>
+                    <Td className={classNames(r.retiroAnticipadoMin > 0 ? 'text-orange-600 dark:text-orange-400 font-medium' : '', r.ausente ? 'line-through opacity-60' : '')}>{r.horaSalida || '-'}</Td>
+                    <Td className={classNames(r.retiroAnticipadoMin > 0 ? 'text-orange-600 dark:text-orange-400 font-medium' : '')}>{formatMin(r.retiroAnticipadoMin)}</Td>
+                    <Td>{r.almuerzoInicio || '-'}</Td>
+                    <Td>{r.almuerzoFin || '-'}</Td>
+                    <Td>{r.almuerzoDuracionMin !== undefined ? `${r.almuerzoDuracionMin} min` : '-'}</Td>
+                    <Td className={classNames(r.almuerzoFueraFranja ? 'text-yellow-700 dark:text-yellow-300 font-medium' : '')}>{r.almuerzoFueraFranja ? 'Sí' : 'No'}</Td>
+                    <Td className={classNames(r.almuerzoExcedido ? 'text-yellow-700 dark:text-yellow-300 font-medium' : '')}>{r.almuerzoExcedido ? 'Sí' : 'No'}</Td>
+                    <Td className={classNames(r.ausente ? 'text-red-700 dark:text-red-300 font-medium' : '')}>{r.ausente ? 'Sí' : 'No'}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -419,63 +419,63 @@ export function ResultsStep() {
           <button onClick={exportGlobalExcel} className="inline-flex items-center rounded-md bg-green-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-green-700">Exportar Excel</button>
         </div>
         {openGlobal && (
-        <div className="mt-6 overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <Th>Empleado</Th>
-                <Th>Fecha</Th>
-                <Th>Desvío</Th>
-                <Th>Programado</Th>
-                <Th>Real</Th>
-                <Th>Minutos</Th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {violacionesGlobales.map((r) => {
-                const desvio = r.tardanzaMin > 0
-                  ? 'Llegada tarde'
-                  : r.retiroAnticipadoMin > 0
-                  ? 'Salida antes'
-                  : r.almuerzoFueraFranja
-                  ? 'Almuerzo fuera franja'
-                  : 'Almuerzo excedido';
+          <div className="mt-6 overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <Th>Empleado</Th>
+                  <Th>Fecha</Th>
+                  <Th>Desvío</Th>
+                  <Th>Programado</Th>
+                  <Th>Real</Th>
+                  <Th>Minutos</Th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {violacionesGlobales.map((r) => {
+                  const desvio = r.tardanzaMin > 0
+                    ? 'Llegada tarde'
+                    : r.retiroAnticipadoMin > 0
+                      ? 'Salida antes'
+                      : r.almuerzoFueraFranja
+                        ? 'Almuerzo fuera franja'
+                        : 'Almuerzo excedido';
 
-                let programado = '-';
-                let real = '-';
-                let minutos: number | undefined = undefined;
-                if (desvio === 'Llegada tarde') {
-                  programado = r.entradaProgramada;
-                  real = r.horaEntrada || '-';
-                  minutos = r.tardanzaMin;
-                } else if (desvio === 'Salida antes') {
-                  programado = r.salidaProgramada;
-                  real = r.horaSalida || '-';
-                  minutos = r.retiroAnticipadoMin;
-                } else if (desvio === 'Almuerzo fuera franja') {
-                  programado = `${config.defaults.almuerzoInicio} - ${config.defaults.almuerzoFin}`;
-                  real = `${r.almuerzoInicio || '-'} - ${r.almuerzoFin || '-'}`;
-                  minutos = r.almuerzoDuracionMin;
-                } else if (desvio === 'Almuerzo excedido') {
-                  programado = `${config.defaults.almuerzoDuracionMin} min`;
-                  real = r.almuerzoDuracionMin !== undefined ? `${r.almuerzoDuracionMin} min` : '-';
-                  minutos = r.almuerzoDuracionMin;
-                }
+                  let programado = '-';
+                  let real = '-';
+                  let minutos: number | undefined = undefined;
+                  if (desvio === 'Llegada tarde') {
+                    programado = r.entradaProgramada;
+                    real = r.horaEntrada || '-';
+                    minutos = r.tardanzaMin;
+                  } else if (desvio === 'Salida antes') {
+                    programado = r.salidaProgramada;
+                    real = r.horaSalida || '-';
+                    minutos = r.retiroAnticipadoMin;
+                  } else if (desvio === 'Almuerzo fuera franja') {
+                    programado = `${config.defaults.almuerzoInicio} - ${config.defaults.almuerzoFin}`;
+                    real = `${r.almuerzoInicio || '-'} - ${r.almuerzoFin || '-'}`;
+                    minutos = r.almuerzoDuracionMin;
+                  } else if (desvio === 'Almuerzo excedido') {
+                    programado = `${config.defaults.almuerzoDuracionMin} min`;
+                    real = r.almuerzoDuracionMin !== undefined ? `${r.almuerzoDuracionMin} min` : '-';
+                    minutos = r.almuerzoDuracionMin;
+                  }
 
-                return (
-                  <tr key={`${r.empleado}-${r.fecha}-${desvio}`} className="bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700">
-                    <Td>{r.empleado}</Td>
-                    <Td>{renderFecha(r.fecha)}</Td>
-                    <Td>{desvio}</Td>
-                    <Td>{programado}</Td>
-                    <Td>{real}</Td>
-                    <Td>{minutos !== undefined ? `${minutos} min` : '-'}</Td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                  return (
+                    <tr key={`${r.empleado}-${r.fecha}-${desvio}`} className="bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700">
+                      <Td>{r.empleado}</Td>
+                      <Td>{renderFecha(r.fecha)}</Td>
+                      <Td>{desvio}</Td>
+                      <Td>{programado}</Td>
+                      <Td>{real}</Td>
+                      <Td>{minutos !== undefined ? `${minutos} min` : '-'}</Td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -491,26 +491,26 @@ export function ResultsStep() {
           <button onClick={exportAusenciasExcel} className="inline-flex items-center rounded-md bg-green-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-green-700">Exportar Excel</button>
         </div>
         {openAus && (
-        <div className="mt-6 overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <Th>Empleado</Th>
-                <Th>Cantidad</Th>
-                <Th>Fechas</Th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {ausenciasDetalle.map((a) => (
-                <tr key={a.empleado} className="bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700">
-                  <Td>{a.empleado}</Td>
-                  <Td>{a.cantidad}</Td>
-                  <Td>{a.fechas.map((f) => renderFecha(f)).join(', ')}</Td>
+          <div className="mt-6 overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <Th>Empleado</Th>
+                  <Th>Cantidad</Th>
+                  <Th>Fechas</Th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {ausenciasDetalle.map((a) => (
+                  <tr key={a.empleado} className="bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700">
+                    <Td>{a.empleado}</Td>
+                    <Td>{a.cantidad}</Td>
+                    <Td>{a.fechas.map((f) => renderFecha(f)).join(', ')}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>
