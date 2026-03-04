@@ -56,3 +56,26 @@ html.dark body {
   color: #f1f5f9;
 }
 
+/* Estilos para controles de gráficos */
+.chart-controls {
+  min-width: 0;
+}
+
+.chart-controls > * {
+  flex-shrink: 0;
+}
+
+/* Asegurar que los selectores no se compriman demasiado */
+.chart-controls select,
+.chart-controls button {
+  min-width: fit-content;
+}
+
+/* Mejorar el espaciado en pantallas pequeñas */
+@media (max-width: 1024px) {
+  .chart-controls {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+

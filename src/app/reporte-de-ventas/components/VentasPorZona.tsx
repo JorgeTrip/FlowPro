@@ -161,8 +161,8 @@ const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
   return (
     <div ref={chartRef} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 gap-4">
-        <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Ventas por Zona</h4>
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center chart-controls">
+        <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 flex-shrink-0">Ventas por Zona</h4>
+        <div className="flex items-center gap-2 flex-wrap chart-controls w-full lg:w-auto justify-end">
           <button
             onClick={handleExport}
             className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"

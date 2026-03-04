@@ -177,6 +177,14 @@ export const VentasPorVendedor = ({ ventasPorVendedor, cantidadesPorVendedor }: 
     }
   }, [data, modoVista, mesesSeleccionados]);
 
+  // Calcular altura dinámica basada en la cantidad de elementos
+  const chartHeight = useMemo(() => {
+    const minHeight = 400;
+    const itemHeight = modoVista === 'comparativo' ? 45 : 35; // Más espacio en modo comparativo
+    const calculatedHeight = data.length * itemHeight + 150; // +150 para márgenes, ejes y leyenda
+    return Math.max(minHeight, calculatedHeight);
+  }, [data.length, modoVista]);
+
   interface TooltipPayloadEntry {
     color: string;
     name: string;
@@ -226,13 +234,13 @@ export const VentasPorVendedor = ({ ventasPorVendedor, cantidadesPorVendedor }: 
 
   return (
     <div ref={chartRef} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <div className="flex justify-between items-center mb-4">
-        <div>
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 gap-4">
+        <div className="flex-shrink-0">
           <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
             Top 10 Vendedores
           </h4>
         </div>
-        <div className="flex items-center space-x-4 chart-controls">
+        <div className="flex items-center gap-2 flex-wrap chart-controls w-full lg:w-auto justify-end">
           <button
             onClick={handleExport}
             className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
@@ -310,7 +318,7 @@ export const VentasPorVendedor = ({ ventasPorVendedor, cantidadesPorVendedor }: 
       </div>
 
       <div className="w-full">
-        <ResponsiveContainer width="100%" height={modoVista === 'comparativo' ? 500 : 400}>
+        <ResponsiveContainer width="100%" height={chartHeight}>
           <BarChart data={data} layout="vertical" margin={{ top: 5, right: 120, left: 20, bottom: 5 }} barGap={2} barCategoryGap={modoVista === 'comparativo' ? "10%" : "20%"}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E5E7EB" />
             <XAxis type="number" domain={[0, maxValue]} tickFormatter={(value) => metric === 'importe' ? formatCurrency(value as number) : formatQuantity(value as number)} tickLine={false} axisLine={false} tick={{ fill: '#6B7280', fontSize: 12 }} />
