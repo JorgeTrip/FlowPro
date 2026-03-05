@@ -63,7 +63,7 @@ const CustomizedLabel = (props: CustomizedLabelProps) => {
   const value = item[dataKey] as number | undefined;
   if (!value) return null;
 
-  let formattedValue = metric === 'importe' ? formatCurrency(value) : formatQuantity(value);
+  const formattedValue = metric === 'importe' ? formatCurrency(value) : formatQuantity(value);
   let percentageElement = null;
 
   if (showDelta && monthsOrder && dataKey && index !== undefined && index > -1) {

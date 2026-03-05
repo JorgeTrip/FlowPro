@@ -30,6 +30,7 @@ const eslintConfig = [
           caughtErrorsIgnorePattern: '^_',
         },
       ],
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 ];
