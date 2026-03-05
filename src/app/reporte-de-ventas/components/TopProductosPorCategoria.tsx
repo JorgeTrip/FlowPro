@@ -2,54 +2,85 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
 import { CameraIcon } from '@heroicons/react/24/outline';
 import { exportChartAsPNG } from '../lib/exportUtils';
+import { ControlPanel, ControlGroup, SelectControl, SwitchControl, ButtonControl } from './shared/ControlPanel';
 
 // --- Helper Functions ---
 const formatCurrency = (value: number, compacto: boolean = false) => {
-  if (compacto) {
-    if (value >= 1000000) {
-      const valorFormateado = (value / 1000000).toLocaleString('es-AR', {
-        minimumFractionDigits: 1,
-        maximumFractionDigits: 1
-      });
-      return `$${valorFormateado} mill.`;
+    if (compacto) {
+        if (value >= 1000000) {
+            const valorFormateado = (value / 1000000).toLocaleString('es-AR', {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1
+            });
+            return `$${valorFormateado} mill.`;
+        } else {
+            return `$${value.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`;
+        }
     } else {
-      return `$${value.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`;
+        return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
     }
-  } else {
-    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
-  }
 };
 
 const formatQuantity = (value: number, compacto: boolean = false) => {
-  if (compacto) {
-    if (value >= 1000000) {
-      const valorFormateado = (value / 1000000).toLocaleString('es-AR', {
-        minimumFractionDigits: 1,
-        maximumFractionDigits: 1
-      });
-      return `${valorFormateado} mill.`;
+    if (compacto) {
+        if (value >= 1000000) {
+            const valorFormateado = (value / 1000000).toLocaleString('es-AR', {
+                minimumFractionDigits: 1,
+                maximumFractionDigits: 1
+            });
+            return `${valorFormateado} mill.`;
+        } else {
+            return value.toLocaleString('es-AR', { maximumFractionDigits: 0 });
+        }
     } else {
-      return value.toLocaleString('es-AR', { maximumFractionDigits: 0 });
+        return new Intl.NumberFormat('es-AR').format(value);
     }
-  } else {
-    return new Intl.NumberFormat('es-AR').format(value);
-  }
+};
+
+// --- Componente de label para las barras (mismo estilo que Top 10 Vendedores) ---
+interface CustomizedLabelProps {
+    x?: string | number;
+    y?: string | number;
+    width?: string | number;
+    height?: string | number;
+    value?: string | number;
+    mostrarCantidad?: boolean;
+}
+
+const CustomizedLabelBar = (props: CustomizedLabelProps) => {
+    const { x = 0, y = 0, width = 0, height = 0, value, mostrarCantidad } = props;
+
+    if (value === undefined || value === null || value === 0) return null;
+
+    const numX = typeof x === 'string' ? parseFloat(x) : x;
+    const numY = typeof y === 'string' ? parseFloat(y) : y;
+    const numWidth = typeof width === 'string' ? parseFloat(width) : width;
+    const numHeight = typeof height === 'string' ? parseFloat(height) : height;
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+
+    const formattedValue = mostrarCantidad ? formatQuantity(numValue) : formatCurrency(numValue);
+
+    return (
+        <text x={numX + numWidth + 5} y={numY + numHeight / 2} textAnchor="start" dominantBaseline="middle" className="fill-gray-600 dark:fill-gray-400 text-xs font-medium">
+            {formattedValue}
+        </text>
+    );
 };
 
 
 interface ProductoCategoria {
-  categoria: string;
-  productos: {
-    articulo: string;
-    descripcion: string;
-    cantidad: number;
-    total: number;
-  }[];
-  cantidadCategoria: number;
-  totalCategoria: number;
+    categoria: string;
+    productos: {
+        articulo: string;
+        descripcion: string;
+        cantidad: number;
+        total: number;
+    }[];
+    cantidadCategoria: number;
+    totalCategoria: number;
 }
 
 interface TopProductosPorCategoriaProps {
@@ -70,12 +101,12 @@ export const TopProductosPorCategoria = ({
     const [ordenAscendente, setOrdenAscendente] = useState<boolean>(false);
     const [popoverVisible, setPopoverVisible] = useState<boolean>(false);
     const chartRef = useRef<HTMLDivElement>(null);
-    
+
     const meses = useMemo(() => [
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
     ], []);
-    
+
     // Identificar meses que tienen datos
     useEffect(() => {
         setMesesConDatos(meses);
@@ -95,7 +126,7 @@ export const TopProductosPorCategoria = ({
 
     // Obtener datos según el tipo de métrica (cantidad o importe)
     const data = mostrarCantidad
-        ? topProductosPorCategoria 
+        ? topProductosPorCategoria
         : topProductosPorCategoriaImporte;
 
     console.log('🔍 TopProductosPorCategoria - data recibida:', data);
@@ -114,7 +145,7 @@ export const TopProductosPorCategoria = ({
         let dataFiltrada = categoriasSeleccionadas.length > 0
             ? data.filter((item: ProductoCategoria) => categoriasSeleccionadas.includes(item.categoria))
             : data;
-            
+
         // Aplicar ordenamiento de categorías según la selección del usuario
         // Ascendente: menor venta primero, Descendente: mayor venta primero
         dataFiltrada = [...dataFiltrada].sort((a: ProductoCategoria, b: ProductoCategoria) => {
@@ -124,9 +155,9 @@ export const TopProductosPorCategoria = ({
         }); // Sin límite de categorías, controlado por filtro
         console.log('🔍 prepararDatosGrafico - dataFiltrada:', dataFiltrada);
         console.log('🔍 prepararDatosGrafico - dataFiltrada.length:', dataFiltrada.length);
-        
-        const resultado: Array<{name: string; value: number; isCategory?: boolean; categoria?: string; porcentaje?: number; articulo?: string; descripcion?: string}> = [];
-        
+
+        const resultado: Array<{ name: string; value: number; isCategory?: boolean; categoria?: string; porcentaje?: number; articulo?: string; descripcion?: string }> = [];
+
         dataFiltrada.forEach((categoria: ProductoCategoria) => {
             // Añadir el total de la categoría (destacado)
             resultado.push({
@@ -151,13 +182,13 @@ export const TopProductosPorCategoria = ({
                 });
             });
         });
-        
+
         console.log('🔍 prepararDatosGrafico - resultado final:', resultado);
         console.log('🔍 prepararDatosGrafico - resultado.length:', resultado.length);
-        
+
         return resultado; // Sin límite artificial, controlado por filtro de categorías y topPorCategoria
     }, [data, categoriasSeleccionadas, ordenAscendente, mostrarCantidad, topPorCategoria]);
-    
+
     // Calcular altura dinámica
     const calcularAltura = () => {
         const baseHeight = 400;
@@ -208,99 +239,99 @@ export const TopProductosPorCategoria = ({
 
     return (
         <div ref={chartRef} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 gap-4">
-                <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 flex-shrink-0">Top Productos por Categoría</h4>
-                <div className="flex items-center gap-2 flex-wrap chart-controls w-full lg:w-auto justify-end">
-                    <button
-                        onClick={handleExport}
-                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
-                        title="Exportar como PNG"
-                    >
+            <div className="flex justify-between items-center mb-4">
+                <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Top Productos por Categoría</h4>
+            </div>
+
+            <ControlPanel title="Controles de Visualización">
+                <ControlGroup label="Exportar">
+                    <ButtonControl onClick={handleExport} variant="icon" title="Exportar como PNG">
                         <CameraIcon className="w-4 h-4" />
-                    </button>
-                    <select
+                    </ButtonControl>
+                </ControlGroup>
+
+                <ControlGroup label="Filtro Meses">
+                    <SelectControl
                         value={filtroMeses}
-                        onChange={(e) => {
-                            setFiltroMeses(e.target.value as 'todos' | 'conDatos' | 'individual');
-                            if (e.target.value === 'individual' && mesesConDatos.length > 0 && !mesSeleccionado) {
+                        onChange={(value) => {
+                            setFiltroMeses(value as 'todos' | 'conDatos' | 'individual');
+                            if (value === 'individual' && mesesConDatos.length > 0 && !mesSeleccionado) {
                                 setMesSeleccionado(mesesConDatos[0]);
                             }
                         }}
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-44 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    >
-                        <option value="todos">Todos los meses</option>
-                        <option value="conDatos">Solo meses con datos</option>
-                        <option value="individual">Seleccionar mes</option>
-                    </select>
-                    
+                        options={[
+                            { value: 'todos', label: 'Todos los meses' },
+                            { value: 'conDatos', label: 'Solo meses con datos' },
+                            { value: 'individual', label: 'Seleccionar mes' }
+                        ]}
+                        className="w-44"
+                    />
                     {filtroMeses === 'individual' && (
-                        <select
+                        <SelectControl
                             value={mesSeleccionado || meses[0]}
-                            onChange={(e) => setMesSeleccionado(e.target.value)}
-                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-36 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        >
-                            {meses.map(mes => (
-                                <option key={mes} value={mes}>
-                                    {mes}
-                                </option>
-                            ))}
-                        </select>
-                    )}
-                    
-                    <div className="border-l border-gray-300 dark:border-gray-600 h-8 mx-2"></div>
-                    
-                    <select
-                        value={topPorCategoria === -1 ? -1 : topPorCategoria}
-                        onChange={(e) => setTopPorCategoria(Number(e.target.value))}
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-44 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    >
-                        <option value={-1}>Todos/Categoría</option>
-                        <option value={1}>1 Prod/Categoría</option>
-                        <option value={2}>2 Prod/Categoría</option>
-                        <option value={3}>3 Prod/Categoría</option>
-                        <option value={4}>4 Prod/Categoría</option>
-                        <option value={5}>5 Prod/Categoría</option>
-                        <option value={6}>6 Prod/Categoría</option>
-                        <option value={7}>7 Prod/Categoría</option>
-                        <option value={8}>8 Prod/Categoría</option>
-                        <option value={9}>9 Prod/Categoría</option>
-                        <option value={10}>10 Prod/Categoría</option>
-                    </select>
-                    
-                    <select
-                        value={mostrarCantidad ? 'cantidad' : 'importe'}
-                        onChange={(e) => setMostrarCantidad(e.target.value === 'cantidad')}
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-32 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    >
-                        <option value="importe">Importe</option>
-                        <option value="cantidad">Cantidad</option>
-                    </select>
-                    
-                    {/* Switch para ordenamiento */}
-                    <label className="inline-flex items-center cursor-pointer">
-                        <input 
-                            type="checkbox" 
-                            checked={ordenAscendente} 
-                            onChange={(e) => setOrdenAscendente(e.target.checked)}
-                            className="sr-only peer"
+                            onChange={(value) => setMesSeleccionado(value)}
+                            options={meses.map(mes => ({
+                                value: mes,
+                                label: mes
+                            }))}
+                            className="w-36"
                         />
-                        <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                        <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">
-                            {ordenAscendente ? 'Ascendente' : 'Descendente'}
-                        </span>
-                    </label>
-                    
-                    {/* Selector de categorías */}
+                    )}
+                </ControlGroup>
+
+                <div className="border-l border-gray-300 dark:border-gray-600 h-8"></div>
+
+                <ControlGroup label="Prod/Categoría">
+                    <SelectControl
+                        value={String(topPorCategoria)}
+                        onChange={(value) => setTopPorCategoria(Number(value))}
+                        options={[
+                            { value: '-1', label: 'Todos/Categoría' },
+                            { value: '1', label: '1 Prod/Categoría' },
+                            { value: '2', label: '2 Prod/Categoría' },
+                            { value: '3', label: '3 Prod/Categoría' },
+                            { value: '4', label: '4 Prod/Categoría' },
+                            { value: '5', label: '5 Prod/Categoría' },
+                            { value: '6', label: '6 Prod/Categoría' },
+                            { value: '7', label: '7 Prod/Categoría' },
+                            { value: '8', label: '8 Prod/Categoría' },
+                            { value: '9', label: '9 Prod/Categoría' },
+                            { value: '10', label: '10 Prod/Categoría' }
+                        ]}
+                        className="w-44"
+                    />
+                </ControlGroup>
+
+                <ControlGroup label="Métrica">
+                    <SelectControl
+                        value={mostrarCantidad ? 'cantidad' : 'importe'}
+                        onChange={(value) => setMostrarCantidad(value === 'cantidad')}
+                        options={[
+                            { value: 'importe', label: 'Importe' },
+                            { value: 'cantidad', label: 'Cantidad' }
+                        ]}
+                        className="w-32"
+                    />
+                </ControlGroup>
+
+                <SwitchControl
+                    checked={ordenAscendente}
+                    onChange={setOrdenAscendente}
+                    label={ordenAscendente ? 'Ascendente' : 'Descendente'}
+                />
+
+                {/* Selector de categorías con popover */}
+                <ControlGroup label="Categorías">
                     <div className="relative">
                         <button
                             onClick={() => setPopoverVisible(!popoverVisible)}
                             className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-44 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                         >
-                            {categoriasSeleccionadas.length === 0 ? 'Todas las categorías' : 
-                             categoriasSeleccionadas.length === 1 ? categoriasSeleccionadas[0] : 
-                             `${categoriasSeleccionadas.length} categorías`}
+                            {categoriasSeleccionadas.length === 0 ? 'Todas las categorías' :
+                                categoriasSeleccionadas.length === 1 ? categoriasSeleccionadas[0] :
+                                    `${categoriasSeleccionadas.length} categorías`}
                         </button>
-                        
+
                         {popoverVisible && (
                             <div className="absolute top-full left-0 mt-1 w-96 bg-white border border-gray-300 rounded-lg shadow-lg z-10 dark:bg-gray-700 dark:border-gray-600">
                                 <div className="p-4">
@@ -334,8 +365,8 @@ export const TopProductosPorCategoria = ({
                                                     <span className="flex-1 text-gray-900 dark:text-gray-100">
                                                         {cat.categoria}
                                                         <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
-                                                            {mostrarCantidad 
-                                                                ? `(${cat.cantidadCategoria?.toLocaleString('es-AR')} u.)` 
+                                                            {mostrarCantidad
+                                                                ? `(${cat.cantidadCategoria?.toLocaleString('es-AR')} u.)`
                                                                 : `(${cat.totalCategoria?.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 })})`
                                                             }
                                                         </span>
@@ -345,25 +376,24 @@ export const TopProductosPorCategoria = ({
                                         }
                                     </div>
                                     <div className="flex justify-between mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-                                        <button 
-                            onClick={() => setCategoriasSeleccionadas([])}
-                            disabled={categoriasSeleccionadas.length === 0}
-                            className={`text-sm px-3 py-1 rounded transition-colors ${
-                                categoriasSeleccionadas.length === 0
-                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
-                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500'
-                            }`}
-                        >
-                            Limpiar
-                        </button>
+                                        <button
+                                            onClick={() => setCategoriasSeleccionadas([])}
+                                            disabled={categoriasSeleccionadas.length === 0}
+                                            className={`text-sm px-3 py-1 rounded transition-colors ${categoriasSeleccionadas.length === 0
+                                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500'
+                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500'
+                                                }`}
+                                        >
+                                            Limpiar
+                                        </button>
                                         <div className="space-x-2">
-                                            <button 
+                                            <button
                                                 onClick={() => setCategoriasSeleccionadas(data.map((cat: ProductoCategoria) => cat.categoria))}
                                                 className="text-sm px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800"
                                             >
                                                 Seleccionar todas
                                             </button>
-                                            <button 
+                                            <button
                                                 onClick={() => setPopoverVisible(false)}
                                                 className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
                                             >
@@ -375,9 +405,9 @@ export const TopProductosPorCategoria = ({
                             </div>
                         )}
                     </div>
-                </div>
-            </div>
-            
+                </ControlGroup>
+            </ControlPanel>
+
             <div style={{ height: calcularAltura() }}>
                 {(() => {
                     console.log('🔍 Renderizando BarChart con altura:', calcularAltura());
@@ -393,14 +423,14 @@ export const TopProductosPorCategoria = ({
                     >
                         <defs>
                             <linearGradient id="colorBarCategoriaTotal" x1="0" y1="0" x2="1" y2="0">
-                                <stop offset="0%" stopColor="#8884d8" stopOpacity={1}/>
-                                <stop offset="75%" stopColor="#7570c0" stopOpacity={1}/>
-                                <stop offset="100%" stopColor="#6762a8" stopOpacity={1}/>
+                                <stop offset="0%" stopColor="#8884d8" stopOpacity={1} />
+                                <stop offset="75%" stopColor="#7570c0" stopOpacity={1} />
+                                <stop offset="100%" stopColor="#6762a8" stopOpacity={1} />
                             </linearGradient>
                             <linearGradient id="colorBarProducto" x1="0" y1="0" x2="1" y2="0">
-                                <stop offset="0%" stopColor="#98e3b5" stopOpacity={1}/>
-                                <stop offset="75%" stopColor="#82ca9d" stopOpacity={1}/>
-                                <stop offset="100%" stopColor="#6eb58a" stopOpacity={1}/>
+                                <stop offset="0%" stopColor="#98e3b5" stopOpacity={1} />
+                                <stop offset="75%" stopColor="#82ca9d" stopOpacity={1} />
+                                <stop offset="100%" stopColor="#6eb58a" stopOpacity={1} />
                             </linearGradient>
                             <filter id="shadowProductos" x="-10%" y="-10%" width="120%" height="130%">
                                 <feOffset result="offOut" in="SourceGraphic" dx="3" dy="3" />
@@ -411,8 +441,8 @@ export const TopProductosPorCategoria = ({
                             </filter>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis 
-                            type="number" 
+                        <XAxis
+                            type="number"
                             tickFormatter={(value) => {
                                 // Formatear valores con separadores de miles y notación de millones
                                 if (!mostrarCantidad) {
@@ -430,21 +460,21 @@ export const TopProductosPorCategoria = ({
                                 }
                             }}
                         />
-                        <YAxis 
-                            type="category" 
-                            dataKey="name" 
+                        <YAxis
+                            type="category"
+                            dataKey="name"
                             width={200}
                             tick={({ y, payload }) => {
                                 const isCategory = chartData[payload.index]?.isCategory;
                                 const isDarkMode = document.documentElement.classList.contains('dark');
                                 return (
-                                    <text 
-                                        x={0} 
-                                        y={y} 
-                                        dy={4} 
-                                        textAnchor="start" 
-                                        fill={isCategory 
-                                            ? (isDarkMode ? "#f9fafb" : "#333") 
+                                    <text
+                                        x={0}
+                                        y={y}
+                                        dy={4}
+                                        textAnchor="start"
+                                        fill={isCategory
+                                            ? (isDarkMode ? "#f9fafb" : "#333")
                                             : (isDarkMode ? "#d1d5db" : "#666")
                                         }
                                         fontWeight={isCategory ? "bold" : "normal"}
@@ -457,8 +487,8 @@ export const TopProductosPorCategoria = ({
                             interval={0}
                         />
                         <Tooltip content={<CustomTooltip />} />
-                        <Bar 
-                            dataKey="value" 
+                        <Bar
+                            dataKey="value"
                             name={mostrarCantidad ? "Cantidad" : "Importe"}
                             fill="url(#colorBarProducto)"
                             stroke="#6eb58a"
@@ -468,26 +498,27 @@ export const TopProductosPorCategoria = ({
                             filter="url(#shadowProductos)"
                         >
                             {chartData.map((entry, index: number) => (
-                                <Cell 
+                                <Cell
                                     key={`cell-${index}`}
                                     fill={entry.isCategory ? "url(#colorBarCategoriaTotal)" : "url(#colorBarProducto)"}
                                     stroke={entry.isCategory ? "#6762a8" : "#6eb58a"}
                                 />
                             ))}
+                            <LabelList dataKey="value" content={(props) => <CustomizedLabelBar {...props} mostrarCantidad={mostrarCantidad} />} />
                         </Bar>
                     </BarChart>
                 </ResponsiveContainer>
             </div>
-            
+
             <div className="text-center mt-3">
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {topPorCategoria === -1 
+                    {topPorCategoria === -1
                         ? `Todos los productos por categoría (por ${mostrarCantidad ? 'cantidad' : 'importe'})`
                         : `Top ${topPorCategoria} productos más vendidos por categoría (por ${mostrarCantidad ? 'cantidad' : 'importe'})`
                     }
                 </span>
             </div>
-            
+
             <style jsx>{`
                 .categoria-row {
                     background-color: #f0f0ff;

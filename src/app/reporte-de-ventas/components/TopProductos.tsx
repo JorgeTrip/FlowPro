@@ -7,6 +7,7 @@ import { CameraIcon } from '@heroicons/react/24/outline';
 import { exportChartAsPNG } from '../lib/exportUtils';
 import { LabelList as RechartsLabelList } from 'recharts';
 import { ReporteResultados } from '@/app/lib/reportGenerator';
+import { ControlPanel, ControlGroup, SelectControl, SwitchControl, ButtonControl } from './shared/ControlPanel';
 
 // --- Helper Functions ---
 const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
@@ -51,7 +52,7 @@ const CustomizedLabel = (props: CustomizedLabelProps) => {
     const formattedValue = formatearNumeroCompacto(numValue, metric === 'importe');
 
     return (
-        <text x={numX + numWidth + 8} y={numY + 12} textAnchor="start" dominantBaseline="middle" className="fill-gray-800 dark:fill-gray-200 font-bold text-sm">
+        <text x={numX + numWidth + 8} y={numY + 12} textAnchor="start" dominantBaseline="middle" className="fill-gray-600 dark:fill-gray-400 text-xs font-medium">
             {formattedValue}
         </text>
     );
@@ -152,55 +153,63 @@ export const TopProductos = ({
 
     return (
         <div ref={chartRef} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 gap-4">
-                <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 flex-shrink-0">Top Productos</h4>
-                <div className="flex items-center gap-2 flex-wrap chart-controls w-full lg:w-auto justify-end">
-                    <button
-                        onClick={handleExport}
-                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
-                        title="Exportar como PNG"
-                    >
-                        <CameraIcon className="w-4 h-4" />
-                    </button>
-                    <select
-                        value={tipo}
-                        onChange={(e) => setTipo(e.target.value as 'mas' | 'menos')}
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-40 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    >
-                        <option value="mas">Más Vendidos</option>
-                        <option value="menos">Menos Vendidos</option>
-                    </select>
-                    <select
-                        value={metric}
-                        onChange={(e) => setMetric(e.target.value as 'importe' | 'cantidad')}
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-32 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        disabled={tipo === 'menos'}
-                    >
-                        <option value="cantidad">Cantidad</option>
-                        <option value="importe">Importe</option>
-                    </select>
-                    <select
-                        value={numProductos}
-                        onChange={(e) => setNumProductos(Number(e.target.value))}
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-28 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    >
-                        <option value={5}>Top 5</option>
-                        <option value={10}>Top 10</option>
-                        <option value={15}>Top 15</option>
-                        <option value={20}>Top 20</option>
-                    </select>
-                    {/* Checkbox para excluir ajustes y variantes */}
-                    <label className="inline-flex items-center cursor-pointer text-sm font-medium text-gray-700 dark:text-gray-300">
-                        <input
-                            type="checkbox"
-                            checked={excluirAjustes}
-                            onChange={(e) => setExcluirAjustes(e.target.checked)}
-                            className="mr-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        Excluir ajustes
-                    </label>
-                </div>
+            <div className="flex justify-between items-center mb-4">
+                <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">Top Productos</h4>
             </div>
+
+            <ControlPanel title="Controles de Visualización">
+                <ControlGroup label="Exportar">
+                    <ButtonControl onClick={handleExport} variant="icon" title="Exportar como PNG">
+                        <CameraIcon className="w-4 h-4" />
+                    </ButtonControl>
+                </ControlGroup>
+
+                <ControlGroup label="Tipo">
+                    <SelectControl
+                        value={tipo}
+                        onChange={(value) => setTipo(value as 'mas' | 'menos')}
+                        options={[
+                            { value: 'mas', label: 'Más Vendidos' },
+                            { value: 'menos', label: 'Menos Vendidos' }
+                        ]}
+                        className="w-40"
+                    />
+                </ControlGroup>
+
+                <ControlGroup label="Métrica">
+                    <SelectControl
+                        value={metric}
+                        onChange={(value) => setMetric(value as 'importe' | 'cantidad')}
+                        options={[
+                            { value: 'cantidad', label: 'Cantidad' },
+                            { value: 'importe', label: 'Importe' }
+                        ]}
+                        className="w-32"
+                    />
+                </ControlGroup>
+
+                <ControlGroup label="Cantidad">
+                    <SelectControl
+                        value={String(numProductos)}
+                        onChange={(value) => setNumProductos(Number(value))}
+                        options={[
+                            { value: '5', label: 'Top 5' },
+                            { value: '10', label: 'Top 10' },
+                            { value: '15', label: 'Top 15' },
+                            { value: '20', label: 'Top 20' }
+                        ]}
+                        className="w-28"
+                    />
+                </ControlGroup>
+
+                <div className="border-l border-gray-300 dark:border-gray-600 h-8"></div>
+
+                <SwitchControl
+                    checked={excluirAjustes}
+                    onChange={setExcluirAjustes}
+                    label="Excluir ajustes"
+                />
+            </ControlPanel>
             <ResponsiveContainer width="100%" height={chartHeight}>
                 <BarChart data={data} layout="vertical" margin={{ top: 5, right: 120, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" />

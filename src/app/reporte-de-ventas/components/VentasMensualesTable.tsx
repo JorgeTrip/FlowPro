@@ -12,6 +12,7 @@ export const VentasMensualesTable = ({ ventasPorMes, cantidadesPorMes }: VentasM
     const [mesesSeleccionados, setMesesSeleccionados] = useState<string[]>([]);
     const [mostrarCantidad, setMostrarCantidad] = useState<boolean>(false);
     const [mostrarTotales, setMostrarTotales] = useState<boolean>(true);
+    const [mostrarVariacion, setMostrarVariacion] = useState<boolean>(false);
 
     const meses = useMemo(() => [
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -44,15 +45,54 @@ export const VentasMensualesTable = ({ ventasPorMes, cantidadesPorMes }: VentasM
                 break;
         }
 
-        return mesesAMostrar.map(mes => ({
-            mes,
-            importeA: ventasPorMes[mes]?.A || 0,
-            importeX: ventasPorMes[mes]?.X || 0,
-            cantidadA: cantidadesPorMes[mes]?.A || 0,
-            cantidadX: cantidadesPorMes[mes]?.X || 0,
-            total: (ventasPorMes[mes]?.A || 0) + (ventasPorMes[mes]?.X || 0),
-            totalCantidad: (cantidadesPorMes[mes]?.A || 0) + (cantidadesPorMes[mes]?.X || 0)
-        }));
+        return mesesAMostrar.map((mes, index) => {
+            const importeA = ventasPorMes[mes]?.A || 0;
+            const importeX = ventasPorMes[mes]?.X || 0;
+            const cantidadA = cantidadesPorMes[mes]?.A || 0;
+            const cantidadX = cantidadesPorMes[mes]?.X || 0;
+            const total = importeA + importeX;
+            const totalCantidad = cantidadA + cantidadX;
+
+            // Calcular variaciones
+            let varImporteA = 0, varImporteX = 0, varTotal = 0;
+            let varCantidadA = 0, varCantidadX = 0, varTotalCantidad = 0;
+            let tieneVariacion = false;
+
+            if (index > 0) {
+                const mesAnterior = mesesAMostrar[index - 1];
+                const importeAAnt = ventasPorMes[mesAnterior]?.A || 0;
+                const importeXAnt = ventasPorMes[mesAnterior]?.X || 0;
+                const cantidadAAnt = cantidadesPorMes[mesAnterior]?.A || 0;
+                const cantidadXAnt = cantidadesPorMes[mesAnterior]?.X || 0;
+                const totalAnt = importeAAnt + importeXAnt;
+                const totalCantidadAnt = cantidadAAnt + cantidadXAnt;
+
+                if (importeAAnt > 0) varImporteA = ((importeA - importeAAnt) / importeAAnt) * 100;
+                if (importeXAnt > 0) varImporteX = ((importeX - importeXAnt) / importeXAnt) * 100;
+                if (totalAnt > 0) varTotal = ((total - totalAnt) / totalAnt) * 100;
+                if (cantidadAAnt > 0) varCantidadA = ((cantidadA - cantidadAAnt) / cantidadAAnt) * 100;
+                if (cantidadXAnt > 0) varCantidadX = ((cantidadX - cantidadXAnt) / cantidadXAnt) * 100;
+                if (totalCantidadAnt > 0) varTotalCantidad = ((totalCantidad - totalCantidadAnt) / totalCantidadAnt) * 100;
+                tieneVariacion = true;
+            }
+
+            return {
+                mes,
+                importeA,
+                importeX,
+                cantidadA,
+                cantidadX,
+                total,
+                totalCantidad,
+                varImporteA,
+                varImporteX,
+                varTotal,
+                varCantidadA,
+                varCantidadX,
+                varTotalCantidad,
+                tieneVariacion
+            };
+        });
     }, [filtroMeses, mesesSeleccionados, mesesConDatos, ventasPorMes, cantidadesPorMes, meses]);
 
     // Calcular totales
@@ -95,20 +135,63 @@ export const VentasMensualesTable = ({ ventasPorMes, cantidadesPorMes }: VentasM
     };
 
     const exportarDatos = () => {
-        const headers = mostrarCantidad
-            ? ['Mes', 'Cant. Facturas', 'Cant. Remitos', 'Total Cantidad']
-            : ['Mes', 'Imp. Facturas', 'Imp. Remitos', 'Total Importe'];
+        let headers: string[];
+        let rows: (string | number)[][];
 
-        const rows = datosFiltrados.map(item => mostrarCantidad
-            ? [item.mes, item.cantidadA, item.cantidadX, item.totalCantidad]
-            : [item.mes, item.importeA, item.importeX, item.total]
-        );
+        if (mostrarCantidad) {
+            headers = mostrarVariacion 
+                ? ['Mes', 'Cant. Facturas', 'Var %', 'Cant. Remitos', 'Var %', 'Total Cantidad', 'Var %']
+                : ['Mes', 'Cant. Facturas', 'Cant. Remitos', 'Total Cantidad'];
+            
+            rows = datosFiltrados.map(item => {
+                if (mostrarVariacion) {
+                    return [
+                        item.mes,
+                        item.cantidadA,
+                        item.tieneVariacion ? `${item.varCantidadA.toFixed(1)}%` : '-',
+                        item.cantidadX,
+                        item.tieneVariacion ? `${item.varCantidadX.toFixed(1)}%` : '-',
+                        item.totalCantidad,
+                        item.tieneVariacion ? `${item.varTotalCantidad.toFixed(1)}%` : '-'
+                    ];
+                } else {
+                    return [item.mes, item.cantidadA, item.cantidadX, item.totalCantidad];
+                }
+            });
 
-        if (mostrarTotales) {
-            rows.push(mostrarCantidad
-                ? ['TOTAL', totales.cantidadA, totales.cantidadX, totales.totalCantidad]
-                : ['TOTAL', totales.importeA, totales.importeX, totales.total]
-            );
+            if (mostrarTotales) {
+                const totalRow = mostrarVariacion
+                    ? ['TOTAL', totales.cantidadA, '-', totales.cantidadX, '-', totales.totalCantidad, '-']
+                    : ['TOTAL', totales.cantidadA, totales.cantidadX, totales.totalCantidad];
+                rows.push(totalRow);
+            }
+        } else {
+            headers = mostrarVariacion
+                ? ['Mes', 'Imp. Facturas', 'Var %', 'Imp. Remitos', 'Var %', 'Total Importe', 'Var %']
+                : ['Mes', 'Imp. Facturas', 'Imp. Remitos', 'Total Importe'];
+            
+            rows = datosFiltrados.map(item => {
+                if (mostrarVariacion) {
+                    return [
+                        item.mes,
+                        item.importeA,
+                        item.tieneVariacion ? `${item.varImporteA.toFixed(1)}%` : '-',
+                        item.importeX,
+                        item.tieneVariacion ? `${item.varImporteX.toFixed(1)}%` : '-',
+                        item.total,
+                        item.tieneVariacion ? `${item.varTotal.toFixed(1)}%` : '-'
+                    ];
+                } else {
+                    return [item.mes, item.importeA, item.importeX, item.total];
+                }
+            });
+
+            if (mostrarTotales) {
+                const totalRow = mostrarVariacion
+                    ? ['TOTAL', totales.importeA, '-', totales.importeX, '-', totales.total, '-']
+                    : ['TOTAL', totales.importeA, totales.importeX, totales.total];
+                rows.push(totalRow);
+            }
         }
 
         const csvContent = [headers, ...rows]
@@ -119,7 +202,7 @@ export const VentasMensualesTable = ({ ventasPorMes, cantidadesPorMes }: VentasM
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `ventas-mensuales-${mostrarCantidad ? 'cantidad' : 'importe'}.csv`;
+        a.download = `ventas-mensuales-${mostrarCantidad ? 'cantidad' : 'importe'}${mostrarVariacion ? '-con-variacion' : ''}.csv`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -195,6 +278,20 @@ export const VentasMensualesTable = ({ ventasPorMes, cantidadesPorMes }: VentasM
                             </span>
                         </label>
 
+                        {/* Switch mostrar variación */}
+                        <label className="flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={mostrarVariacion}
+                                onChange={(e) => setMostrarVariacion(e.target.checked)}
+                                className="sr-only peer"
+                            />
+                            <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                            <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">
+                                Variación %
+                            </span>
+                        </label>
+
                         {/* Botón exportar */}
                         <button
                             onClick={exportarDatos}
@@ -219,24 +316,54 @@ export const VentasMensualesTable = ({ ventasPorMes, cantidadesPorMes }: VentasM
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                         Cant. Facturas
                                     </th>
+                                    {mostrarVariacion && (
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                            Var %
+                                        </th>
+                                    )}
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                         Cant. Remitos
                                     </th>
+                                    {mostrarVariacion && (
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                            Var %
+                                        </th>
+                                    )}
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                         Total Cantidad
                                     </th>
+                                    {mostrarVariacion && (
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                            Var %
+                                        </th>
+                                    )}
                                 </>
                             ) : (
                                 <>
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                         Imp. Facturas
                                     </th>
+                                    {mostrarVariacion && (
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                            Var %
+                                        </th>
+                                    )}
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                         Imp. Remitos
                                     </th>
+                                    {mostrarVariacion && (
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                            Var %
+                                        </th>
+                                    )}
                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                         Total Importe
                                     </th>
+                                    {mostrarVariacion && (
+                                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                            Var %
+                                        </th>
+                                    )}
                                 </>
                             )}
                         </tr>
@@ -252,24 +379,90 @@ export const VentasMensualesTable = ({ ventasPorMes, cantidadesPorMes }: VentasM
                                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                                             {formatQuantity(item.cantidadA)}
                                         </td>
+                                        {mostrarVariacion && (
+                                            <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
+                                                {item.tieneVariacion ? (
+                                                    <span className={item.varCantidadA > 0 ? 'text-green-600 dark:text-green-400' : item.varCantidadA < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}>
+                                                        {item.varCantidadA > 0 ? '+' : ''}{item.varCantidadA.toFixed(1)}%
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-400 dark:text-gray-600">-</span>
+                                                )}
+                                            </td>
+                                        )}
                                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                                             {formatQuantity(item.cantidadX)}
                                         </td>
+                                        {mostrarVariacion && (
+                                            <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
+                                                {item.tieneVariacion ? (
+                                                    <span className={item.varCantidadX > 0 ? 'text-green-600 dark:text-green-400' : item.varCantidadX < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}>
+                                                        {item.varCantidadX > 0 ? '+' : ''}{item.varCantidadX.toFixed(1)}%
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-400 dark:text-gray-600">-</span>
+                                                )}
+                                            </td>
+                                        )}
                                         <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                                             {formatQuantity(item.totalCantidad)}
                                         </td>
+                                        {mostrarVariacion && (
+                                            <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
+                                                {item.tieneVariacion ? (
+                                                    <span className={item.varTotalCantidad > 0 ? 'text-green-600 dark:text-green-400' : item.varTotalCantidad < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}>
+                                                        {item.varTotalCantidad > 0 ? '+' : ''}{item.varTotalCantidad.toFixed(1)}%
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-400 dark:text-gray-600">-</span>
+                                                )}
+                                            </td>
+                                        )}
                                     </>
                                 ) : (
                                     <>
                                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                                             {formatCurrency(item.importeA)}
                                         </td>
+                                        {mostrarVariacion && (
+                                            <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
+                                                {item.tieneVariacion ? (
+                                                    <span className={item.varImporteA > 0 ? 'text-green-600 dark:text-green-400' : item.varImporteA < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}>
+                                                        {item.varImporteA > 0 ? '+' : ''}{item.varImporteA.toFixed(1)}%
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-400 dark:text-gray-600">-</span>
+                                                )}
+                                            </td>
+                                        )}
                                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                                             {formatCurrency(item.importeX)}
                                         </td>
+                                        {mostrarVariacion && (
+                                            <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
+                                                {item.tieneVariacion ? (
+                                                    <span className={item.varImporteX > 0 ? 'text-green-600 dark:text-green-400' : item.varImporteX < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}>
+                                                        {item.varImporteX > 0 ? '+' : ''}{item.varImporteX.toFixed(1)}%
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-400 dark:text-gray-600">-</span>
+                                                )}
+                                            </td>
+                                        )}
                                         <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                                             {formatCurrency(item.total)}
                                         </td>
+                                        {mostrarVariacion && (
+                                            <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
+                                                {item.tieneVariacion ? (
+                                                    <span className={item.varTotal > 0 ? 'text-green-600 dark:text-green-400' : item.varTotal < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}>
+                                                        {item.varTotal > 0 ? '+' : ''}{item.varTotal.toFixed(1)}%
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-400 dark:text-gray-600">-</span>
+                                                )}
+                                            </td>
+                                        )}
                                     </>
                                 )}
                             </tr>

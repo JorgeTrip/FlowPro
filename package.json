@@ -20,6 +20,7 @@
     "dom-to-image-more": "^3.7.1",
     "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
+    "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
     "lucide-react": "^0.540.0",
     "moment": "^2.30.1",

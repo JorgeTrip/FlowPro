@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { ClipboardDocumentIcon, ClipboardDocumentCheckIcon } from '@heroicons/react/24/outline';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { MultiSelectDropdown } from './shared/ControlPanel';
 
 interface VentasPorVendedorTableProps {
-    ventasPorVendedor: { resultado: Record<string, Record<string, { A: number; X: number }>> };
-    cantidadesPorVendedor: { resultado: Record<string, Record<string, { A: number; X: number }>> };
+    ventasPorVendedor: { resultado: Record<string, Record<string, { A: number; X: number; AX: number }>> };
+    cantidadesPorVendedor: { resultado: Record<string, Record<string, { A: number; X: number; AX: number }>> };
     vendedorDebugLog?: string[];
 }
 
@@ -45,16 +46,29 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
     const [vendedoresSeleccionados, setVendedoresSeleccionados] = useState<string[]>([]);
     const [mesesSeleccionados, setMesesSeleccionados] = useState<string[]>([]);
     const [modoVista, setModoVista] = useState<'acumulado' | 'comparativo'>('acumulado');
+    const [mostrarVariacion, setMostrarVariacion] = useState<boolean>(true);
     const [copied, setCopied] = useState(false);
-    const [dropdownVendedoresOpen, setDropdownVendedoresOpen] = useState(false);
-    const [dropdownMesesOpen, setDropdownMesesOpen] = useState(false);
+
+    const meses = useMemo(() => [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ], []);
 
     // Obtener todos los meses disponibles
     const mesesConDatos = useMemo(() => {
-        const meses = new Set<string>();
-        Object.keys(ventasPorVendedor.resultado).forEach(mes => meses.add(mes));
-        Object.keys(cantidadesPorVendedor.resultado).forEach(mes => meses.add(mes));
-        return Array.from(meses);
+        const months = new Set<string>();
+
+        Object.entries(ventasPorVendedor.resultado).forEach(([mes, vendedores]) => {
+            const hasData = Object.values(vendedores).some(v => v.AX !== 0);
+            if (hasData) months.add(mes);
+        });
+
+        Object.entries(cantidadesPorVendedor.resultado).forEach(([mes, vendedores]) => {
+            const hasData = Object.values(vendedores).some(v => v.AX !== 0);
+            if (hasData) months.add(mes);
+        });
+
+        return Array.from(months);
     }, [ventasPorVendedor, cantidadesPorVendedor]);
 
     // Obtener todos los vendedores disponibles
@@ -68,18 +82,23 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
         return Array.from(vendedores);
     }, [ventasPorVendedor]);
 
-    // Inicializar selecciones
-    useEffect(() => {
-        if (vendedoresSeleccionados.length === 0 && todosLosVendedores.length > 0) {
-            setVendedoresSeleccionados(todosLosVendedores);
-        }
-    }, [todosLosVendedores, vendedoresSeleccionados.length]);
+    // Flags para evitar reinicializar tras "Ninguno"/"Limpiar" — solo se ejecuta la primera vez
+    const vendedoresInicializados = useRef(false);
+    const mesesInicializados = useRef(false);
 
     useEffect(() => {
-        if (mesesSeleccionados.length === 0 && mesesConDatos.length > 0) {
-            setMesesSeleccionados(mesesConDatos);
+        if (!vendedoresInicializados.current && todosLosVendedores.length > 0) {
+            setVendedoresSeleccionados(todosLosVendedores);
+            vendedoresInicializados.current = true;
         }
-    }, [mesesConDatos, mesesSeleccionados.length]);
+    }, [todosLosVendedores]);
+
+    useEffect(() => {
+        if (!mesesInicializados.current && mesesConDatos.length > 0) {
+            setMesesSeleccionados(mesesConDatos);
+            mesesInicializados.current = true;
+        }
+    }, [mesesConDatos]);
 
     const handleCopyLog = useCallback(async () => {
         if (!vendedorDebugLog?.length) return;
@@ -92,17 +111,7 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
         }
     }, [vendedorDebugLog]);
 
-    const handleVendedorToggle = (vendedor: string) => {
-        setVendedoresSeleccionados(prev =>
-            prev.includes(vendedor) ? prev.filter(v => v !== vendedor) : [...prev, vendedor]
-        );
-    };
 
-    const handleMesToggle = (mes: string) => {
-        setMesesSeleccionados(prev =>
-            prev.includes(mes) ? prev.filter(m => m !== mes) : [...prev, mes]
-        );
-    };
 
     // Procesar y filtrar datos
     const datosProcesados = useMemo(() => {
@@ -261,7 +270,9 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
                 headers.push(`${mes} (Facturas)`);
                 headers.push(`${mes} (Remitos)`);
                 headers.push(`${mes} (Total)`);
-                headers.push(`${mes} (Var %)`);
+                if (mostrarVariacion) {
+                    headers.push(`${mes} (Var %)`);
+                }
             });
             headers.push('TOTAL GLOBAL');
 
@@ -269,17 +280,20 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
                 const row: (string | number)[] = [item.vendedor];
                 mesesSeleccionados.forEach((mes, index) => {
                     const d = item.meses[mes];
-                    let variacionStr = '-';
-                    if (index > 0) {
-                        const dataAnt = item.meses[mesesSeleccionados[index - 1]];
-                        const valAct = mostrarCantidad ? d.totalCantidad : d.totalImporte;
-                        const valAnt = mostrarCantidad ? dataAnt.totalCantidad : dataAnt.totalImporte;
-                        if (valAnt > 0) variacionStr = (((valAct - valAnt) / valAnt) * 100).toFixed(1) + '%';
-                    }
                     if (mostrarCantidad) {
-                        row.push(d.cantidadA, d.cantidadX, d.totalCantidad, variacionStr);
+                        row.push(d.cantidadA, d.cantidadX, d.totalCantidad);
                     } else {
-                        row.push(d.importeA, d.importeX, d.totalImporte, variacionStr);
+                        row.push(d.importeA, d.importeX, d.totalImporte);
+                    }
+                    if (mostrarVariacion) {
+                        let variacionStr = '-';
+                        if (index > 0) {
+                            const dataAnt = item.meses[mesesSeleccionados[index - 1]];
+                            const valAct = mostrarCantidad ? d.totalCantidad : d.totalImporte;
+                            const valAnt = mostrarCantidad ? dataAnt.totalCantidad : dataAnt.totalImporte;
+                            if (valAnt > 0) variacionStr = (((valAct - valAnt) / valAnt) * 100).toFixed(1) + '%';
+                        }
+                        row.push(variacionStr);
                     }
                 });
                 row.push(mostrarCantidad ? item.totalGlobalCantidad : item.totalGlobalImporte);
@@ -290,17 +304,20 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
                 const totalRow: (string | number)[] = ['TOTAL'];
                 mesesSeleccionados.forEach((mes, index) => {
                     const d = totalesComparativos.meses[mes];
-                    let variacionStr = '-';
-                    if (index > 0) {
-                        const dataAnt = totalesComparativos.meses[mesesSeleccionados[index - 1]];
-                        const valAct = mostrarCantidad ? d.totalCantidad : d.totalImporte;
-                        const valAnt = mostrarCantidad ? dataAnt.totalCantidad : dataAnt.totalImporte;
-                        if (valAnt > 0) variacionStr = (((valAct - valAnt) / valAnt) * 100).toFixed(1) + '%';
-                    }
                     if (mostrarCantidad) {
-                        totalRow.push(d.cantidadA, d.cantidadX, d.totalCantidad, variacionStr);
+                        totalRow.push(d.cantidadA, d.cantidadX, d.totalCantidad);
                     } else {
-                        totalRow.push(d.importeA, d.importeX, d.totalImporte, variacionStr);
+                        totalRow.push(d.importeA, d.importeX, d.totalImporte);
+                    }
+                    if (mostrarVariacion) {
+                        let variacionStr = '-';
+                        if (index > 0) {
+                            const dataAnt = totalesComparativos.meses[mesesSeleccionados[index - 1]];
+                            const valAct = mostrarCantidad ? d.totalCantidad : d.totalImporte;
+                            const valAnt = mostrarCantidad ? dataAnt.totalCantidad : dataAnt.totalImporte;
+                            if (valAnt > 0) variacionStr = (((valAct - valAnt) / valAnt) * 100).toFixed(1) + '%';
+                        }
+                        totalRow.push(variacionStr);
                     }
                 });
                 totalRow.push(mostrarCantidad ? totalesComparativos.totalGlobalCantidad : totalesComparativos.totalGlobalImporte);
@@ -348,64 +365,21 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
                         )}
 
                         {/* Filtro de Meses */}
-                        <div className="relative">
-                            <button
-                                className="bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-36 p-2 text-left"
-                                onClick={() => setDropdownMesesOpen(!dropdownMesesOpen)}
-                            >
-                                Meses ({mesesSeleccionados.length})
-                            </button>
-
-                            {dropdownMesesOpen && (
-                                <>
-                                    <div className="fixed inset-0 z-10" onClick={() => setDropdownMesesOpen(false)}></div>
-                                    <div className="absolute top-full left-0 mt-1 w-56 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
-                                        <div className="p-3">
-                                            <div className="flex gap-2 mb-3">
-                                                <button onClick={() => setMesesSeleccionados(mesesConDatos)} className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">Todos</button>
-                                                <button onClick={() => setMesesSeleccionados([])} className="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">Ninguno</button>
-                                            </div>
-                                            {mesesConDatos.map(mes => (
-                                                <label key={mes} className="flex items-center mb-2 cursor-pointer">
-                                                    <input type="checkbox" checked={mesesSeleccionados.includes(mes)} onChange={() => handleMesToggle(mes)} className="mr-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                                                    <span className="text-sm text-gray-900 dark:text-white">{mes}</span>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-                        </div>
+                        <MultiSelectDropdown
+                            label="Meses"
+                            options={meses}
+                            selected={mesesSeleccionados}
+                            onChange={setMesesSeleccionados}
+                            optionsWithData={mesesConDatos}
+                        />
 
                         {/* Filtro de vendedores */}
-                        <div className="relative">
-                            <button
-                                className="bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-36 p-2 text-left"
-                                onClick={() => setDropdownVendedoresOpen(!dropdownVendedoresOpen)}
-                            >
-                                Vendedores ({vendedoresSeleccionados.length})
-                            </button>
-
-                            {dropdownVendedoresOpen && (
-                                <>
-                                    <div className="fixed inset-0 z-10" onClick={() => setDropdownVendedoresOpen(false)}></div>
-                                    <div className="absolute top-full left-0 lg:right-auto mt-1 w-64 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
-                                        <div className="p-3">
-                                            <div className="flex gap-2 mb-3">
-                                                <button onClick={() => setVendedoresSeleccionados(todosLosVendedores)} className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">Todos</button>
-                                                <button onClick={() => setVendedoresSeleccionados([])} className="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600">Limpiar</button>
-                                            </div>
-                                            {todosLosVendedores.map(vendedor => (
-                                                <label key={vendedor} className="flex items-center mb-2 cursor-pointer">
-                                                    <input type="checkbox" checked={vendedoresSeleccionados.includes(vendedor)} onChange={() => handleVendedorToggle(vendedor)} className="mr-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                                                    <span className="text-sm text-gray-900 dark:text-white">{vendedor}</span>
-                                                </label>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-                        </div>
+                        <MultiSelectDropdown
+                            label="Vendedores"
+                            options={todosLosVendedores}
+                            selected={vendedoresSeleccionados}
+                            onChange={setVendedoresSeleccionados}
+                        />
 
                         {/* Switch ordenamiento */}
                         <label className="flex items-center cursor-pointer">
@@ -427,6 +401,15 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
                             <div className="border border-gray-300 dark:border-gray-500 relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                             <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Totales</span>
                         </label>
+
+                        {/* Switch mostrar variación (solo en modo comparativo) */}
+                        {modoVista === 'comparativo' && (
+                            <label className="flex items-center cursor-pointer">
+                                <input type="checkbox" checked={mostrarVariacion} onChange={(e) => setMostrarVariacion(e.target.checked)} className="sr-only peer" />
+                                <div className="border border-gray-300 dark:border-gray-500 relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                                <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Variación %</span>
+                            </label>
+                        )}
 
                         {/* Toggle Acumulado/Comparativo */}
                         <select
@@ -472,7 +455,7 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
                                     Vendedor
                                 </th>
                                 {mesesSeleccionados.map(mes => (
-                                    <th key={mes} colSpan={4} className="px-4 py-2 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                                    <th key={mes} colSpan={mostrarVariacion ? 4 : 3} className="px-4 py-2 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
                                         {mes}
                                     </th>
                                 ))}
@@ -494,9 +477,11 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
                                         <th className="px-4 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
                                             Total
                                         </th>
-                                        <th className="px-4 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                                            Var %
-                                        </th>
+                                        {mostrarVariacion && (
+                                            <th className="px-4 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
+                                                Var %
+                                            </th>
+                                        )}
                                     </React.Fragment>
                                 ))}
                             </tr>
@@ -551,15 +536,17 @@ export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedo
                                                 <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-gray-900 dark:text-white">
                                                     {mostrarCantidad ? formatQuantity(mesData.totalCantidad) : formatCurrency(mesData.totalImporte)}
                                                 </td>
-                                                <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium border-r border-gray-200 dark:border-gray-700">
-                                                    {tieneVariacion ? (
-                                                        <span className={variacion > 0 ? 'text-green-600 dark:text-green-400' : variacion < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}>
-                                                            {variacion > 0 ? '+' : ''}{variacion.toFixed(1)}%
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-gray-400 dark:text-gray-600">-</span>
-                                                    )}
-                                                </td>
+                                                {mostrarVariacion && (
+                                                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium border-r border-gray-200 dark:border-gray-700">
+                                                        {tieneVariacion ? (
+                                                            <span className={variacion > 0 ? 'text-green-600 dark:text-green-400' : variacion < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}>
+                                                                {variacion > 0 ? '+' : ''}{variacion.toFixed(1)}%
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-gray-400 dark:text-gray-600">-</span>
+                                                        )}
+                                                    </td>
+                                                )}
                                             </React.Fragment>
                                         );
                                     })}

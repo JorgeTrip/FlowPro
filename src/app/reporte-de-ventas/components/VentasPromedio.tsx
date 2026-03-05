@@ -4,6 +4,8 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { CameraIcon } from '@heroicons/react/24/outline';
 import { exportChartAsPNG } from '../lib/exportUtils';
+import { useAppStore } from '@/app/stores/appStore';
+import { ControlPanel, ControlGroup, SelectControl, ButtonControl } from './shared/ControlPanel';
 
 // --- Helper Functions ---
 const formatCurrency = (value: number, compacto: boolean = false) => {
@@ -51,6 +53,8 @@ export const VentasPromedio = ({ ventasPorMes, cantidadesPorMes }: VentasPromedi
     const [mesSeleccionado, setMesSeleccionado] = useState<string | null>(null);
     const [mesesConDatos, setMesesConDatos] = useState<string[]>([]);
     const chartRef = useRef<HTMLDivElement>(null);
+    const tema = useAppStore((state) => state.configuracionGlobal.tema);
+    const esOscuro = tema === 'dark';
 
     const meses = useMemo(() => [
         'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -118,11 +122,11 @@ export const VentasPromedio = ({ ventasPorMes, cantidadesPorMes }: VentasPromedi
     }, [ventasPorMes, cantidadesPorMes, filtroMeses, mesSeleccionado, mesesConDatos, meses]);
 
     const StatCard = ({ label, value, color }: { label: string; value: number; color: string }) => (
-        <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-lg p-8 border border-gray-200 dark:border-gray-700 shadow-sm min-h-[120px]">
+        <div className={`rounded-lg p-8 border shadow-sm min-h-[120px] ${esOscuro ? 'bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700' : 'bg-white border-gray-200'}`}>
             <div className="flex items-center justify-between h-full">
                 <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{label}</p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white break-words">
+                    <p className={`text-sm font-medium mb-2 ${esOscuro ? 'text-gray-400' : 'text-gray-600'}`}>{label}</p>
+                    <p className={`text-3xl font-bold break-words ${esOscuro ? 'text-white' : 'text-gray-900'}`}>
                         {metrica === 'importe' ? formatCurrency(value) : formatQuantity(value)}
                     </p>
                 </div>
@@ -138,58 +142,62 @@ export const VentasPromedio = ({ ventasPorMes, cantidadesPorMes }: VentasPromedi
     };
 
     return (
-        <div ref={chartRef} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
-                <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 flex-shrink-0">Venta Promedio</h4>
-                <div className="flex items-center gap-2 flex-wrap chart-controls w-full lg:w-auto justify-end">
-                    <button
-                        onClick={handleExport}
-                        className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
-                        title="Exportar como PNG"
-                    >
+        <div ref={chartRef} className={`rounded-lg border p-6 shadow-sm ${esOscuro ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'}`}>
+            <div className="flex justify-between items-center mb-4">
+                <h4 className={`text-lg font-semibold ${esOscuro ? 'text-gray-200' : 'text-gray-800'}`}>Venta Promedio</h4>
+            </div>
+
+            <ControlPanel title="Controles de Visualización">
+                <ControlGroup label="Exportar">
+                    <ButtonControl onClick={handleExport} variant="icon" title="Exportar como PNG">
                         <CameraIcon className="w-4 h-4" />
-                    </button>
-                    <select
+                    </ButtonControl>
+                </ControlGroup>
+
+                <ControlGroup label="Filtro de Meses">
+                    <SelectControl
                         value={filtroMeses}
-                        onChange={(e) => {
-                            setFiltroMeses(e.target.value as 'todos' | 'conDatos' | 'individual');
-                            if (e.target.value === 'individual' && mesesConDatos.length > 0 && !mesSeleccionado) {
+                        onChange={(value) => {
+                            setFiltroMeses(value as 'todos' | 'conDatos' | 'individual');
+                            if (value === 'individual' && mesesConDatos.length > 0 && !mesSeleccionado) {
                                 setMesSeleccionado(mesesConDatos[0]);
                             }
                         }}
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-44 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    >
-                        <option value="todos">Todos los meses</option>
-                        <option value="conDatos">Solo meses con datos</option>
-                        <option value="individual">Seleccionar mes</option>
-                    </select>
-
+                        options={[
+                            { value: 'todos', label: 'Todos los meses' },
+                            { value: 'conDatos', label: 'Solo con datos' },
+                            { value: 'individual', label: 'Seleccionar mes' }
+                        ]}
+                        className="w-44"
+                    />
                     {filtroMeses === 'individual' && (
-                        <select
+                        <SelectControl
                             value={mesSeleccionado || (mesesConDatos.length > 0 ? mesesConDatos[0] : meses[0])}
-                            onChange={(e) => setMesSeleccionado(e.target.value)}
-                            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-36 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        >
-                            {meses.map(mes => (
-                                <option key={mes} value={mes} disabled={!mesesConDatos.includes(mes)}>
-                                    {mes}{!mesesConDatos.includes(mes) ? ' (sin datos)' : ''}
-                                </option>
-                            ))}
-                        </select>
+                            onChange={(value) => setMesSeleccionado(value)}
+                            options={meses.map(mes => ({
+                                value: mes,
+                                label: `${mes}${!mesesConDatos.includes(mes) ? ' (sin datos)' : ''}`,
+                                disabled: !mesesConDatos.includes(mes)
+                            }))}
+                            className="w-36"
+                        />
                     )}
+                </ControlGroup>
 
-                    <div className="border-l border-gray-300 dark:border-gray-600 h-8 mx-2"></div>
+                <div className="border-l border-gray-300 dark:border-gray-600 h-8"></div>
 
-                    <select
+                <ControlGroup label="Métrica">
+                    <SelectControl
                         value={metrica}
-                        onChange={(e) => setMetrica(e.target.value as 'importe' | 'cantidad')}
-                        className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-32 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                    >
-                        <option value="importe">Importe</option>
-                        <option value="cantidad">Cantidad</option>
-                    </select>
-                </div>
-            </div>
+                        onChange={(value) => setMetrica(value as 'importe' | 'cantidad')}
+                        options={[
+                            { value: 'importe', label: 'Importe' },
+                            { value: 'cantidad', label: 'Cantidad' }
+                        ]}
+                        className="w-32"
+                    />
+                </ControlGroup>
+            </ControlPanel>
 
             <div className="space-y-4">
                 <StatCard
@@ -210,7 +218,7 @@ export const VentasPromedio = ({ ventasPorMes, cantidadesPorMes }: VentasPromedi
             </div>
 
             <div className="text-center mt-4">
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className={`text-sm ${esOscuro ? 'text-gray-400' : 'text-gray-600'}`}>
                     {filtroMeses === 'individual'
                         ? `Datos del mes: ${mesSeleccionado}`
                         : `Promedio calculado sobre ${promedios.mesesValidos} ${promedios.mesesValidos === 1 ? 'mes' : 'meses'} con datos`

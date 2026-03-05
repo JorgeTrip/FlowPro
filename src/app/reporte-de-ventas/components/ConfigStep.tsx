@@ -149,6 +149,19 @@ export function ConfigStep() {
                 // Penalizar por orden de keyword (primeras keywords tienen prioridad)
                 specificity -= keywordIndex;
 
+                // Reglas específicas para ReferenciaVendedor:
+                // - Priorizar el nombre del vendedor (columna "vendedor" o que incluya "nombre")
+                // - Penalizar columnas de código: contienen "cod", "cód", "codigo", "id", "nro"
+                if (field === 'ReferenciaVendedor') {
+                  const isExactVendedor = columnLower.trim() === 'vendedor';
+                  const seemsName = columnLower.includes('nombre');
+                  const seemsCode = /\b(cod|cód|codigo|código|id|nro)\b/.test(columnLower);
+
+                  if (isExactVendedor) specificity += 600;
+                  if (seemsName) specificity += 350;
+                  if (seemsCode) specificity -= 500;
+                }
+
                 matches.push({ field, column, specificity });
               }
             });

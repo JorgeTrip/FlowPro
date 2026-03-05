@@ -6,11 +6,15 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { CameraIcon } from '@heroicons/react/24/outline';
 import { exportChartAsPNG } from '../lib/exportUtils';
 import { ReporteResultados } from '@/app/lib/reportGenerator';
+import { ControlPanel, ControlGroup, SelectControl, ButtonControl, MultiSelectDropdown, SwitchControl } from './shared/ControlPanel';
 
 // --- Helper Functions ---
 const formatCurrency = (value: number) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(value);
 const formatQuantity = (value: number) => new Intl.NumberFormat('es-AR').format(value);
-const formatName = (name: string) => name.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+const formatName = (name: string) => {
+  const cleaned = name.replace(/[_\-]+/g, ' ').trim();
+  return cleaned.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ');
+};
 
 // Paleta de colores para los diferentes meses en el gráfico comparativo
 const monthColors = [
@@ -37,10 +41,12 @@ interface CustomizedLabelProps {
   data: VendedorData[];
   dataKey?: string;
   metric?: 'importe' | 'cantidad';
+  monthsOrder?: string[];
+  showDelta?: boolean;
 }
 
 const CustomizedLabel = (props: CustomizedLabelProps) => {
-  const { x = 0, y = 0, width = 0, height = 0, index, data, dataKey, metric } = props;
+  const { x = 0, y = 0, width = 0, height = 0, index, data, dataKey, metric, monthsOrder, showDelta } = props;
 
   if (index === undefined || !data || !data[index] || !dataKey) {
     return null;
@@ -52,13 +58,25 @@ const CustomizedLabel = (props: CustomizedLabelProps) => {
   const numHeight = typeof height === 'string' ? parseFloat(height) : height;
   const item = data[index];
 
-  // Solo mostramos labels si el ancho de la barra es suficientemente grande
-  if (numWidth < 20) return null;
+  // Ya no ocultamos labels en barras pequeñas: se posicionan fuera de la barra
 
   const value = item[dataKey] as number | undefined;
   if (!value) return null;
 
-  const formattedValue = metric === 'importe' ? formatCurrency(value) : formatQuantity(value);
+  let formattedValue = metric === 'importe' ? formatCurrency(value) : formatQuantity(value);
+  if (showDelta && monthsOrder && dataKey && index !== undefined && index > -1) {
+    const item = data[index];
+    const monthIndex = monthsOrder.indexOf(String(dataKey));
+    if (monthIndex > 0) {
+      const prevMonthKey = monthsOrder[monthIndex - 1];
+      const prevVal = (item[prevMonthKey] as number) || 0;
+      if (prevVal > 0) {
+        const delta = ((value - prevVal) / prevVal) * 100;
+        const sign = delta > 0 ? '+' : '';
+        formattedValue = `${formattedValue}  (${sign}${delta.toFixed(1)}%)`;
+      }
+    }
+  }
 
   return (
     <text x={numX + numWidth + 5} y={numY + numHeight / 2} textAnchor="start" dominantBaseline="middle" className="fill-gray-600 dark:fill-gray-400 text-xs font-medium">
@@ -74,27 +92,40 @@ export const VentasPorVendedor = ({ ventasPorVendedor, cantidadesPorVendedor }: 
   const [metric, setMetric] = useState<'importe' | 'cantidad'>('importe');
   const [mesesSeleccionados, setMesesSeleccionados] = useState<string[]>([]);
   const [modoVista, setModoVista] = useState<'acumulado' | 'comparativo'>('acumulado');
+  const [mostrarVariacion, setMostrarVariacion] = useState<boolean>(true);
   const chartRef = useRef<HTMLDivElement>(null);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const meses = useMemo(() => [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ], []);
 
   const mesesConDatos = useMemo(() => {
-    const meses = new Set<string>();
-    Object.keys(ventasPorVendedor.resultado).forEach(mes => meses.add(mes));
-    Object.keys(cantidadesPorVendedor.resultado).forEach(mes => meses.add(mes));
-    return Array.from(meses);
+    const months = new Set<string>();
+
+    Object.entries(ventasPorVendedor.resultado).forEach(([mes, vendedores]) => {
+      const hasData = Object.values(vendedores).some(v => v.AX !== 0);
+      if (hasData) months.add(mes);
+    });
+
+    Object.entries(cantidadesPorVendedor.resultado).forEach(([mes, vendedores]) => {
+      const hasData = Object.values(vendedores).some(v => v.AX !== 0);
+      if (hasData) months.add(mes);
+    });
+
+    return Array.from(months);
   }, [ventasPorVendedor, cantidadesPorVendedor]);
 
+  // Flag para evitar reinicializar tras "Ninguno" — solo se ejecuta la primera vez
+  const mesesInicializados = useRef(false);
   useEffect(() => {
-    if (mesesSeleccionados.length === 0 && mesesConDatos.length > 0) {
+    if (!mesesInicializados.current && mesesConDatos.length > 0) {
       setMesesSeleccionados(mesesConDatos);
+      mesesInicializados.current = true;
     }
-  }, [mesesConDatos, mesesSeleccionados.length]);
+  }, [mesesConDatos]);
 
-  const toggleMes = (mes: string) => {
-    setMesesSeleccionados(prev =>
-      prev.includes(mes) ? prev.filter(m => m !== mes) : [...prev, mes]
-    );
-  };
+
 
   const data: VendedorData[] = useMemo(() => {
     if (mesesSeleccionados.length === 0) return [];
@@ -214,13 +245,29 @@ export const VentasPorVendedor = ({ ventasPorVendedor, cantidadesPorVendedor }: 
         return (
           <div className="p-3 bg-gray-800 text-white rounded-lg shadow-xl border border-gray-700">
             <p className="font-bold mb-2 text-blue-300">{label}</p>
-            {payload.map((entry, index) => (
-              <p key={index} className="text-sm flex items-center gap-2 mb-1">
-                <span className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }}></span>
-                <span className="font-medium">{entry.name}:</span>
-                {metric === 'importe' ? formatCurrency(entry.value) : formatQuantity(entry.value)}
-              </p>
-            ))}
+            {payload.map((entry, index) => {
+              let extra = '';
+              if (mostrarVariacion && mesesSeleccionados.length > 1) {
+                const monthIndex = mesesSeleccionados.indexOf(entry.name);
+                if (monthIndex > 0) {
+                  const prevMonth = mesesSeleccionados[monthIndex - 1];
+                  const item = entry.payload;
+                  const prevVal = (item[prevMonth] as number) || 0;
+                  if (prevVal > 0) {
+                    const delta = ((entry.value - prevVal) / prevVal) * 100;
+                    const sign = delta > 0 ? '+' : '';
+                    extra = ` (${sign}${delta.toFixed(1)}%)`;
+                  }
+                }
+              }
+              return (
+                <p key={index} className="text-sm flex items-center gap-2 mb-1">
+                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }}></span>
+                  <span className="font-medium">{entry.name}:</span>
+                  {(metric === 'importe' ? formatCurrency(entry.value) : formatQuantity(entry.value))}{extra}
+                </p>
+              );
+            })}
           </div>
         );
       }
@@ -234,88 +281,63 @@ export const VentasPorVendedor = ({ ventasPorVendedor, cantidadesPorVendedor }: 
 
   return (
     <div ref={chartRef} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 gap-4">
-        <div className="flex-shrink-0">
-          <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-            Top 10 Vendedores
-          </h4>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap chart-controls w-full lg:w-auto justify-end">
-          <button
-            onClick={handleExport}
-            className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-600"
-            title="Exportar como PNG"
-          >
-            <CameraIcon className="w-4 h-4" />
-          </button>
-
-          {/* Selector Múltiple de Meses */}
-          <div className="relative">
-            <button
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-40 p-2.5 text-left dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-            >
-              Meses ({mesesSeleccionados.length})
-            </button>
-
-            {dropdownOpen && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setDropdownOpen(false)}></div>
-                <div className="absolute top-full right-0 mt-1 w-56 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg shadow-lg z-20 max-h-60 overflow-y-auto">
-                  <div className="p-3">
-                    <div className="flex gap-2 mb-3">
-                      <button
-                        onClick={() => setMesesSeleccionados(mesesConDatos)}
-                        className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                      >
-                        Todos
-                      </button>
-                      <button
-                        onClick={() => setMesesSeleccionados([])}
-                        className="text-xs bg-gray-500 text-white px-2 py-1 rounded hover:bg-gray-600"
-                      >
-                        Ninguno
-                      </button>
-                    </div>
-
-                    {mesesConDatos.map(mes => (
-                      <label key={mes} className="flex items-center mb-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={mesesSeleccionados.includes(mes)}
-                          onChange={() => toggleMes(mes)}
-                          className="mr-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm text-gray-900 dark:text-white">
-                          {mes}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          <select
-            value={metric}
-            onChange={(e) => setMetric(e.target.value as 'importe' | 'cantidad')}
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-32 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-          >
-            <option value="importe">Importe</option>
-            <option value="cantidad">Cantidad</option>
-          </select>
-
-          <select
-            value={modoVista}
-            onChange={(e) => setModoVista(e.target.value as 'acumulado' | 'comparativo')}
-            className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-          >
-            <option value="acumulado">Acumulado</option>
-            <option value="comparativo" disabled={mesesSeleccionados.length < 2}>Comparativo</option>
-          </select>
-        </div>
+      <div className="flex justify-between items-center mb-4">
+        <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+          Top 10 Vendedores
+        </h4>
       </div>
+
+      <ControlPanel title="Controles de Visualización">
+        <ControlGroup label="Exportar">
+          <ButtonControl onClick={handleExport} variant="icon" title="Exportar como PNG">
+            <CameraIcon className="w-4 h-4" />
+          </ButtonControl>
+        </ControlGroup>
+
+        {/* Selector Múltiple de Meses */}
+        <ControlGroup label="Meses">
+          <MultiSelectDropdown
+            options={meses}
+            selected={mesesSeleccionados}
+            onChange={setMesesSeleccionados}
+            optionsWithData={mesesConDatos}
+            label="Meses"
+          />
+        </ControlGroup>
+
+        <div className="border-l border-gray-300 dark:border-gray-600 h-8"></div>
+
+        <ControlGroup label="Métrica">
+          <SelectControl
+            value={metric}
+            onChange={(value) => setMetric(value as 'importe' | 'cantidad')}
+            options={[
+              { value: 'importe', label: 'Importe' },
+              { value: 'cantidad', label: 'Cantidad' }
+            ]}
+            className="w-32"
+          />
+        </ControlGroup>
+
+        <ControlGroup label="Vista">
+          <SelectControl
+            value={modoVista}
+            onChange={(value) => setModoVista(value as 'acumulado' | 'comparativo')}
+            options={[
+              { value: 'acumulado', label: 'Acumulado' },
+              { value: 'comparativo', label: 'Comparativo', disabled: mesesSeleccionados.length < 2 }
+            ]}
+          />
+        </ControlGroup>
+
+        {modoVista === 'comparativo' && (
+          <SwitchControl
+            checked={mostrarVariacion}
+            onChange={setMostrarVariacion}
+            label="Variación %"
+          />
+        )}
+      </ControlPanel>
 
       <div className="w-full">
         <ResponsiveContainer width="100%" height={chartHeight}>
@@ -333,7 +355,7 @@ export const VentasPorVendedor = ({ ventasPorVendedor, cantidadesPorVendedor }: 
             ) : (
               mesesSeleccionados.map((mes, index) => (
                 <Bar key={mes} dataKey={mes} name={mes} fill={monthColors[index % monthColors.length]} radius={[0, 4, 4, 0]}>
-                  <LabelList dataKey={mes} content={(props) => <CustomizedLabel {...props} data={data} dataKey={mes} metric={metric} />} />
+                  <LabelList dataKey={mes} content={(props) => <CustomizedLabel {...props} data={data} dataKey={mes} metric={metric} monthsOrder={mesesSeleccionados} showDelta={mostrarVariacion} />} />
                 </Bar>
               ))
             )}

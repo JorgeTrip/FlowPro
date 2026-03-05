@@ -380,16 +380,18 @@ function resolverVendedor(
   clienteVendorMap?: Map<string, string>
 ): string {
   const vendedorVentas = referenciaVendedor?.trim() || '';
-  if (!vendedorVentas) return '';
+  if (!vendedorVentas && !clienteVendorMap) return '';
 
-  // Solo sobrescribir si el vendedor original es "Hierbas del Oasis"
-  const esHierbasDelOasis = vendedorVentas.toLowerCase() === 'hierbas del oasis';
-  if (esHierbasDelOasis && clienteVendorMap) {
+  // Preferir siempre el vendedor real de la nómina cuando esté disponible
+  // (muchas planillas traen códigos en ReferenciaVendedor; la nómina tiene el nombre real)
+  if (clienteVendorMap) {
     const vendorNomina = clienteVendorMap.get(razonSocialCliente?.trim() || '');
-    if (vendorNomina) return vendorNomina;
+    if (vendorNomina && vendorNomina.trim()) {
+      return vendorNomina.trim();
+    }
   }
 
-  // En cualquier otro caso, el vendedor del reporte de ventas prevalece
+  // Fallback al dato de ventas
   return vendedorVentas;
 }
 
