@@ -193,11 +193,11 @@ export function generarReporte(ventas: Venta[], clienteVendorMap?: Map<string, s
     cantidadesPorZona: agruparPorZonaCantidad(ventas),
     cantidadesPorVendedor: agruparPorVendedorCantidad(ventas, clienteVendorMap),
     // Tops
-    topProductosMasVendidos: topProductosMasVendidos(ventas, 20, 'conDatos', mesesConDatos),
-    topProductosMasVendidosPorImporte: topProductosMasVendidosImporte(ventas, 20, 'conDatos', mesesConDatos),
-    topProductosMenosVendidos: topProductosMenosVendidos(ventas, 20, 'conDatos', mesesConDatos),
-    topProductosPorCategoriaPorCantidad: topProductosPorCategoria(ventas, 5, 'conDatos', mesesConDatos, 'cantidad'),
-    topProductosPorCategoriaPorImporte: topProductosPorCategoria(ventas, 5, 'conDatos', mesesConDatos, 'importe'),
+    topProductosMasVendidos: topProductosMasVendidos(ventas, -1, 'conDatos', mesesConDatos),
+    topProductosMasVendidosPorImporte: topProductosMasVendidosImporte(ventas, -1, 'conDatos', mesesConDatos),
+    topProductosMenosVendidos: topProductosMenosVendidos(ventas, -1, 'conDatos', mesesConDatos),
+    topProductosPorCategoriaPorCantidad: topProductosPorCategoria(ventas, -1, 'conDatos', mesesConDatos, 'cantidad'),
+    topProductosPorCategoriaPorImporte: topProductosPorCategoria(ventas, -1, 'conDatos', mesesConDatos, 'importe'),
     topClientesMinoristas: topClientesPorRubro(ventas, 'Minoristas', 20, 'importe', 'mas', 'conDatos', mesesConDatos),
     topClientesDistribuidores: topClientesPorRubro(ventas, 'Distribuidores', 20, 'importe', 'mas', 'conDatos', mesesConDatos),
     topClientesMinoristasPorCantidad: topClientesPorRubro(ventas, 'Minoristas', 20, 'cantidad', 'mas', 'conDatos', mesesConDatos),
@@ -592,11 +592,12 @@ function topProductosMasVendidosImporte(
 
   const resultado = Object.entries(map)
     .sort((a, b) => b[1].total - a[1].total)
-    .slice(0, n)
     .map(([articulo, data]) => ({ articulo, descripcion: data.descripcion, total: data.total }));
+  
+  const final = n > 0 ? resultado.slice(0, n) : resultado;
 
-  console.log('🔍 topProductosMasVendidosImporte - primeros 3 resultados:', resultado.slice(0, 3));
-  return resultado;
+  console.log('🔍 topProductosMasVendidosImporte - primeros 3 resultados:', final.slice(0, 3));
+  return final;
 }
 
 // Mapeo de categorías según el código de artículo
@@ -702,13 +703,15 @@ function topProductosPorCategoria(
         return b.cantidad - a.cantidad;
       }
       return b.total - a.total;
-    }).slice(0, n);
+    });
+
+    const finalProductos = n > 0 ? sortedProductos.slice(0, n) : sortedProductos;
 
     return {
       categoria,
       cantidadCategoria: data.cantidadCategoria,
       totalCategoria: data.totalCategoria,
-      productos: sortedProductos
+      productos: finalProductos
     };
   }).sort((a, b) => {
     if (sortBy === 'cantidad') {
@@ -801,11 +804,10 @@ function topProductosMasVendidos(
 
   const resultado = Object.entries(map)
     .sort((a, b) => b[1].cantidad - a[1].cantidad)
-    .slice(0, n)
     .map(([articulo, data]) => ({ articulo, descripcion: data.descripcion, cantidad: data.cantidad }));
 
   console.log('🔍 topProductosMasVendidos - primeros 3 resultados:', resultado.slice(0, 3));
-  return resultado;
+  return n > 0 ? resultado.slice(0, n) : resultado;
 }
 
 function topProductosMenosVendidos(
@@ -823,11 +825,13 @@ function topProductosMenosVendidos(
     }
     map[v.Articulo].cantidad += v.Cantidad;
   });
-  return Object.entries(map)
+  
+  const resultado = Object.entries(map)
     .filter(([, data]) => data.cantidad > 0)
     .sort((a, b) => a[1].cantidad - b[1].cantidad)
-    .slice(0, n)
     .map(([articulo, data]) => ({ articulo, descripcion: data.descripcion, cantidad: data.cantidad }));
+
+  return n > 0 ? resultado.slice(0, n) : resultado;
 }
 
 function topClientesPorRubro(

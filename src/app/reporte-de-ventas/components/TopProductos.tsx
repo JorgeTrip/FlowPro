@@ -100,7 +100,13 @@ export const TopProductos = ({
             ? sourceData.filter((item: { articulo: string }) => !debeExcluirProducto(item.articulo))
             : sourceData;
 
+        // Ordenar datos si es necesario (para asegurar el top correcto)
+        // Nota: sourceData ya viene ordenado, pero al filtrar podríamos querer re-validar
+        // Para "menos vendidos", sourceData viene ordenado ascendente (menor a mayor)
+        // Para "más vendidos", sourceData viene ordenado descendente (mayor a menor)
+        
         return filteredData
+            .slice(0, numProductos)
             .map((item: { articulo: string; descripcion: string; total?: number; cantidad?: number }) => {
                 // Usar artículo como fallback si descripción está vacía
                 const displayName = item.descripcion && item.descripcion.trim() ?
@@ -111,8 +117,7 @@ export const TopProductos = ({
                     name: displayName,
                     value: metric === 'importe' ? (item.total || 0) : (item.cantidad || 0),
                 };
-            })
-            .slice(0, numProductos);
+            });
 
     }, [tipo, metric, numProductos, excluirAjustes, topProductosMasVendidos, topProductosMasVendidosPorImporte, topProductosMenosVendidos]);
 

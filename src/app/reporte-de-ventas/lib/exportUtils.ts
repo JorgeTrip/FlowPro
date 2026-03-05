@@ -1,5 +1,7 @@
 // 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 import * as htmlToImage from 'html-to-image';
+import * as ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 export const exportChartAsPNG = async (
   chartContainerRef: React.RefObject<HTMLDivElement | null>,
@@ -81,5 +83,68 @@ export const exportChartAsPNG = async (
     if (cloneContainer && cloneContainer.parentNode) {
       cloneContainer.parentNode.removeChild(cloneContainer);
     }
+  }
+};
+
+/**
+ * Exporta datos a un archivo Excel (.xlsx)
+ * @param data Matriz de datos (filas x columnas), donde la primera fila son los encabezados
+ * @param filename Nombre del archivo sin extensión
+ * @param sheetName Nombre de la hoja de cálculo
+ */
+export const exportToExcel = async (
+  data: (string | number | null | undefined)[][],
+  filename: string,
+  sheetName: string = 'Datos'
+) => {
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet(sheetName);
+
+    // Añadir filas
+    worksheet.addRows(data);
+
+    // Dar formato a la primera fila (encabezados)
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+
+    // Ajustar ancho de columnas (aproximación simple)
+    if (data.length > 0) {
+      const numColumns = data[0].length;
+      for (let i = 1; i <= numColumns; i++) {
+        const column = worksheet.getColumn(i);
+        let maxLength = 0;
+        // Comprobar las primeras 50 filas para rendimiento
+        let rowCount = 0;
+
+        column.eachCell({ includeEmpty: true }, (cell) => {
+          if (rowCount < 50) {
+            const cellValue = cell.value ? String(cell.value) : '';
+            const columnLength = cellValue.length;
+            if (columnLength > maxLength) {
+              maxLength = columnLength;
+            }
+            rowCount++;
+          }
+        });
+
+        column.width = maxLength < 10 ? 10 : (maxLength > 50 ? 50 : maxLength + 2);
+      }
+    }
+
+    // Generar buffer y descargar
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, `${filename}.xlsx`);
+    
+    console.log('Excel exported successfully');
+  } catch (error) {
+    console.error('Error exporting to Excel:', error);
+    alert('Error al exportar a Excel. Por favor, intente nuevamente.');
   }
 };

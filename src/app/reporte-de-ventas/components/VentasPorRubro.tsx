@@ -20,10 +20,15 @@ interface CustomizedLabelProps {
   index?: number;
   value?: string | number;
   metric?: 'importe' | 'cantidad';
+  // Props para cálculo de variación
+  data?: any[];
+  dataKey?: string;
+  monthsOrder?: string[];
+  showDelta?: boolean;
 }
 
 const CustomizedLabel = (props: CustomizedLabelProps) => {
-  const { x = 0, y = 0, width = 0, height = 0, value, metric } = props;
+  const { x = 0, y = 0, width = 0, height = 0, value, metric, data, dataKey, index, monthsOrder, showDelta } = props;
 
   if (!value) return null;
 
@@ -37,10 +42,32 @@ const CustomizedLabel = (props: CustomizedLabelProps) => {
 
   const numValue = typeof value === 'string' ? parseFloat(value) : value;
   const formattedValue = metric === 'importe' ? formatCurrency(numValue) : formatQuantity(numValue);
+  let percentageElement = null;
+
+  if (showDelta && monthsOrder && dataKey && data && index !== undefined && index > -1) {
+    const item = data[index];
+    const monthIndex = monthsOrder.indexOf(String(dataKey));
+    if (monthIndex > 0) {
+      const prevMonthKey = monthsOrder[monthIndex - 1];
+      const prevVal = (item[prevMonthKey] as number) || 0;
+      if (prevVal > 0) {
+        const delta = ((numValue - prevVal) / prevVal) * 100;
+        const sign = delta > 0 ? '+' : '';
+        const colorClass = delta > 0 ? 'fill-green-600 dark:fill-green-400' : (delta < 0 ? 'fill-red-600 dark:fill-red-400' : 'fill-gray-500');
+        
+        percentageElement = (
+          <tspan className={colorClass} dx="5" fontWeight="bold">
+            ({sign}{delta.toFixed(1)}%)
+          </tspan>
+        );
+      }
+    }
+  }
 
   return (
     <text x={numX + numWidth + 5} y={numY + numHeight / 2} textAnchor="start" dominantBaseline="middle" className="fill-gray-600 dark:fill-gray-400 text-xs font-medium">
       {formattedValue}
+      {percentageElement}
     </text>
   );
 };
@@ -458,7 +485,7 @@ export const VentasPorRubro = ({ ventasPorRubro, cantidadesPorRubro }: {
 
               {mesesSeleccionados.map((mes, index) => (
                 <Bar key={mes} dataKey={mes} name={mes} fill={monthColors[index % monthColors.length]} radius={[0, 4, 4, 0]}>
-                  <LabelList dataKey={mes} content={(props) => <CustomizedLabel {...props} metric={activeMetric} />} />
+                  <LabelList dataKey={mes} content={(props) => <CustomizedLabel {...props} metric={activeMetric} data={data} dataKey={mes} monthsOrder={mesesSeleccionados} showDelta={mostrarVariacion} />} />
                 </Bar>
               ))}
             </BarChart>

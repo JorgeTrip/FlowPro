@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { exportToExcel } from '../lib/exportUtils';
 
 interface Producto {
     articulo: string;
@@ -16,7 +17,6 @@ interface TopProductosTableProps {
 export const TopProductosTable = ({ topProductosMasVendidos, topProductosMenosVendidos }: TopProductosTableProps) => {
     const [tipoProductos, setTipoProductos] = useState<'mas' | 'menos'>('mas');
     const [topN, setTopN] = useState<number>(10);
-    const [ordenAscendente, setOrdenAscendente] = useState<boolean>(false);
     const [mostrarPorcentajes, setMostrarPorcentajes] = useState<boolean>(true);
     const [excluirAjustes, setExcluirAjustes] = useState<boolean>(false);
 
@@ -40,18 +40,18 @@ export const TopProductosTable = ({ topProductosMasVendidos, topProductosMenosVe
             datos = datos.filter(item => !debeExcluirProducto(item.articulo));
         }
 
-        // Limitar cantidad
-        datos = datos.slice(0, topN);
-
-        // Ordenar si es necesario
-        if (ordenAscendente) {
+        // Ordenar según el tipo de producto
+        if (tipoProductos === 'menos') {
             datos.sort((a, b) => a.cantidad - b.cantidad);
         } else {
             datos.sort((a, b) => b.cantidad - a.cantidad);
         }
 
+        // Limitar cantidad (DESPUES de filtrar y ordenar)
+        datos = datos.slice(0, topN);
+
         return datos;
-    }, [datosOriginales, topN, ordenAscendente, excluirAjustes]);
+    }, [datosOriginales, topN, tipoProductos, excluirAjustes]);
 
     // Calcular total para porcentajes
     const totalCantidad = useMemo(() => {
@@ -86,17 +86,7 @@ export const TopProductosTable = ({ topProductosMasVendidos, topProductosMenosVe
             return fila;
         });
 
-        const csvContent = [headers, ...rows]
-            .map(row => row.join(','))
-            .join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `top-productos-${tipoProductos === 'mas' ? 'mas' : 'menos'}-vendidos.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
+        exportToExcel([headers, ...rows], `top-productos-${tipoProductos === 'mas' ? 'mas' : 'menos'}-vendidos`, 'Top Productos');
     };
 
     return (
@@ -129,20 +119,6 @@ export const TopProductosTable = ({ topProductosMasVendidos, topProductosMenosVe
                                 <option key={n} value={n}>Top {n}</option>
                             ))}
                         </select>
-
-                        {/* Switch ordenamiento */}
-                        <label className="flex items-center cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={ordenAscendente}
-                                onChange={(e) => setOrdenAscendente(e.target.checked)}
-                                className="sr-only peer"
-                            />
-                            <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                            <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">
-                                {ordenAscendente ? '↑ Asc' : '↓ Desc'}
-                            </span>
-                        </label>
 
                         {/* Switch porcentajes */}
                         <label className="flex items-center cursor-pointer">

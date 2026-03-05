@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { exportToExcel } from '../lib/exportUtils';
 
 interface VentasMensualesTableProps {
     ventasPorMes: Record<string, { A: number; X: number }>;
@@ -194,17 +195,7 @@ export const VentasMensualesTable = ({ ventasPorMes, cantidadesPorMes }: VentasM
             }
         }
 
-        const csvContent = [headers, ...rows]
-            .map(row => row.join(','))
-            .join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `ventas-mensuales-${mostrarCantidad ? 'cantidad' : 'importe'}${mostrarVariacion ? '-con-variacion' : ''}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
+        exportToExcel([headers, ...rows], `ventas-mensuales-${mostrarCantidad ? 'cantidad' : 'importe'}${mostrarVariacion ? '-con-variacion' : ''}`, 'Ventas Mensuales');
     };
 
     return (
@@ -479,24 +470,30 @@ export const VentasMensualesTable = ({ ventasPorMes, cantidadesPorMes }: VentasM
                                         <td className="whitespace-nowrap px-6 py-4 text-sm font-bold text-blue-900 dark:text-blue-300">
                                             {formatQuantity(totales.cantidadA)}
                                         </td>
+                                        {mostrarVariacion && <td className="px-6 py-4"></td>}
                                         <td className="whitespace-nowrap px-6 py-4 text-sm font-bold text-blue-900 dark:text-blue-300">
                                             {formatQuantity(totales.cantidadX)}
                                         </td>
+                                        {mostrarVariacion && <td className="px-6 py-4"></td>}
                                         <td className="whitespace-nowrap px-6 py-4 text-sm font-bold text-blue-900 dark:text-blue-300">
                                             {formatQuantity(totales.totalCantidad)}
                                         </td>
+                                        {mostrarVariacion && <td className="px-6 py-4"></td>}
                                     </>
                                 ) : (
                                     <>
                                         <td className="whitespace-nowrap px-6 py-4 text-sm font-bold text-blue-900 dark:text-blue-300">
                                             {formatCurrency(totales.importeA)}
                                         </td>
+                                        {mostrarVariacion && <td className="px-6 py-4"></td>}
                                         <td className="whitespace-nowrap px-6 py-4 text-sm font-bold text-blue-900 dark:text-blue-300">
                                             {formatCurrency(totales.importeX)}
                                         </td>
+                                        {mostrarVariacion && <td className="px-6 py-4"></td>}
                                         <td className="whitespace-nowrap px-6 py-4 text-sm font-bold text-blue-900 dark:text-blue-300">
                                             {formatCurrency(totales.total)}
                                         </td>
+                                        {mostrarVariacion && <td className="px-6 py-4"></td>}
                                     </>
                                 )}
                             </tr>

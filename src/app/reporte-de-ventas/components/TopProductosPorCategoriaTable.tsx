@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { exportToExcel } from '../lib/exportUtils';
 
 interface Producto {
     articulo: string;
@@ -154,17 +155,7 @@ export const TopProductosPorCategoriaTable = ({
             });
         });
 
-        const csvContent = [headers, ...rows]
-            .map(row => row.join(','))
-            .join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `top-productos-categoria-${mostrarCantidad ? 'cantidad' : 'importe'}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
+        exportToExcel([headers, ...rows], `top-productos-categoria-${mostrarCantidad ? 'cantidad' : 'importe'}`, 'Top Productos Categoria');
     };
 
     return (
@@ -194,7 +185,7 @@ export const TopProductosPorCategoriaTable = ({
                             onChange={(e) => setTopN(Number(e.target.value))}
                             className="bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-24 p-2"
                         >
-                            {[1, 2, 3, 4, 5].map(n => (
+                            {[1, 2, 3, 4, 5, 10, 20].map(n => (
                                 <option key={n} value={n}>Top {n}</option>
                             ))}
                         </select>

@@ -64,6 +64,8 @@ const CustomizedLabel = (props: CustomizedLabelProps) => {
   if (!value) return null;
 
   let formattedValue = metric === 'importe' ? formatCurrency(value) : formatQuantity(value);
+  let percentageElement = null;
+
   if (showDelta && monthsOrder && dataKey && index !== undefined && index > -1) {
     const item = data[index];
     const monthIndex = monthsOrder.indexOf(String(dataKey));
@@ -73,7 +75,13 @@ const CustomizedLabel = (props: CustomizedLabelProps) => {
       if (prevVal > 0) {
         const delta = ((value - prevVal) / prevVal) * 100;
         const sign = delta > 0 ? '+' : '';
-        formattedValue = `${formattedValue}  (${sign}${delta.toFixed(1)}%)`;
+        const colorClass = delta > 0 ? 'fill-green-600 dark:fill-green-400' : (delta < 0 ? 'fill-red-600 dark:fill-red-400' : 'fill-gray-500');
+        
+        percentageElement = (
+          <tspan className={colorClass} dx="5" fontWeight="bold">
+            ({sign}{delta.toFixed(1)}%)
+          </tspan>
+        );
       }
     }
   }
@@ -81,6 +89,7 @@ const CustomizedLabel = (props: CustomizedLabelProps) => {
   return (
     <text x={numX + numWidth + 5} y={numY + numHeight / 2} textAnchor="start" dominantBaseline="middle" className="fill-gray-600 dark:fill-gray-400 text-xs font-medium">
       {formattedValue}
+      {percentageElement}
     </text>
   );
 };
