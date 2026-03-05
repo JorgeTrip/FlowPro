@@ -209,6 +209,24 @@ export const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: VentasMensua
     };
 
     // Etiquetas personalizadas
+    interface ChartData {
+        mes: string;
+        A: number;
+        X: number;
+        AX: number;
+        cantidadA: number;
+        cantidadX: number;
+        cantidadAX: number;
+        varA: number;
+        varX: number;
+        varAX: number;
+        varCantA: number;
+        varCantX: number;
+        varCantAX: number;
+        tieneVariacion: boolean;
+        ghostValue: number;
+    }
+
     type LabelProps = {
         x?: number | string;
         y?: number | string;
@@ -217,7 +235,7 @@ export const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: VentasMensua
         value?: number | string;
         index?: number;
         dataKey?: string;
-        payload?: any;
+        payload?: ChartData;
     };
 
     const SegmentLabel = (props: LabelProps & { serie: 'A' | 'X' | 'cantidadA' | 'cantidadX' }) => {
@@ -275,7 +293,7 @@ export const VentasMensuales = ({ ventasPorMes, cantidadesPorMes }: VentasMensua
         );
     };
 
-    const TotalLabel = (props: LabelProps & { payload?: any }) => {
+    const TotalLabel = (props: LabelProps) => {
         const { x, y, width, index, payload } = props;
         
         // Ensure values are numbers
