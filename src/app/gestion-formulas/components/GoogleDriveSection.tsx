@@ -127,6 +127,11 @@ export function GoogleDriveSection() {
     limpiarEstado,
   } = useGoogleDriveSync();
 
+  const todoSincronizado =
+    store.datosCrudosFormulas.length > 0 &&
+    store.datosCrudosStock.length > 0 &&
+    store.datosCrudosConsumo.length > 0;
+
   return (
     <div className="p-5 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-gray-800 shadow-sm">
       <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">Sincronización con Google Drive</h3>
@@ -158,13 +163,25 @@ export function GoogleDriveSection() {
         />
 
         {store.urlGoogleDriveFormulas && store.urlGoogleDriveStock && (
-          <button
-            onClick={sincronizarTodo}
-            disabled={isSincronizando}
-            className="w-full px-4 py-2.5 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold transition-all shadow-md disabled:bg-gray-300 dark:disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed cursor-pointer"
-          >
-            {isSincronizando ? 'Sincronizando todo...' : 'Sincronizar todo'}
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={sincronizarTodo}
+              disabled={isSincronizando || todoSincronizado}
+              className="w-full px-4 py-2.5 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold transition-all shadow-md disabled:bg-gray-300 dark:disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {isSincronizando ? 'Sincronizando todo...' : todoSincronizado ? '✓ Todo sincronizado' : 'Sincronizar todo'}
+            </button>
+
+            {todoSincronizado && (
+              <button
+                onClick={() => store.setStep(2)}
+                disabled={store.isLoading}
+                className="w-full px-6 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all shadow-md disabled:bg-gray-300 dark:disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed cursor-pointer"
+              >
+                Siguiente: Configurar Mapeo →
+              </button>
+            )}
+          </div>
         )}
       </div>
 
