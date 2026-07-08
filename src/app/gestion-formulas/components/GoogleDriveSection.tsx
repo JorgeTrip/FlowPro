@@ -113,7 +113,7 @@ function VinculadorFuente({
 
 /**
  * Sección de sincronización con Google Drive.
- * Permite vincular 3 fuentes independientes: Fórmulas, Stock y Rotación.
+ * Permite vincular 2 fuentes distintas: Fórmulas y Stock/Rotación.
  */
 export function GoogleDriveSection() {
   const store = useGestionFormulasStore();
@@ -123,7 +123,6 @@ export function GoogleDriveSection() {
     errorSincronizacion,
     sincronizarFormulas,
     sincronizarStock,
-    sincronizarRotacion,
     sincronizarTodo,
     limpiarEstado,
   } = useGoogleDriveSync();
@@ -148,8 +147,8 @@ export function GoogleDriveSection() {
         />
 
         <VinculadorFuente
-          titulo="Stock"
-          descripcion="Hoja: BASE DE DATOS STOCK"
+          titulo="Stock y Rotación"
+          descripcion="Hojas: BASE DE DATOS ROTACIÓN MENSUAL y BASE DE DATOS STOCK"
           urlGuardada={store.urlGoogleDriveStock}
           onGuardarUrl={store.setUrlGoogleDriveStock}
           onCambiarEnlace={limpiarEstado}
@@ -158,18 +157,7 @@ export function GoogleDriveSection() {
           error={fuenteSincronizando === 'stock' ? errorSincronizacion : null}
         />
 
-        <VinculadorFuente
-          titulo="Rotación Mensual"
-          descripcion="Hoja: BASE DE DATOS ROTACIÓN MENSUAL"
-          urlGuardada={store.urlGoogleDriveRotacion}
-          onGuardarUrl={store.setUrlGoogleDriveRotacion}
-          onCambiarEnlace={limpiarEstado}
-          onSincronizar={sincronizarRotacion}
-          isSincronizando={isSincronizando && fuenteSincronizando === 'rotacion'}
-          error={fuenteSincronizando === 'rotacion' ? errorSincronizacion : null}
-        />
-
-        {store.urlGoogleDriveFormulas && store.urlGoogleDriveStock && store.urlGoogleDriveRotacion && (
+        {store.urlGoogleDriveFormulas && store.urlGoogleDriveStock && (
           <button
             onClick={sincronizarTodo}
             disabled={isSincronizando}

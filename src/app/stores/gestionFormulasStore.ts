@@ -82,10 +82,8 @@ export interface GestionFormulasState {
   // --- Google Drive Links ---
   urlGoogleDriveFormulas: string | null;
   urlGoogleDriveStock: string | null;
-  urlGoogleDriveRotacion: string | null;
   setUrlGoogleDriveFormulas: (url: string | null) => void;
   setUrlGoogleDriveStock: (url: string | null) => void;
-  setUrlGoogleDriveRotacion: (url: string | null) => void;
 }
 
 /**
@@ -132,7 +130,6 @@ const estadoInicial = {
   cargandoCalculo: false,
   urlGoogleDriveFormulas: null,
   urlGoogleDriveStock: null,
-  urlGoogleDriveRotacion: null,
 };
 
 /**
@@ -165,7 +162,6 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
       setFormulasClasificadas: (formulasClasificadas) => set({ formulasClasificadas }),
       setUrlGoogleDriveFormulas: (urlGoogleDriveFormulas) => set({ urlGoogleDriveFormulas }),
       setUrlGoogleDriveStock: (urlGoogleDriveStock) => set({ urlGoogleDriveStock }),
-      setUrlGoogleDriveRotacion: (urlGoogleDriveRotacion) => set({ urlGoogleDriveRotacion }),
 
       ejecutarCalculoMRP: async (meses = 3) => {
         set({ cargandoCalculo: true, error: null });
@@ -235,7 +231,6 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
         resultadosMRP: state.resultadosMRP,
         urlGoogleDriveFormulas: state.urlGoogleDriveFormulas,
         urlGoogleDriveStock: state.urlGoogleDriveStock,
-        urlGoogleDriveRotacion: state.urlGoogleDriveRotacion,
       }),
     }
   )
