@@ -45,8 +45,17 @@ export function useGoogleDriveSync() {
 
     const response = await fetch(`/api/proxy-drive?id=${id}`);
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Error al descargar el archivo');
+      let errorMessage = 'Error al descargar el archivo';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+        if (errorData.preview) {
+          errorMessage += ` (Contenido: ${errorData.preview}...)`;
+        }
+      } catch {
+        errorMessage = `Error ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
     }
 
     const buffer = await response.arrayBuffer();
