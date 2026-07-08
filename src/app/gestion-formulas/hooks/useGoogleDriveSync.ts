@@ -6,7 +6,7 @@ import { leerHojasExcel, procesarHojaEspecifica } from '../lib/lectorExcel';
 /**
  * Hook personalizado para manejar la sincronización con Google Drive.
  * Extrae la lógica de negocio para mantener el componente UI limpio.
- * Soporta 2 fuentes: Fórmulas y Stock/Rotación.
+ * Soporta 3 fuentes independientes: Fórmulas, Stock y Rotación.
  */
 export function useGoogleDriveSync() {
   const store = useGestionFormulasStore();
@@ -19,7 +19,7 @@ export function useGoogleDriveSync() {
   });
   const [isSincronizando, setIsSincronizando] = useState(false);
   const [errorSincronizacion, setErrorSincronizacion] = useState<string | null>(null);
-  const [fuenteSincronizando, setFuenteSincronizando] = useState<'formulas' | 'stock' | null>(null);
+  const [fuenteSincronizando, setFuenteSincronizando] = useState<'formulas' | 'stock' | 'rotacion' | null>(null);
 
   /**
    * Extrae el ID de archivo de una URL de Google Drive.
@@ -128,8 +128,8 @@ export function useGoogleDriveSync() {
   };
 
   /**
-   * Sincroniza stock y rotación desde Google Drive.
-   * Descarga del link de stock y procesa las hojas "BASE DE DATOS ROTACIÓN MENSUAL" y "BASE DE DATOS STOCK".
+   * Sincroniza el stock desde Google Drive.
+   * Descarga del link de stock y procesa la hoja "BASE DE DATOS STOCK".
    */
   const sincronizarStock = async () => {
     const url = store.urlGoogleDriveStock;
@@ -151,27 +151,23 @@ export function useGoogleDriveSync() {
       setHojasDisponibles(hojas);
       setArchivoConsolidado(archivo);
 
-      const hojaRotacion = hojas.find((h) => 
-        h.toUpperCase() === 'BASE DE DATOS ROTACIÓN MENSUAL'
-      );
       const hojaStock = hojas.find((h) => 
         h.toUpperCase() === 'BASE DE DATOS STOCK'
       );
 
-      if (!hojaRotacion && !hojaStock) {
-        throw new Error('No se encontraron las hojas "BASE DE DATOS ROTACIÓN MENSUAL" ni "BASE DE DATOS STOCK"');
+      if (!hojaStock) {
+        throw new Error('No se encontró la hoja "BASE DE DATOS STOCK" en el archivo');
       }
 
       const nuevasSolapas = {
         formulas: '',
-        stock: hojaStock || '',
-        consumo: hojaRotacion || '',
+        stock: hojaStock,
+        consumo: '',
       };
 
       setSolapasSeleccionadas(nuevasSolapas);
 
-      if (hojaStock) await procesarYGuardarHoja(archivo, hojaStock, 'stock');
-      if (hojaRotacion) await procesarYGuardarHoja(archivo, hojaRotacion, 'consumo');
+      await procesarYGuardarHoja(archivo, hojaStock, 'stock');
     } catch (err: any) {
       const mensaje = err.message || 'Error al sincronizar stock desde Google Drive';
       setErrorSincronizacion(mensaje);
@@ -183,11 +179,63 @@ export function useGoogleDriveSync() {
   };
 
   /**
-   * Sincroniza ambas fuentes (fórmulas y stock).
+   * Sincroniza la rotación desde Google Drive.
+   * Descarga del link de rotación y procesa la hoja "BASE DE DATOS ROTACIÓN MENSUAL".
+   */
+  const sincronizarRotacion = async () => {
+    const url = store.urlGoogleDriveRotacion;
+    if (!url) {
+      setErrorSincronizacion('No hay un enlace de Google Drive configurado para rotación');
+      return;
+    }
+
+    setIsSincronizando(true);
+    setFuenteSincronizando('rotacion');
+    setErrorSincronizacion(null);
+    store.setError(null);
+
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      const archivo = await descargarDesdeDrive(url);
+      const hojas = await leerHojasExcel(archivo);
+      setHojasDisponibles(hojas);
+      setArchivoConsolidado(archivo);
+
+      const hojaRotacion = hojas.find((h) => 
+        h.toUpperCase() === 'BASE DE DATOS ROTACIÓN MENSUAL'
+      );
+
+      if (!hojaRotacion) {
+        throw new Error('No se encontró la hoja "BASE DE DATOS ROTACIÓN MENSUAL" en el archivo');
+      }
+
+      const nuevasSolapas = {
+        formulas: '',
+        stock: '',
+        consumo: hojaRotacion,
+      };
+
+      setSolapasSeleccionadas(nuevasSolapas);
+
+      await procesarYGuardarHoja(archivo, hojaRotacion, 'consumo');
+    } catch (err: any) {
+      const mensaje = err.message || 'Error al sincronizar rotación desde Google Drive';
+      setErrorSincronizacion(mensaje);
+      store.setError(mensaje);
+    } finally {
+      setIsSincronizando(false);
+      setFuenteSincronizando(null);
+    }
+  };
+
+  /**
+   * Sincroniza las 3 fuentes (fórmulas, stock y rotación).
    */
   const sincronizarTodo = async () => {
     await sincronizarFormulas();
     await sincronizarStock();
+    await sincronizarRotacion();
   };
 
   /**
@@ -219,6 +267,7 @@ export function useGoogleDriveSync() {
     errorSincronizacion,
     sincronizarFormulas,
     sincronizarStock,
+    sincronizarRotacion,
     sincronizarTodo,
     handleCambioSolapa,
     limpiarEstado,
