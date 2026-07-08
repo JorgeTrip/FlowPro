@@ -78,6 +78,10 @@ export interface GestionFormulasState {
   guardarImportacionConfirmada: () => void;
   limpiarDatos: () => void;
   reset: () => void;
+
+  // --- Google Drive Link ---
+  urlGoogleDrive: string | null;
+  setUrlGoogleDrive: (url: string | null) => void;
 }
 
 /**
@@ -122,6 +126,7 @@ const estadoInicial = {
 
   resultadosMRP: null,
   cargandoCalculo: false,
+  urlGoogleDrive: null,
 };
 
 /**
@@ -152,6 +157,7 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
       setIsLoading: (isLoading) => set({ isLoading }),
       setError: (error) => set({ error }),
       setFormulasClasificadas: (formulasClasificadas) => set({ formulasClasificadas }),
+      setUrlGoogleDrive: (urlGoogleDrive) => set({ urlGoogleDrive }),
 
       ejecutarCalculoMRP: async (meses = 3) => {
         set({ cargandoCalculo: true, error: null });
@@ -219,6 +225,7 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
         step: state.step,
         configuracionMapeo: state.configuracionMapeo,
         resultadosMRP: state.resultadosMRP,
+        urlGoogleDrive: state.urlGoogleDrive,
       }),
     }
   )

@@ -1,92 +1,19 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import { useState } from 'react';
 import { useGestionFormulasStore } from '@/app/stores/gestionFormulasStore';
 import { FileUpload } from '@/app/components/shared/FileUpload';
-import { leerHojasExcel, procesarHojaEspecifica } from '../lib/lectorExcel';
+import { GoogleDriveSection } from './GoogleDriveSection';
+import { useGoogleDriveSync } from '../hooks/useGoogleDriveSync';
 
 export default function UploadStep() {
   const store = useGestionFormulasStore();
-  const [hojasDisponibles, setHojasDisponibles] = useState<string[]>([]);
-  const [archivoConsolidado, setArchivoConsolidado] = useState<File | null>(null);
-  
-  const [solapasSeleccionadas, setSolapasSeleccionadas] = useState({
-    formulas: '',
-    stock: '',
-    consumo: '',
-  });
-
-  const handleCargaConsolidada = async (file: File) => {
-    store.setIsLoading(true);
-    store.setError(null);
-    try {
-      const hojas = await leerHojasExcel(file);
-      setHojasDisponibles(hojas);
-      setArchivoConsolidado(file);
-
-      const buscarSolapa = (keywords: string[]) => {
-        return hojas.find((h) =>
-          keywords.some((k) =>
-            h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(k)
-          )
-        ) || '';
-      };
-
-      const solapaFormulas = buscarSolapa(['formula', 'receta', 'bom']);
-      const solapaStock = buscarSolapa(['stock', 'saldo', 'inventario', 'existencia']);
-      const solapaConsumo = buscarSolapa(['consumo', 'demanda', 'venta']);
-
-      const nuevasSolapas = {
-        formulas: solapaFormulas,
-        stock: solapaStock,
-        consumo: solapaConsumo,
-      };
-
-      setSolapasSeleccionadas(nuevasSolapas);
-
-      if (solapaFormulas) await procesarYGuardarHoja(file, solapaFormulas, 'formulas');
-      if (solapaStock) await procesarYGuardarHoja(file, solapaStock, 'stock');
-      if (solapaConsumo) await procesarYGuardarHoja(file, solapaConsumo, 'consumo');
-
-    } catch (err: any) {
-      store.setError(`Error al leer las solapas: ${err.message || err}`);
-    } finally {
-      store.setIsLoading(false);
-    }
-  };
-
-  const procesarYGuardarHoja = async (file: File, hoja: string, destino: 'formulas' | 'stock' | 'consumo') => {
-    if (!hoja) return;
-    console.log(`[UploadStep] Iniciando importación de solapa '${hoja}' para entidad '${destino}'...`);
-    try {
-      const { data, columns, previewData } = await procesarHojaEspecifica(file, hoja);
-      console.log(`[UploadStep] Importación completada. Hoja: '${hoja}'. Registros: ${data.length}, Columnas: ${columns.length}`);
-      
-      if (destino === 'formulas') {
-        store.setArchivoFormulas(file);
-        store.setDatosCrudosFormulas(data, columns, previewData);
-      } else if (destino === 'stock') {
-        store.setArchivoStock(file);
-        store.setDatosCrudosStock(data, columns, previewData);
-      } else {
-        store.setArchivoConsumo(file);
-        store.setDatosCrudosConsumo(data, columns, previewData);
-      }
-    } catch (err: any) {
-      console.error(`[UploadStep] Error procesando hoja '${hoja}':`, err);
-      store.setError(`Error procesando la hoja '${hoja}': ${err.message}`);
-    }
-  };
-
-  const handleCambioSolapa = async (destino: 'formulas' | 'stock' | 'consumo', hoja: string) => {
-    setSolapasSeleccionadas((prev) => ({ ...prev, [destino]: hoja }));
-    if (archivoConsolidado && hoja) {
-      store.setIsLoading(true);
-      await procesarYGuardarHoja(archivoConsolidado, hoja, destino);
-      store.setIsLoading(false);
-    }
-  };
+  const {
+    hojasDisponibles,
+    archivoConsolidado,
+    solapasSeleccionadas,
+    handleCambioSolapa,
+  } = useGoogleDriveSync();
 
   const listoParaContinuar =
     store.datosCrudosFormulas.length > 0 &&
@@ -95,6 +22,8 @@ export default function UploadStep() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
+      <GoogleDriveSection />
+
       <div className="p-5 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-gray-800 shadow-sm">
         <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">Opción A: Cargar Planilla Consolidada (Recomendado)</h3>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
@@ -103,7 +32,46 @@ export default function UploadStep() {
         <FileUpload
           title="Planilla Consolidada de Tango"
           file={archivoConsolidado}
-          onFileLoad={handleCargaConsolidada}
+          onFileLoad={async (file) => {
+            store.setIsLoading(true);
+            store.setError(null);
+            try {
+              const { leerHojasExcel, procesarHojaEspecifica } = await import('../lib/lectorExcel');
+              const hojas = await leerHojasExcel(file);
+              
+              const buscarSolapa = (keywords: string[]) => {
+                return hojas.find((h: string) =>
+                  keywords.some((k) =>
+                    h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(k)
+                  )
+                ) || '';
+              };
+
+              const solapaFormulas = buscarSolapa(['formula', 'receta', 'bom']);
+              const solapaStock = buscarSolapa(['stock', 'saldo', 'inventario', 'existencia']);
+              const solapaConsumo = buscarSolapa(['consumo', 'demanda', 'venta']);
+
+              if (solapaFormulas) {
+                const { data, columns, previewData } = await procesarHojaEspecifica(file, solapaFormulas);
+                store.setArchivoFormulas(file);
+                store.setDatosCrudosFormulas(data, columns, previewData);
+              }
+              if (solapaStock) {
+                const { data, columns, previewData } = await procesarHojaEspecifica(file, solapaStock);
+                store.setArchivoStock(file);
+                store.setDatosCrudosStock(data, columns, previewData);
+              }
+              if (solapaConsumo) {
+                const { data, columns, previewData } = await procesarHojaEspecifica(file, solapaConsumo);
+                store.setArchivoConsumo(file);
+                store.setDatosCrudosConsumo(data, columns, previewData);
+              }
+            } catch (err: any) {
+              store.setError(`Error al leer las solapas: ${err.message || err}`);
+            } finally {
+              store.setIsLoading(false);
+            }
+          }}
           setIsLoading={store.setIsLoading}
           setError={store.setError}
         />
@@ -134,7 +102,6 @@ export default function UploadStep() {
               </div>
             </div>
 
-            {/* Panel de Feedback de Filas Importadas (Triada de Jorge) */}
             <div className="flex flex-wrap gap-4 justify-center py-2 px-4 bg-blue-50/30 dark:bg-blue-950/10 border border-blue-100/30 dark:border-blue-900/20 rounded-xl text-xs font-bold">
               <div className="flex items-center space-x-1.5">
                 <span className={`w-2.5 h-2.5 rounded-full ${store.datosCrudosFormulas.length > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
