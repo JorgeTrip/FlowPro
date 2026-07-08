@@ -64,6 +64,19 @@ export const MODULOS_DISPONIBLES: Modulo[] = [
     }
   },
   {
+    id: 'gestion-formulas',
+    nombre: 'Gestión de Fórmulas',
+    ruta: '/gestion-formulas',
+    icono: '⚗️',
+    descripcion: 'Gestión de fórmulas, stock y optimización BOM/MRP',
+    activo: true,
+    categoria: 'inventario',
+    tooltip: {
+      descripcion: 'Optimiza el cálculo de fórmulas (BOM/MRP) de forma intermedia procesando datos de stock y recetas en el cliente para volcar en la planilla de Excel oficial.',
+      inputRequerido: 'Requiere archivos Excel de Tango: 1) Catálogo de productos, 2) Fórmulas/recetas (BOM) y 3) Stock actual por depósito.'
+    }
+  },
+  {
     id: 'gestion-ventas',
     nombre: 'Gestión Ventas (CRM)',
     ruta: '/gestion-ventas',
