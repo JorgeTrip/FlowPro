@@ -6,6 +6,7 @@ import { leerHojasExcel, procesarHojaEspecifica } from '../lib/lectorExcel';
 /**
  * Hook personalizado para manejar la sincronización con Google Drive.
  * Extrae la lógica de negocio para mantener el componente UI limpio.
+ * Soporta 2 fuentes: Fórmulas y Stock/Rotación.
  */
 export function useGoogleDriveSync() {
   const store = useGestionFormulasStore();
@@ -18,6 +19,7 @@ export function useGoogleDriveSync() {
   });
   const [isSincronizando, setIsSincronizando] = useState(false);
   const [errorSincronizacion, setErrorSincronizacion] = useState<string | null>(null);
+  const [fuenteSincronizando, setFuenteSincronizando] = useState<'formulas' | 'stock' | null>(null);
 
   /**
    * Extrae el ID de archivo de una URL de Google Drive.
@@ -76,21 +78,63 @@ export function useGoogleDriveSync() {
   };
 
   /**
-   * Sincroniza el archivo desde Google Drive y pre-carga las solapas.
+   * Sincroniza las fórmulas desde Google Drive.
+   * Descarga del link de fórmulas y procesa la hoja "BASE DE DATOS FORMULAS".
    */
-  const sincronizarDesdeDrive = async () => {
-    const url = store.urlGoogleDrive;
+  const sincronizarFormulas = async () => {
+    const url = store.urlGoogleDriveFormulas;
     if (!url) {
-      setErrorSincronizacion('No hay un enlace de Google Drive configurado');
+      setErrorSincronizacion('No hay un enlace de Google Drive configurado para fórmulas');
       return;
     }
 
     setIsSincronizando(true);
+    setFuenteSincronizando('formulas');
     setErrorSincronizacion(null);
     store.setError(null);
 
     try {
-      // Ilusión de progreso elegante (Triada de Jorge)
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      const archivo = await descargarDesdeDrive(url);
+      const hojas = await leerHojasExcel(archivo);
+
+      const hojaFormulas = hojas.find((h) => 
+        h.toUpperCase() === 'BASE DE DATOS FORMULAS'
+      );
+
+      if (!hojaFormulas) {
+        throw new Error('No se encontró la hoja "BASE DE DATOS FORMULAS" en el archivo');
+      }
+
+      await procesarYGuardarHoja(archivo, hojaFormulas, 'formulas');
+    } catch (err: any) {
+      const mensaje = err.message || 'Error al sincronizar fórmulas desde Google Drive';
+      setErrorSincronizacion(mensaje);
+      store.setError(mensaje);
+    } finally {
+      setIsSincronizando(false);
+      setFuenteSincronizando(null);
+    }
+  };
+
+  /**
+   * Sincroniza stock y rotación desde Google Drive.
+   * Descarga del link de stock y procesa las hojas "BASE DE DATOS ROTACIÓN MENSUAL" y "BASE DE DATOS STOCK".
+   */
+  const sincronizarStock = async () => {
+    const url = store.urlGoogleDriveStock;
+    if (!url) {
+      setErrorSincronizacion('No hay un enlace de Google Drive configurado para stock');
+      return;
+    }
+
+    setIsSincronizando(true);
+    setFuenteSincronizando('stock');
+    setErrorSincronizacion(null);
+    store.setError(null);
+
+    try {
       await new Promise((resolve) => setTimeout(resolve, 600));
 
       const archivo = await descargarDesdeDrive(url);
@@ -98,36 +142,43 @@ export function useGoogleDriveSync() {
       setHojasDisponibles(hojas);
       setArchivoConsolidado(archivo);
 
-      const buscarSolapa = (keywords: string[]) => {
-        return hojas.find((h) =>
-          keywords.some((k) =>
-            h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(k)
-          )
-        ) || '';
-      };
+      const hojaRotacion = hojas.find((h) => 
+        h.toUpperCase() === 'BASE DE DATOS ROTACIÓN MENSUAL'
+      );
+      const hojaStock = hojas.find((h) => 
+        h.toUpperCase() === 'BASE DE DATOS STOCK'
+      );
 
-      const solapaFormulas = buscarSolapa(['formula', 'receta', 'bom']);
-      const solapaStock = buscarSolapa(['stock', 'saldo', 'inventario', 'existencia']);
-      const solapaConsumo = buscarSolapa(['consumo', 'demanda', 'venta']);
+      if (!hojaRotacion && !hojaStock) {
+        throw new Error('No se encontraron las hojas "BASE DE DATOS ROTACIÓN MENSUAL" ni "BASE DE DATOS STOCK"');
+      }
 
       const nuevasSolapas = {
-        formulas: solapaFormulas,
-        stock: solapaStock,
-        consumo: solapaConsumo,
+        formulas: '',
+        stock: hojaStock || '',
+        consumo: hojaRotacion || '',
       };
 
       setSolapasSeleccionadas(nuevasSolapas);
 
-      if (solapaFormulas) await procesarYGuardarHoja(archivo, solapaFormulas, 'formulas');
-      if (solapaStock) await procesarYGuardarHoja(archivo, solapaStock, 'stock');
-      if (solapaConsumo) await procesarYGuardarHoja(archivo, solapaConsumo, 'consumo');
+      if (hojaStock) await procesarYGuardarHoja(archivo, hojaStock, 'stock');
+      if (hojaRotacion) await procesarYGuardarHoja(archivo, hojaRotacion, 'consumo');
     } catch (err: any) {
-      const mensaje = err.message || 'Error al sincronizar con Google Drive';
+      const mensaje = err.message || 'Error al sincronizar stock desde Google Drive';
       setErrorSincronizacion(mensaje);
       store.setError(mensaje);
     } finally {
       setIsSincronizando(false);
+      setFuenteSincronizando(null);
     }
+  };
+
+  /**
+   * Sincroniza ambas fuentes (fórmulas y stock).
+   */
+  const sincronizarTodo = async () => {
+    await sincronizarFormulas();
+    await sincronizarStock();
   };
 
   /**
@@ -155,8 +206,11 @@ export function useGoogleDriveSync() {
     archivoConsolidado,
     solapasSeleccionadas,
     isSincronizando,
+    fuenteSincronizando,
     errorSincronizacion,
-    sincronizarDesdeDrive,
+    sincronizarFormulas,
+    sincronizarStock,
+    sincronizarTodo,
     handleCambioSolapa,
     limpiarEstado,
   };
