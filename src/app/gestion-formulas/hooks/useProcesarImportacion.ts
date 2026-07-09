@@ -6,6 +6,7 @@ import {
   mapearFormulas,
   mapearStock,
   mapearConsumo,
+  mapearStockPT,
 } from '../lib/lectorExcel';
 
 /**
@@ -45,6 +46,7 @@ export function useProcesarImportacion() {
         datosCrudosFormulas,
         datosCrudosStock,
         datosCrudosConsumo,
+        datosCrudosStockPT,
         configuracionMapeo,
         formulas: formulasActuales,
       } = estadoActual;
@@ -66,6 +68,11 @@ export function useProcesarImportacion() {
           ? mapearConsumo(datosCrudosConsumo, configuracionMapeo.consumo)
           : [];
 
+      const stockPTProcesado =
+        datosCrudosStockPT.length > 0 && configuracionMapeo.stockPT
+          ? mapearStockPT(datosCrudosStockPT, configuracionMapeo.stockPT)
+          : [];
+
       // 3. Cruzar y clasificar recetas del Excel contra IndexedDB (Fórmulas Activas)
       const recetasActivasGuardadas = formulasActuales.filter((f) => f.estado === 'activa');
       const formulasActivasMap = new Map<string, Formula>();
@@ -83,7 +90,6 @@ export function useProcesarImportacion() {
         const recetaExistente = formulasActivasMap.get(recetaExcel.codigoProducto);
 
         if (!recetaExistente) {
-          // Caso A: Nueva receta
           clasificadas.nueva.push({
             ...recetaExcel,
             version: 1,
@@ -91,7 +97,6 @@ export function useProcesarImportacion() {
             fechaCreacion: fechaActual,
           });
         } else if (!sonRecetasIdenticas(recetaExcel, recetaExistente)) {
-          // Caso B: Receta modificada (incrementa versión, hereda metadatos de auditoría)
           clasificadas.modificada.push({
             ...recetaExcel,
             version: recetaExistente.version + 1,
@@ -99,14 +104,14 @@ export function useProcesarImportacion() {
             fechaCreacion: fechaActual,
           });
         } else {
-          // Caso C: Receta idéntica (sin cambios)
           clasificadas.sin_cambios.push(recetaExistente);
         }
       });
 
-      // 4. Guardar datos de stock y consumo de manera inmediata en el store
+      // 4. Guardar datos de stock, consumo y maestro PT en el store
       store.setStocks(stockProcesado);
       store.setConsumos(consumosProcesados);
+      store.setStockPT(stockPTProcesado);
 
       // 5. Generar o deducir catálogo de productos
       const productosCat =
@@ -117,7 +122,6 @@ export function useProcesarImportacion() {
       if (productosCat.length > 0) {
         store.setProductos(productosCat);
       } else {
-        // Deducir catálogo maestro combinando fórmulas excel y existencias
         const codigos = new Set<string>();
         const prodLista: Producto[] = [];
 
@@ -140,7 +144,6 @@ export function useProcesarImportacion() {
       // 6. Impactar clasificación en el store
       store.setFormulasClasificadas(clasificadas);
 
-      // Si no se detectaron recetas nuevas ni modificadas, avanzar automáticamente sin modal
       if (clasificadas.nueva.length === 0 && clasificadas.modificada.length === 0) {
         store.setStep(3);
       }

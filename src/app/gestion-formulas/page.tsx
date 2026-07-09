@@ -1,6 +1,7 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useGestionFormulasStore } from '@/app/stores/gestionFormulasStore';
 import UploadStep from './components/UploadStep';
 import ConfigStep from './components/ConfigStep';
@@ -61,6 +62,22 @@ function BarraProgreso({ pasoActual }: { pasoActual: number }) {
  */
 export default function PaginaGestionFormulas() {
   const step = useGestionFormulasStore((s) => s.step);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="container mx-auto px-4 py-8 space-y-6 animate-pulse">
+        <div className="text-center max-w-2xl mx-auto space-y-2">
+          <div className="h-10 bg-gray-200 dark:bg-[#2C2C2E] rounded-lg w-3/4 mx-auto" />
+          <div className="h-4 bg-gray-150 dark:bg-[#1C1C1E] rounded-lg w-1/2 mx-auto" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">

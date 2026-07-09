@@ -147,6 +147,18 @@ export interface MapeoConsumo {
   mes?: string;
 }
 
+export interface MapeoStockPT {
+  codigo: string;
+  descripcion: string;
+  descripcionAdicional?: string;
+}
+
+export interface ProductoTerminadoMaestro {
+  codigo: string;
+  descripcion: string;
+  descripcionAdicional: string;
+}
+
 /**
  * Objeto unificado que consolida la configuración de los mapeos de Excel del módulo.
  */
@@ -155,4 +167,5 @@ export interface ConfiguracionMapeoFormulas {
   formulas: MapeoFormulas | null;
   stock: MapeoStock | null;
   consumo: MapeoConsumo | null;
+  stockPT: MapeoStockPT | null;
 }

@@ -4,178 +4,210 @@ import {
   Formula,
   StockPorDeposito,
   ConsumoMensual,
+  ProductoTerminadoMaestro,
 } from './types';
 
-export interface ResultadoMRP {
+export interface DesgloseProducto {
   codigoProducto: string;
   descripcion: string;
-  stockCABAMP: number;
-  stockERMP: number;
-  stockCABAPT: number;
-  stockERPT: number;
-  stockTotalDisponible: number;
-  puntoPedido: number;
-  consumoMensual: number;
-  demandaBruta: number;
+  rotacion: number;
+}
+
+export interface ResultadoMRP {
+  codigoMP: string;
+  descripcionMP: string;
+  unidadMedida: string;
+  stockMPEntreRios: number;
+  stockMPCABA: number;
   cantidadSugerida: number;
-  criticidad: 'alta' | 'media' | 'baja';
-  tipo: 'PT' | 'MP';
-  contenido?: string;
-  cantidadARecibirCABA: number;
-  cantidadARecibirER: number;
-  cantidadARecibirTotal: number;
+  movimientoSugerido: {
+    tipo: 'sin_accion' | 'transferencia' | 'compra' | 'combinado';
+    transferencia?: number;
+    compra?: number;
+  };
+  productosUsados: DesgloseProducto[];
+}
+
+export interface ResultadoTercerizadosMRP {
+  codigoPT: string;
+  descripcionPT: string;
+  stockPTEntreRios: number;
+  stockPTCABA: number;
+  rotacion: number;
+  movimientoSugerido: {
+    tipo: 'sin_accion' | 'transferencia' | 'compra' | 'combinado';
+    transferencia?: number;
+    compra?: number;
+  };
+}
+
+export interface ResultadosMRPFinal {
+  propios: ResultadoMRP[];
+  tercerizados: ResultadoTercerizadosMRP[];
 }
 
 /**
- * Determina el nivel de criticidad según el stock disponible, la demanda y el punto de pedido.
+ * Calcula el movimiento sugerido según la cascada de distribución logística.
+ * Prioridad 1: Stock CABA
+ * Prioridad 2: Transferencia de Entre Ríos
+ * Prioridad 3: Compra
  */
-function calcularCriticidad(
-  stockTotal: number,
-  puntoPedido: number,
-  demandaBruta: number,
-  consumoMensual: number
-): 'alta' | 'media' | 'baja' {
-  // Quiebre o punto de pedido superado negativamente
-  if (stockTotal <= puntoPedido || (demandaBruta > 0 && stockTotal < consumoMensual)) {
-    return 'alta';
+export function calcularMovimientoSugerido(
+  demanda: number,
+  stockCABA: number,
+  stockER: number
+): ResultadoMRP['movimientoSugerido'] {
+  const disponibleCABA = Math.max(0, stockCABA);
+  const disponibleER = Math.max(0, stockER);
+
+  if (disponibleCABA >= demanda) {
+    return { tipo: 'sin_accion' };
   }
-  // Alerta preventiva: stock cubre consumo inmediato pero no cubre la proyección completa
-  if (stockTotal < demandaBruta || stockTotal <= puntoPedido * 1.2) {
-    return 'media';
+
+  const faltante = demanda - disponibleCABA;
+  const transferencia = Math.min(faltante, disponibleER);
+  const compra = faltante - transferencia;
+
+  if (transferencia > 0 && compra > 0) {
+    return { tipo: 'combinado', transferencia, compra };
   }
-  return 'baja';
+  if (transferencia > 0) {
+    return { tipo: 'transferencia', transferencia };
+  }
+  return { tipo: 'compra', compra };
 }
 
 /**
- * Función pura que implementa el algoritmo MRP con explosión de materiales BOM.
- * Procesa stocks multi-depósito (CABA y Entre Ríos) y genera las sugerencias de compras.
+ * Función pura que implementa el algoritmo MRP con explosión inversa.
+ * Agrupa requerimientos por Materia Prima e Insumos para Propios,
+ * y calcula stock de PT para Tercerizados.
  */
 export function calcularRequerimientosMRP(
   productos: Producto[],
   formulas: Formula[],
   stocks: StockPorDeposito[],
   consumos: ConsumoMensual[],
-  mesesProyeccion: number = 3
-): ResultadoMRP[] {
-  // 1. Filtrar recetas que estén en estado 'activa'
+  stockPT: ProductoTerminadoMaestro[] = []
+): ResultadosMRPFinal {
+  // 1. Filtrar recetas activas
   const recetasActivas = formulas.filter((f) => f.estado === 'activa');
-  const recetasMap = new Map<string, Formula>();
-  recetasActivas.forEach((r) => recetasMap.set(r.codigoProducto, r));
+  const productosMap = new Map<string, Producto>();
+  productos.forEach((p) => productosMap.set(p.codigo, p));
 
-  // Mapa para acumular las demandas explotadas de insumos (Materias Primas)
-  const demandaInsumosExplotados = new Map<string, number>();
+  const stockPTMap = new Map<string, ProductoTerminadoMaestro>();
+  stockPT.forEach((s) => stockPTMap.set(s.codigo, s));
 
-  // 2. Primer paso: Calcular necesidades netas y fabricaciones sugeridas para Productos Terminados (PT)
-  const productosPT = productos.filter((p) => recetasMap.has(p.codigo));
-  const resultadosPT: ResultadoMRP[] = [];
+  // Mapa para consolidar requerimientos de Materias Primas (Propios)
+  const requerimientosMP = new Map<string, {
+    descripcion: string;
+    unidadMedida: string;
+    cantidadTotal: number;
+    productosUsados: DesgloseProducto[];
+  }>();
 
-  productosPT.forEach((prod) => {
-    const receta = recetasMap.get(prod.codigo)!;
+  // 2. Explosión inversa para Propios
+  recetasActivas.forEach((receta) => {
+    const productoPT = productosMap.get(receta.codigoProducto);
+    if (!productoPT) return;
 
-    // Calcular consumo mensual promedio histórico
-    const consumosFiltrados = consumos.filter((c) => c.codigoProducto === prod.codigo);
-    const consumoMensual =
-      consumosFiltrados.length > 0
-        ? consumosFiltrados.reduce((sum, c) => sum + c.cantidadConsumida, 0) / consumosFiltrados.length
-        : 0;
+    // Obtener rotación mensual del PT
+    const consumosPT = consumos.filter((c) => c.codigoProducto === receta.codigoProducto);
+    const rotacionMensual = consumosPT.length > 0
+      ? consumosPT.reduce((sum, c) => sum + c.cantidadConsumida, 0) / consumosPT.length
+      : 0;
 
-    const demandaBruta = consumoMensual * mesesProyeccion;
+    if (rotacionMensual <= 0) return;
 
-    // Consolidar existencias de PT
-    const stocksProducto = stocks.filter((s) => s.codigoProducto === prod.codigo);
-    const stockCABA = stocksProducto.find((s) => s.deposito.toLowerCase().includes('caba'))?.stockDisponible || 0;
-    const stockER = stocksProducto.find((s) => s.deposito.toLowerCase().includes('entre') || s.deposito.toLowerCase().includes('rios'))?.stockDisponible || 0;
-    const stockTotal = stockCABA + stockER;
+    // Obtener descripción concatenada con descripción adicional si existe
+    const maestroPT = stockPTMap.get(receta.codigoProducto);
+    const descPTConcat = maestroPT && maestroPT.descripcionAdicional
+      ? `${maestroPT.descripcion} (${maestroPT.descripcionAdicional})`
+      : (maestroPT?.descripcion || productoPT.descripcion || receta.descripcion);
 
-    const aRecibirCABA = stocksProducto.find((s) => s.deposito.toLowerCase().includes('caba'))?.cantidadARecibir || 0;
-    const aRecibirER = stocksProducto.find((s) => s.deposito.toLowerCase().includes('entre') || s.deposito.toLowerCase().includes('rios'))?.cantidadARecibir || 0;
+    receta.componentes.forEach((componente) => {
+      const cantidadRequerida = rotacionMensual * componente.cantidad;
+      const existente = requerimientosMP.get(componente.codigoComponente);
 
-    // Faltante o necesidad neta de PT
-    const necesidadNeta = Math.max(0, demandaBruta - stockTotal);
-
-    resultadosPT.push({
-      codigoProducto: prod.codigo,
-      descripcion: prod.descripcion,
-      stockCABAMP: 0,
-      stockERMP: 0,
-      stockCABAPT: stockCABA,
-      stockERPT: stockER,
-      stockTotalDisponible: stockTotal,
-      puntoPedido: prod.puntoPedido,
-      consumoMensual,
-      demandaBruta,
-      cantidadSugerida: necesidadNeta,
-      criticidad: calcularCriticidad(stockTotal, prod.puntoPedido, demandaBruta, consumoMensual),
-      tipo: 'PT',
-      contenido: prod.contenido,
-      cantidadARecibirCABA: aRecibirCABA,
-      cantidadARecibirER: aRecibirER,
-      cantidadARecibirTotal: aRecibirCABA + aRecibirER,
-    });
-
-    // Explosión de Materiales (BOM Explosion): si falta PT, cargamos proporcionalmente la demanda a las materias primas
-    if (necesidadNeta > 0) {
-      receta.componentes.forEach((comp) => {
-        const proporc = comp.cantidad / (receta.rendimiento || 1);
-        const demandaMP = necesidadNeta * proporc;
-        const acumulado = demandaInsumosExplotados.get(comp.codigoComponente) || 0;
-        demandaInsumosExplotados.set(comp.codigoComponente, acumulado + demandaMP);
-      });
-    }
-  });
-
-  // 3. Segundo paso: Calcular necesidades netas y compras sugeridas para Materias Primas (MP)
-  const productosMP = productos.filter((p) => !recetasMap.has(p.codigo));
-  const resultadosMP: ResultadoMRP[] = [];
-
-  productosMP.forEach((prod) => {
-    // La demanda bruta de la MP es el consumo histórico del producto + la demanda explotada de recetas
-    const consumosFiltrados = consumos.filter((c) => c.codigoProducto === prod.codigo);
-    const consumoHistorico =
-      consumosFiltrados.length > 0
-        ? consumosFiltrados.reduce((sum, c) => sum + c.cantidadConsumida, 0) / consumosFiltrados.length
-        : 0;
-
-    const demandaHistorica = consumoHistorico * mesesProyeccion;
-    const demandaBOM = demandaInsumosExplotados.get(prod.codigo) || 0;
-    const demandaBruta = demandaHistorica + demandaBOM;
-
-    // Consolidar existencias de MP
-    const stocksProducto = stocks.filter((s) => s.codigoProducto === prod.codigo);
-    const stockCABA = stocksProducto.find((s) => s.deposito.toLowerCase().includes('caba'))?.stockDisponible || 0;
-    const stockER = stocksProducto.find((s) => s.deposito.toLowerCase().includes('entre') || s.deposito.toLowerCase().includes('rios'))?.stockDisponible || 0;
-    const stockTotal = stockCABA + stockER;
-
-    const aRecibirCABA = stocksProducto.find((s) => s.deposito.toLowerCase().includes('caba'))?.cantidadARecibir || 0;
-    const aRecibirER = stocksProducto.find((s) => s.deposito.toLowerCase().includes('entre') || s.deposito.toLowerCase().includes('rios'))?.cantidadARecibir || 0;
-
-    const necesidadNeta = Math.max(0, demandaBruta - stockTotal);
-
-    resultadosMP.push({
-      codigoProducto: prod.codigo,
-      descripcion: prod.descripcion,
-      stockCABAMP: stockCABA,
-      stockERMP: stockER,
-      stockCABAPT: 0,
-      stockERPT: 0,
-      stockTotalDisponible: stockTotal,
-      puntoPedido: prod.puntoPedido,
-      consumoMensual: consumoHistorico,
-      demandaBruta,
-      cantidadSugerida: necesidadNeta,
-      criticidad: calcularCriticidad(stockTotal, prod.puntoPedido, demandaBruta, consumoHistorico),
-      tipo: 'MP',
-      contenido: prod.contenido,
-      cantidadARecibirCABA: aRecibirCABA,
-      cantidadARecibirER: aRecibirER,
-      cantidadARecibirTotal: aRecibirCABA + aRecibirER,
+      if (existente) {
+        existente.cantidadTotal += cantidadRequerida;
+        const yaUsado = existente.productosUsados.find((p) => p.codigoProducto === receta.codigoProducto);
+        if (yaUsado) {
+          yaUsado.rotacion += rotacionMensual;
+        } else {
+          existente.productosUsados.push({
+            codigoProducto: receta.codigoProducto,
+            descripcion: descPTConcat,
+            rotacion: rotacionMensual,
+          });
+        }
+      } else {
+        const productoMP = productosMap.get(componente.codigoComponente);
+        requerimientosMP.set(componente.codigoComponente, {
+          descripcion: productoMP?.descripcion || componente.descripcion,
+          unidadMedida: productoMP?.unidadMedida || componente.unidadMedida,
+          cantidadTotal: cantidadRequerida,
+          productosUsados: [{
+            codigoProducto: receta.codigoProducto,
+            descripcion: descPTConcat,
+            rotacion: rotacionMensual,
+          }],
+        });
+      }
     });
   });
 
-  // Retornar la unificación ordenada por tipo de producto y luego por criticidad/código
-  return [...resultadosPT, ...resultadosMP].sort((a, b) => {
-    if (a.tipo !== b.tipo) return a.tipo === 'PT' ? -1 : 1;
-    const pesoCriticidad = { alta: 3, media: 2, baja: 1 };
-    return pesoCriticidad[b.criticidad] - pesoCriticidad[a.criticidad] || a.codigoProducto.localeCompare(b.codigoProducto);
+  // Consolidar resultados de Propios
+  const resultadosPropios: ResultadoMRP[] = [];
+  requerimientosMP.forEach((req, codigoMP) => {
+    const stocksMP = stocks.filter((s) => s.codigoProducto === codigoMP);
+    const stockCABA = stocksMP.find((s) => s.deposito.toLowerCase().includes('caba'))?.stockFisico || 0;
+    const stockER = stocksMP.find((s) => s.deposito.toLowerCase().includes('entre') || s.deposito.toLowerCase().includes('rios'))?.stockFisico || 0;
+
+    const movimiento = calcularMovimientoSugerido(req.cantidadTotal, stockCABA, stockER);
+    resultadosPropios.push({
+      codigoMP,
+      descripcionMP: req.descripcion,
+      unidadMedida: req.unidadMedida,
+      stockMPEntreRios: stockER,
+      stockMPCABA: stockCABA,
+      cantidadSugerida: req.cantidadTotal,
+      movimientoSugerido: movimiento,
+      productosUsados: req.productosUsados,
+    });
   });
+  resultadosPropios.sort((a, b) => b.cantidadSugerida - a.cantidadSugerida);
+
+  // 3. Procesar Canal Tercerizados
+  const codigosPropios = new Set(recetasActivas.map((f) => f.codigoProducto));
+  const listaTercerizados = stockPT.filter((pt) => !codigosPropios.has(pt.codigo));
+
+  const resultadosTercerizados: ResultadoTercerizadosMRP[] = [];
+  listaTercerizados.forEach((pt) => {
+    const consumosPT = consumos.filter((c) => c.codigoProducto === pt.codigo);
+    const rotacion = consumosPT.length > 0
+      ? consumosPT.reduce((sum, c) => sum + c.cantidadConsumida, 0) / consumosPT.length
+      : 0;
+
+    const stocksPT = stocks.filter((s) => s.codigoProducto === pt.codigo);
+    const stockCABA = stocksPT.find((s) => s.deposito.toLowerCase().includes('caba'))?.stockFisico || 0;
+    const stockER = stocksPT.find((s) => s.deposito.toLowerCase().includes('entre') || s.deposito.toLowerCase().includes('rios'))?.stockFisico || 0;
+
+    const movimiento = calcularMovimientoSugerido(rotacion, stockCABA, stockER);
+    const descripcionPT = pt.descripcionAdicional ? `${pt.descripcion} (${pt.descripcionAdicional})` : pt.descripcion;
+
+    resultadosTercerizados.push({
+      codigoPT: pt.codigo,
+      descripcionPT,
+      stockPTEntreRios: stockER,
+      stockPTCABA: stockCABA,
+      rotacion,
+      movimientoSugerido: movimiento,
+    });
+  });
+  resultadosTercerizados.sort((a, b) => b.rotacion - a.rotacion);
+
+  return {
+    propios: resultadosPropios,
+    tercerizados: resultadosTercerizados,
+  };
 }

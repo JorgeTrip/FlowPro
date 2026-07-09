@@ -8,154 +8,120 @@ import {
   StockPorDeposito,
   ConsumoMensual,
   ConfiguracionMapeoFormulas,
+  ProductoTerminadoMaestro,
 } from '@/app/gestion-formulas/lib/types';
-import { ResultadoMRP } from '@/app/gestion-formulas/lib/motorMRP';
-
-/**
- * ==========================================
- * SECCIÓN 1: INTERFAZ DEL ESTADO Y ACCIONES
- * ==========================================
- */
+import { ResultadosMRPFinal } from '@/app/gestion-formulas/lib/motorMRP';
 
 export interface GestionFormulasState {
-  // --- Estados de Datos de Negocio Persistidos ---
   productos: Producto[];
   formulas: Formula[];
   stocks: StockPorDeposito[];
   consumos: ConsumoMensual[];
+  stockPT: ProductoTerminadoMaestro[];
 
-  // --- Estados Crudos de Importación (Temporales) ---
   archivoProductos: File | null;
   archivoFormulas: File | null;
   archivoStock: File | null;
   archivoConsumo: File | null;
+  archivoStockPT: File | null;
+
   datosCrudosProductos: any[];
   datosCrudosFormulas: any[];
   datosCrudosStock: any[];
   datosCrudosConsumo: any[];
+  datosCrudosStockPT: any[];
+
   columnasProductos: string[];
   columnasFormulas: string[];
   columnasStock: string[];
   columnasConsumo: string[];
+  columnasStockPT: string[];
+
   previewProductos: any[];
   previewFormulas: any[];
   previewStock: any[];
   previewConsumo: any[];
+  previewStockPT: any[];
 
-  // --- Estados de Configuración y Auditoría ---
   step: number;
+  pestañaActiva: 'propios' | 'tercerizados';
   configuracionMapeo: ConfiguracionMapeoFormulas;
   isLoading: boolean;
   error: string | null;
-  /** Agrupa las recetas importadas clasificadas tras la comparación inteligente */
   formulasClasificadas: { nueva: Formula[]; modificada: Formula[]; sin_cambios: Formula[] } | null;
 
-  // --- Estados de Cálculo MRP ---
-  resultadosMRP: ResultadoMRP[] | null;
+  resultadosMRP: ResultadosMRPFinal | null;
   cargandoCalculo: boolean;
 
-  // --- Acciones de Configuración e Importación ---
   setArchivoProductos: (file: File | null) => void;
   setArchivoFormulas: (file: File | null) => void;
   setArchivoStock: (file: File | null) => void;
   setArchivoConsumo: (file: File | null) => void;
+  setArchivoStockPT: (file: File | null) => void;
+
   setDatosCrudosProductos: (data: any[], cols: string[], preview: any[]) => void;
   setDatosCrudosFormulas: (data: any[], cols: string[], preview: any[]) => void;
   setDatosCrudosStock: (data: any[], cols: string[], preview: any[]) => void;
   setDatosCrudosConsumo: (data: any[], cols: string[], preview: any[]) => void;
+  setDatosCrudosStockPT: (data: any[], cols: string[], preview: any[]) => void;
+
   setStep: (step: number) => void;
+  setPestañaActiva: (pest: 'propios' | 'tercerizados') => void;
   setProductos: (productos: Producto[]) => void;
   setFormulas: (formulas: Formula[]) => void;
   setStocks: (stocks: StockPorDeposito[]) => void;
   setConsumos: (consumos: ConsumoMensual[]) => void;
+  setStockPT: (stockPT: ProductoTerminadoMaestro[]) => void;
   setConfiguracionMapeo: (mapeo: Partial<ConfiguracionMapeoFormulas>) => void;
   setIsLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
-  setFormulasClasificadas: (clasificadas: { nueva: Formula[]; modificada: Formula[]; sin_cambios: Formula[] } | null) => void;
+  setFormulasClasificadas: (clasificadas: any) => void;
 
-  // --- Acciones de Negocio (MRP e Historial) ---
-  ejecutarCalculoMRP: (meses?: number) => Promise<void>;
+  ejecutarCalculoMRP: () => Promise<void>;
   guardarImportacionConfirmada: () => void;
   limpiarDatos: () => void;
   reset: () => void;
 
-  // --- Google Drive Links ---
   urlGoogleDriveFormulas: string | null;
   urlGoogleDriveStock: string | null;
   setUrlGoogleDriveFormulas: (url: string | null) => void;
   setUrlGoogleDriveStock: (url: string | null) => void;
 }
 
-/**
- * ==========================================
- * SECCIÓN 2: ESTADO INICIAL
- * ==========================================
- */
-
 const estadoInicial = {
-  productos: [],
-  formulas: [],
-  stocks: [],
-  consumos: [],
-
-  archivoProductos: null,
-  archivoFormulas: null,
-  archivoStock: null,
-  archivoConsumo: null,
-  datosCrudosProductos: [],
-  datosCrudosFormulas: [],
-  datosCrudosStock: [],
-  datosCrudosConsumo: [],
-  columnasProductos: [],
-  columnasFormulas: [],
-  columnasStock: [],
-  columnasConsumo: [],
-  previewProductos: [],
-  previewFormulas: [],
-  previewStock: [],
-  previewConsumo: [],
-
-  step: 1,
-  configuracionMapeo: {
-    productos: null,
-    formulas: null,
-    stock: null,
-    consumo: null,
-  },
-  isLoading: false,
-  error: null,
-  formulasClasificadas: null,
-
-  resultadosMRP: null,
-  cargandoCalculo: false,
-  urlGoogleDriveFormulas: null,
-  urlGoogleDriveStock: null,
+  productos: [], formulas: [], stocks: [], consumos: [], stockPT: [],
+  archivoProductos: null, archivoFormulas: null, archivoStock: null, archivoConsumo: null, archivoStockPT: null,
+  datosCrudosProductos: [], datosCrudosFormulas: [], datosCrudosStock: [], datosCrudosConsumo: [], datosCrudosStockPT: [],
+  columnasProductos: [], columnasFormulas: [], columnasStock: [], columnasConsumo: [], columnasStockPT: [],
+  previewProductos: [], previewFormulas: [], previewStock: [], previewConsumo: [], previewStockPT: [],
+  step: 1, pestañaActiva: 'propios' as const,
+  configuracionMapeo: { productos: null, formulas: null, stock: null, consumo: null, stockPT: null },
+  isLoading: false, error: null, formulasClasificadas: null,
+  resultadosMRP: null, cargandoCalculo: false,
+  urlGoogleDriveFormulas: null, urlGoogleDriveStock: null,
 };
-
-/**
- * ==========================================
- * SECCIÓN 3: INICIALIZACIÓN DEL STORE CON PERSISTENCIA
- * ==========================================
- */
 
 export const useGestionFormulasStore = create<GestionFormulasState>()(
   persist(
     (set, get) => ({
       ...estadoInicial,
-
       setArchivoProductos: (archivoProductos) => set({ archivoProductos }),
       setArchivoFormulas: (archivoFormulas) => set({ archivoFormulas }),
       setArchivoStock: (archivoStock) => set({ archivoStock }),
       setArchivoConsumo: (archivoConsumo) => set({ archivoConsumo }),
+      setArchivoStockPT: (archivoStockPT) => set({ archivoStockPT }),
       setDatosCrudosProductos: (datosCrudosProductos, columnasProductos, previewProductos) => set({ datosCrudosProductos, columnasProductos, previewProductos }),
       setDatosCrudosFormulas: (datosCrudosFormulas, columnasFormulas, previewFormulas) => set({ datosCrudosFormulas, columnasFormulas, previewFormulas }),
       setDatosCrudosStock: (datosCrudosStock, columnasStock, previewStock) => set({ datosCrudosStock, columnasStock, previewStock }),
       setDatosCrudosConsumo: (datosCrudosConsumo, columnasConsumo, previewConsumo) => set({ datosCrudosConsumo, columnasConsumo, previewConsumo }),
+      setDatosCrudosStockPT: (datosCrudosStockPT, columnasStockPT, previewStockPT) => set({ datosCrudosStockPT, columnasStockPT, previewStockPT }),
       setStep: (step) => set({ step }),
+      setPestañaActiva: (pestañaActiva) => set({ pestañaActiva }),
       setProductos: (productos) => set({ productos }),
       setFormulas: (formulas) => set({ formulas }),
       setStocks: (stocks) => set({ stocks }),
       setConsumos: (consumos) => set({ consumos }),
+      setStockPT: (stockPT) => set({ stockPT }),
       setConfiguracionMapeo: (mapeo) => set((s) => ({ configuracionMapeo: { ...s.configuracionMapeo, ...mapeo } })),
       setIsLoading: (isLoading) => set({ isLoading }),
       setError: (error) => set({ error }),
@@ -163,14 +129,13 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
       setUrlGoogleDriveFormulas: (urlGoogleDriveFormulas) => set({ urlGoogleDriveFormulas }),
       setUrlGoogleDriveStock: (urlGoogleDriveStock) => set({ urlGoogleDriveStock }),
 
-      ejecutarCalculoMRP: async (meses = 3) => {
+      ejecutarCalculoMRP: async () => {
         set({ cargandoCalculo: true, error: null });
         try {
-          const { productos, formulas, stocks, consumos } = get();
-          // Retraso elegante para transmitir robustez (Triada de Jorge)
+          const { productos, formulas, stocks, consumos, stockPT } = get();
           await new Promise((resolve) => setTimeout(resolve, 850));
           const { calcularRequerimientosMRP } = await import('@/app/gestion-formulas/lib/motorMRP');
-          const resultados = calcularRequerimientosMRP(productos, formulas, stocks, consumos, meses);
+          const resultados = calcularRequerimientosMRP(productos, formulas, stocks, consumos, stockPT);
           set({ resultadosMRP: resultados, cargandoCalculo: false });
         } catch (err: any) {
           set({ error: err.message || 'Error al calcular MRP.', cargandoCalculo: false });
@@ -180,18 +145,12 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
       guardarImportacionConfirmada: () => {
         const { formulasClasificadas, formulas } = get();
         if (!formulasClasificadas) return;
-
-        // 1. Obtener los códigos de las recetas modificadas para marcar sus versiones previas
         const codigosModificados = new Set(formulasClasificadas.modificada.map((f) => f.codigoProducto));
-
-        // 2. Marcar las versiones previas como 'obsoletas'
         const formulasActualizadas = formulas.map((f) =>
           codigosModificados.has(f.codigoProducto) && f.estado === 'activa'
             ? { ...f, estado: 'obsoleta' as const }
             : f
         );
-
-        // 3. Volcar todo al store (se persistirá en IndexedDB de inmediato)
         set({
           formulas: [...formulasActualizadas, ...formulasClasificadas.nueva, ...formulasClasificadas.modificada],
           formulasClasificadas: null,
@@ -199,33 +158,24 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
         });
       },
 
-      limpiarDatos: () =>
-        set({
-          productos: [],
-          formulas: [],
-          stocks: [],
-          consumos: [],
-          resultadosMRP: null,
-          archivoProductos: null,
-          archivoFormulas: null,
-          archivoStock: null,
-          archivoConsumo: null,
-          datosCrudosProductos: [],
-          datosCrudosFormulas: [],
-          datosCrudosStock: [],
-          datosCrudosConsumo: [],
-        }),
+      limpiarDatos: () => set((s) => ({
+        ...estadoInicial,
+        formulas: s.formulas,
+        productos: s.productos,
+        urlGoogleDriveFormulas: s.urlGoogleDriveFormulas,
+        urlGoogleDriveStock: s.urlGoogleDriveStock,
+      })),
       reset: () => set(estadoInicial),
     }),
     {
       name: 'flowpro-gestion-formulas-store',
       storage: createJSONStorage(() => indexedDBStorage),
-      // Solo persistimos datos útiles y el paso final
       partialize: (state) => ({
         productos: state.productos,
         formulas: state.formulas,
         stocks: state.stocks,
         consumos: state.consumos,
+        stockPT: state.stockPT,
         step: state.step,
         configuracionMapeo: state.configuracionMapeo,
         resultadosMRP: state.resultadosMRP,
