@@ -65,10 +65,10 @@ export const MODULOS_DISPONIBLES: Modulo[] = [
   },
   {
     id: 'gestion-formulas',
-    nombre: 'Gestión de Fórmulas',
+    nombre: 'Pedido MP/PT',
     ruta: '/gestion-formulas',
     icono: '⚗️',
-    descripcion: 'Gestión de fórmulas, stock y optimización BOM/MRP',
+    descripcion: 'Gestión de fórmulas, stock y optimización para Pedido MP/PT',
     activo: true,
     categoria: 'inventario',
     tooltip: {

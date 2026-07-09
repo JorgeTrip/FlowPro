@@ -5,17 +5,22 @@ import { useVistaResultados } from '../hooks/useVistaResultados';
 import { exportarExcelMRP } from '../lib/exportarExcel';
 import { Tooltip, SkeletonTabla } from './ComponentesAuxiliares';
 import { BadgeMovimiento } from './BadgeMovimiento';
+import DropdownFiltrosPedidos from './DropdownFiltrosPedidos';
 
 export default function VistaResultados() {
   const {
-    busqueda, setBusqueda, scrollSuperiorRef, scrollInferiorRef, anchoScroll,
+    busqueda, setBusqueda, filtrosActivos, setFiltrosActivos, scrollSuperiorRef, scrollInferiorRef, anchoScroll,
     resultadosFiltradosPropios, resultadosFiltradosTercerizados,
     cargandoCalculo, resultadosMRP, pestañaActiva, setPestañaActiva, setStep,
+    sortPropios, solicitarOrdenPropios, sortTercerizados, solicitarOrdenTercerizados,
   } = useVistaResultados();
+
+  const getIndP = (k: any) => (sortPropios && sortPropios.key === k) ? (sortPropios.direction === 'asc' ? ' ▲' : ' ▼') : '';
+  const getIndT = (k: any) => (sortTercerizados && sortTercerizados.key === k) ? (sortTercerizados.direction === 'asc' ? ' ▲' : ' ▼') : '';
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Buscador y Acciones */}
+      {/* Buscador, Filtros y Acciones */}
       <div className="flex flex-col md:flex-row items-end justify-between p-4 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-gray-800 gap-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
           <div className="flex flex-col w-full sm:w-auto">
@@ -28,6 +33,9 @@ export default function VistaResultados() {
               />
               <span className="absolute left-2.5 top-2.5 text-gray-400 text-xs">🔍</span>
             </div>
+          </div>
+          <div className="flex flex-col justify-end h-full pt-4">
+            <DropdownFiltrosPedidos filtrosActivos={filtrosActivos} setFiltrosActivos={setFiltrosActivos} />
           </div>
         </div>
         <div className="flex space-x-2 w-full md:w-auto justify-end">
@@ -71,15 +79,15 @@ export default function VistaResultados() {
           <div ref={scrollInferiorRef} className="overflow-x-auto max-h-[580px] overflow-y-auto rounded-b-xl md:rounded-t-none border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1C1C1E] shadow-sm">
             {pestañaActiva === 'propios' ? (
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 text-left text-[11px]">
-                <thead className="bg-gray-50 dark:bg-[#2C2C2E] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider">
+                <thead className="bg-gray-50 dark:bg-[#2C2C2E] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider select-none">
                   <tr className="divide-x divide-gray-100 dark:divide-gray-800">
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800">Código MP</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800">Descripción MP</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800">UM</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Stock MP ER</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Stock MP CABA</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Cant. Sugerida</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800">Movimiento Sugerido</th>
+                    <th onClick={() => solicitarOrdenPropios('codigoMP')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Código MP{getIndP('codigoMP')}</th>
+                    <th onClick={() => solicitarOrdenPropios('descripcionMP')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Descripción MP{getIndP('descripcionMP')}</th>
+                    <th onClick={() => solicitarOrdenPropios('unidadMedida')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">UM{getIndP('unidadMedida')}</th>
+                    <th onClick={() => solicitarOrdenPropios('stockMPEntreRios')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Stock MP ER{getIndP('stockMPEntreRios')}</th>
+                    <th onClick={() => solicitarOrdenPropios('stockMPCABA')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Stock MP CABA{getIndP('stockMPCABA')}</th>
+                    <th onClick={() => solicitarOrdenPropios('cantidadSugerida')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Cant. Sugerida{getIndP('cantidadSugerida')}</th>
+                    <th onClick={() => solicitarOrdenPropios('movimientoSugerido')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Movimiento Sugerido{getIndP('movimientoSugerido')}</th>
                     <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800">Productos en los que se usa</th>
                     <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right">Cant (rotación)</th>
                   </tr>
@@ -117,14 +125,14 @@ export default function VistaResultados() {
               </table>
             ) : (
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 text-left text-[11px]">
-                <thead className="bg-gray-50 dark:bg-[#2C2C2E] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider">
+                <thead className="bg-gray-50 dark:bg-[#2C2C2E] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider select-none">
                   <tr className="divide-x divide-gray-100 dark:divide-gray-800">
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800">Código PT</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800">Descripción PT</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Stock PT ER</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Stock PT CABA</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Rotación</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2">Movimiento Sugerido</th>
+                    <th onClick={() => solicitarOrdenTercerizados('codigoPT')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Código PT{getIndT('codigoPT')}</th>
+                    <th onClick={() => solicitarOrdenTercerizados('descripcionPT')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Descripción PT{getIndT('descripcionPT')}</th>
+                    <th onClick={() => solicitarOrdenTercerizados('stockPTEntreRios')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Stock PT ER{getIndT('stockPTEntreRios')}</th>
+                    <th onClick={() => solicitarOrdenTercerizados('stockPTCABA')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Stock PT CABA{getIndT('stockPTCABA')}</th>
+                    <th onClick={() => solicitarOrdenTercerizados('rotacion')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Rotación{getIndT('rotacion')}</th>
+                    <th onClick={() => solicitarOrdenTercerizados('movimientoSugerido')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Movimiento Sugerido{getIndT('movimientoSugerido')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-[#1C1C1E] text-gray-900 dark:text-gray-300">

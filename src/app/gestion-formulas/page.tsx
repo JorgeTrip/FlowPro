@@ -84,10 +84,10 @@ export default function PaginaGestionFormulas() {
       {/* Encabezado */}
       <div className="text-center max-w-2xl mx-auto space-y-2">
         <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-          Gestión de Fórmulas (BOM/MRP)
+          Pedido MP/PT
         </h1>
         <p className="text-base text-gray-600 dark:text-gray-400">
-          Optimizador intermedio: absorbe stocks y recetas desde Excel y procesa la planificación de compras.
+          Optimizador de compras y transferencias: absorbe stocks, recetas y maestro PT desde Excel.
         </p>
       </div>
 
