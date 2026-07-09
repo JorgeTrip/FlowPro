@@ -1,7 +1,7 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface DropdownFiltrosPedidosProps {
   filtrosActivos: string[];
@@ -13,6 +13,7 @@ export default function DropdownFiltrosPedidos({
   setFiltrosActivos,
 }: DropdownFiltrosPedidosProps) {
   const [abierto, setAbierto] = useState(false);
+  const refContenedor = useRef<HTMLDivElement>(null);
 
   const toggleFiltro = (filtro: string) => {
     if (filtrosActivos.includes(filtro)) {
@@ -22,20 +23,31 @@ export default function DropdownFiltrosPedidos({
     }
   };
 
+  useEffect(() => {
+    const alHacerClickAfuera = (evento: MouseEvent) => {
+      if (refContenedor.current && !refContenedor.current.contains(evento.target as Node)) {
+        setAbierto(false);
+      }
+    };
+    if (abierto) {
+      document.addEventListener('mousedown', alHacerClickAfuera);
+    }
+    return () => {
+      document.removeEventListener('mousedown', alHacerClickAfuera);
+    };
+  }, [abierto]);
+
   const opciones = [
     { id: 'eliminar_sin_accion', etiqueta: 'Eliminar Sin acción' },
     { id: 'con_datos', etiqueta: 'Productos con datos' },
   ];
 
   return (
-    <div
-      className="relative inline-block text-left"
-      onMouseLeave={() => setAbierto(false)}
-    >
+    <div ref={refContenedor} className="relative inline-block text-left">
       <button
         onClick={() => setAbierto(!abierto)}
         type="button"
-        className="px-4 h-9 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#2C2C2E] hover:bg-gray-50 dark:hover:bg-[#3A3A3C] text-xs font-bold text-gray-700 dark:text-gray-200 transition-all flex items-center space-x-2 cursor-pointer shadow-sm animate-fade-in"
+        className="px-4 h-9 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#2C2C2E] hover:bg-gray-50 dark:hover:bg-[#3A3A3C] text-xs font-bold text-gray-700 dark:text-gray-200 transition-all flex items-center space-x-2 cursor-pointer shadow-sm"
       >
         <span>Filtros</span>
         {filtrosActivos.length > 0 && (
