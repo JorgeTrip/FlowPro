@@ -7,6 +7,19 @@ import { Tooltip, SkeletonTabla } from './ComponentesAuxiliares';
 import { BadgeMovimiento } from './BadgeMovimiento';
 import DropdownFiltrosPedidos from './DropdownFiltrosPedidos';
 
+function BadgeCriticidad({ criticidad }: { criticidad: 'alta' | 'media' | 'baja' }) {
+  const classes = {
+    alta: 'bg-red-100 text-red-800 dark:bg-red-950/30 dark:text-red-400 border border-red-200/50 dark:border-red-900/30',
+    media: 'bg-amber-100 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/30',
+    baja: 'bg-green-100 text-green-800 dark:bg-green-950/30 dark:text-green-400 border border-green-200/50 dark:border-green-900/30',
+  };
+  return (
+    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${classes[criticidad]}`}>
+      {criticidad}
+    </span>
+  );
+}
+
 export default function VistaResultados() {
   const {
     busqueda, setBusqueda, filtrosActivos, setFiltrosActivos, scrollSuperiorRef, scrollInferiorRef, anchoScroll,
@@ -88,13 +101,14 @@ export default function VistaResultados() {
                     <th onClick={() => solicitarOrdenPropios('stockMPCABA')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Stock MP CABA{getIndP('stockMPCABA')}</th>
                     <th onClick={() => solicitarOrdenPropios('cantidadSugerida')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Cant. Sugerida{getIndP('cantidadSugerida')}</th>
                     <th onClick={() => solicitarOrdenPropios('movimientoSugerido')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Movimiento Sugerido{getIndP('movimientoSugerido')}</th>
+                    <th onClick={() => solicitarOrdenPropios('criticidad')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Criticidad{getIndP('criticidad')}</th>
                     <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800">Productos en los que se usa</th>
                     <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right">Cant (rotación)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-[#1C1C1E] text-gray-900 dark:text-gray-300">
                   {resultadosFiltradosPropios.map((fila, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-[#2C2C2E]/40 transition-colors divide-x divide-gray-100 dark:divide-gray-850 text-xs">
+                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-[#2C2C2E]/40 transition-colors divide-x divide-gray-100 dark:divide-gray-850 text-xs text-left">
                       <td className="px-2.5 py-2 font-mono font-semibold">{fila.codigoMP}</td>
                       <td className="px-2.5 py-2 group relative cursor-help">
                         <div className="truncate max-w-[150px] text-ellipsis">{fila.descripcionMP}</div>
@@ -105,8 +119,9 @@ export default function VistaResultados() {
                       <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.stockMPCABA ?? 0).toFixed(1)}</td>
                       <td className="px-2.5 py-2 text-right font-semibold font-mono text-gray-900 dark:text-white">{(fila.cantidadSugerida ?? 0).toFixed(1)}</td>
                       <td className="px-2.5 py-2"><BadgeMovimiento movimiento={fila.movimientoSugerido} /></td>
+                      <td className="px-2.5 py-2 text-center"><BadgeCriticidad criticidad={fila.criticidad} /></td>
                       <td className="px-2.5 py-2">
-                        <div className="space-y-0.5">
+                        <div className="space-y-0.5 text-left">
                           {fila.productosUsados?.map((p, i) => (
                             <div key={i} className="text-[10px] text-gray-600 dark:text-gray-400 truncate max-w-[200px]" title={p.descripcion}>
                               {p.descripcion}
@@ -131,8 +146,9 @@ export default function VistaResultados() {
                     <th onClick={() => solicitarOrdenTercerizados('descripcionPT')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Descripción PT{getIndT('descripcionPT')}</th>
                     <th onClick={() => solicitarOrdenTercerizados('stockPTEntreRios')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Stock PT ER{getIndT('stockPTEntreRios')}</th>
                     <th onClick={() => solicitarOrdenTercerizados('stockPTCABA')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Stock PT CABA{getIndT('stockPTCABA')}</th>
-                    <th onClick={() => solicitarOrdenTercerizados('rotacion')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Rotación{getIndT('rotacion')}</th>
-                    <th onClick={() => solicitarOrdenTercerizados('movimientoSugerido')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Movimiento Sugerido{getIndT('movimientoSugerido')}</th>
+                    <th onClick={() => solicitarOrdenTercerizados('rotacion')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Rotación{getIndT('rotacion')}</th>
+                    <th onClick={() => solicitarOrdenTercerizados('movimientoSugerido')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Movimiento Sugerido{getIndT('movimientoSugerido')}</th>
+                    <th onClick={() => solicitarOrdenTercerizados('criticidad')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Criticidad{getIndT('criticidad')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-[#1C1C1E] text-gray-900 dark:text-gray-300">
@@ -147,6 +163,7 @@ export default function VistaResultados() {
                       <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.stockPTCABA ?? 0).toFixed(1)}</td>
                       <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.rotacion ?? 0).toFixed(1)}</td>
                       <td className="px-2.5 py-2"><BadgeMovimiento movimiento={fila.movimientoSugerido} /></td>
+                      <td className="px-2.5 py-2 text-center"><BadgeCriticidad criticidad={fila.criticidad} /></td>
                     </tr>
                   ))}
                 </tbody>

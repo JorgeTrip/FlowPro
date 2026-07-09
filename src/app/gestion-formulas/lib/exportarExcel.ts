@@ -55,10 +55,11 @@ export async function exportarExcelMRP(resultados: ResultadosMRPFinal): Promise<
     { header: 'STOCK MP CABA', key: 'stockMPCABA', width: 14 },
     { header: 'CANT. SUGERIDA', key: 'cantidadSugerida', width: 16 },
     { header: 'MOVIMIENTO SUGERIDO', key: 'movimientoSugerido', width: 25 },
+    { header: 'CRITICIDAD', key: 'criticidad', width: 14 },
     { header: 'PRODUCTOS EN LOS QUE SE USA', key: 'productosUsados', width: 40 },
     { header: 'CANTIDAD PRODUCTO (ROTACIÓN)', key: 'rotacionProductos', width: 30 },
   ];
-  formatearHeaders(wsP, 9);
+  formatearHeaders(wsP, 10);
 
   let filaActual = 2;
   (resultados.propios || []).forEach((r, idx) => {
@@ -86,6 +87,7 @@ export async function exportarExcelMRP(resultados: ResultadosMRPFinal): Promise<
         stockMPCABA: r.stockMPCABA,
         cantidadSugerida: r.cantidadSugerida,
         movimientoSugerido: movimientoTexto,
+        criticidad: r.criticidad.toUpperCase(),
         productosUsados: pt?.descripcion || '',
         rotacionProductos: pt?.rotacion !== undefined ? pt.rotacion : '',
       });
@@ -101,17 +103,18 @@ export async function exportarExcelMRP(resultados: ResultadosMRPFinal): Promise<
         { horizontal: 'right' as const, vertical: 'middle' as const },
         { horizontal: 'right' as const, vertical: 'middle' as const },
         { horizontal: 'center' as const, vertical: 'middle' as const },
+        { horizontal: 'center' as const, vertical: 'middle' as const },
         { horizontal: 'left' as const, vertical: 'middle' as const },
         { horizontal: 'right' as const, vertical: 'middle' as const }
       ];
 
-      for (let c = 1; c <= 9; c++) {
+      for (let c = 1; c <= 10; c++) {
         const cell = row.getCell(c);
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colorBg } };
         cell.border = borderFino;
         cell.alignment = alignConfigs[c - 1];
         cell.font = { name: 'Segoe UI', size: 9 };
-        if (c === 6 || c === 9 || c === 4 || c === 5) {
+        if (c === 6 || c === 10 || c === 4 || c === 5) {
           cell.numFmt = '#,##0.0';
         }
       }
@@ -119,14 +122,14 @@ export async function exportarExcelMRP(resultados: ResultadosMRPFinal): Promise<
     }
 
     if (N > 1) {
-      for (let col = 1; col <= 7; col++) {
+      for (let col = 1; col <= 8; col++) {
         wsP.mergeCells(filaInicio, col, filaFin, col);
       }
     }
   });
 
   if (filaActual > 2) {
-    aplicarBordesExternos(wsP, filaActual - 1, 9);
+    aplicarBordesExternos(wsP, filaActual - 1, 10);
   }
 
   // 2. Hoja de Productos Tercerizados
@@ -139,8 +142,9 @@ export async function exportarExcelMRP(resultados: ResultadosMRPFinal): Promise<
       { header: 'STOCK PT CABA', key: 'stockPTCABA', width: 14 },
       { header: 'ROTACIÓN', key: 'rotacion', width: 14 },
       { header: 'MOVIMIENTO SUGERIDO', key: 'movimientoSugerido', width: 25 },
+      { header: 'CRITICIDAD', key: 'criticidad', width: 14 },
     ];
-    formatearHeaders(wsT, 6);
+    formatearHeaders(wsT, 7);
 
     let filaActualT = 2;
     resultados.tercerizados.forEach((r, idx) => {
@@ -160,6 +164,7 @@ export async function exportarExcelMRP(resultados: ResultadosMRPFinal): Promise<
         stockPTCABA: r.stockPTCABA,
         rotacion: r.rotacion,
         movimientoSugerido: movimientoTexto,
+        criticidad: r.criticidad.toUpperCase(),
       });
 
       const row = wsT.getRow(filaActualT);
@@ -172,10 +177,11 @@ export async function exportarExcelMRP(resultados: ResultadosMRPFinal): Promise<
         { horizontal: 'right' as const, vertical: 'middle' as const },
         { horizontal: 'right' as const, vertical: 'middle' as const },
         { horizontal: 'right' as const, vertical: 'middle' as const },
+        { horizontal: 'center' as const, vertical: 'middle' as const },
         { horizontal: 'center' as const, vertical: 'middle' as const }
       ];
 
-      for (let c = 1; c <= 6; c++) {
+      for (let c = 1; c <= 7; c++) {
         const cell = row.getCell(c);
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colorBg } };
         cell.border = borderFino;
@@ -189,7 +195,7 @@ export async function exportarExcelMRP(resultados: ResultadosMRPFinal): Promise<
     });
 
     if (filaActualT > 2) {
-      aplicarBordesExternos(wsT, filaActualT - 1, 6);
+      aplicarBordesExternos(wsT, filaActualT - 1, 7);
     }
   }
 
