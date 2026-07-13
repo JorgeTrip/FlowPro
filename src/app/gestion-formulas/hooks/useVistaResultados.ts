@@ -1,7 +1,7 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useGestionFormulasStore } from '@/app/stores/gestionFormulasStore';
-import { ResultadoMRP, ResultadoTercerizadosMRP } from '../lib/motorMRP';
+import { ResultadoMRP, ResultadoTercerizadosMRP } from '../lib/types';
 
 export function useVistaResultados() {
   const store = useGestionFormulasStore();
@@ -132,6 +132,7 @@ export function useVistaResultados() {
 
   useEffect(() => {
     store.ejecutarCalculoMRP(mesesRotacion);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mesesRotacion]);
 
   const activeListLength = store.pestañaActiva === 'propios'
