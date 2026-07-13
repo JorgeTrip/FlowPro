@@ -5,13 +5,12 @@ import { borderFino, aplicarBordesExternos, formatearHeaders } from './excelEsti
 
 /**
  * Agrega la hoja de "Productos Propios" consolidando MP y PT de forma no redundante.
- * La materia prima y sus cálculos se muestran una única vez alineados verticalmente arriba.
+ * Combina las celdas de la materia prima cuando está asociada a múltiples productos.
  */
 export function agregarHojaProductosPropios(wb: ExcelJS.Workbook, propios: ResultadoMRP[]): void {
   const wsP = wb.addWorksheet('Productos Propios');
 
   wsP.columns = [
-    { header: 'ÍD', key: 'id', width: 6 },
     { header: 'CÓDIGO MP', key: 'codigoMP', width: 15 },
     { header: 'DESCRIPCIÓN MP', key: 'descripcionMP', width: 35 },
     { header: 'UM', key: 'unidadMedida', width: 8 },
@@ -30,19 +29,19 @@ export function agregarHojaProductosPropios(wb: ExcelJS.Workbook, propios: Resul
     { header: 'TRANSFERIR PT', key: 'transferirPT', width: 12 },
     { header: 'CANT (ROTACIÓN)', key: 'rotacionProductos', width: 30 },
   ];
-  formatearHeaders(wsP, 18);
+  formatearHeaders(wsP, 17);
 
   let filaActual = 2;
   (propios || []).forEach((r, idx) => {
     const N = Math.max(1, r.productosUsados?.length || 0);
     const colorBg = idx % 2 === 0 ? 'FFF9F9F9' : 'FFFFFFFF';
+    const filaInicio = filaActual;
 
     for (let i = 0; i < N; i++) {
       const pt = r.productosUsados?.[i];
       const esPrimeraFila = i === 0;
 
       wsP.addRow({
-        id: esPrimeraFila ? (idx + 1) : '',
         codigoMP: esPrimeraFila ? r.codigoMP : '',
         descripcionMP: esPrimeraFila ? r.descripcionMP : '',
         unidadMedida: esPrimeraFila ? r.unidadMedida : '',
@@ -67,7 +66,6 @@ export function agregarHojaProductosPropios(wb: ExcelJS.Workbook, propios: Resul
 
       const alignConfigs = [
         { horizontal: 'center' as const, vertical: 'top' as const },
-        { horizontal: 'center' as const, vertical: 'top' as const },
         { horizontal: 'left' as const, vertical: 'top' as const },
         { horizontal: 'center' as const, vertical: 'top' as const },
         { horizontal: 'right' as const, vertical: 'top' as const },
@@ -86,24 +84,31 @@ export function agregarHojaProductosPropios(wb: ExcelJS.Workbook, propios: Resul
         { horizontal: 'right' as const, vertical: 'top' as const }
       ];
 
-      for (let c = 1; c <= 18; c++) {
+      for (let c = 1; c <= 17; c++) {
         const cell = row.getCell(c);
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colorBg } };
         cell.border = borderFino;
         cell.alignment = alignConfigs[c - 1];
         cell.font = { name: 'Segoe UI', size: 9 };
         
-        // Aplicar formato de número solo a las celdas que realmente tienen valores numéricos
         const tieneValor = cell.value !== null && cell.value !== '';
-        if (tieneValor && (c === 5 || c === 6 || c === 7 || c === 8 || c === 9 || c === 13 || c === 14 || c === 15 || c === 16 || c === 17 || c === 18)) {
+        if (tieneValor && (c === 4 || c === 5 || c === 6 || c === 7 || c === 8 || c === 12 || c === 13 || c === 14 || c === 15 || c === 16 || c === 17)) {
           cell.numFmt = '#,##0.0';
         }
       }
       filaActual++;
     }
+
+    // Combinar las celdas de las columnas correspondientes a la Materia Prima (1 a 9)
+    if (N > 1) {
+      const filaFin = filaInicio + N - 1;
+      for (let c = 1; c <= 9; c++) {
+        wsP.mergeCells(filaInicio, c, filaFin, c);
+      }
+    }
   });
 
   if (filaActual > 2) {
-    aplicarBordesExternos(wsP, filaActual - 1, 18);
+    aplicarBordesExternos(wsP, filaActual - 1, 17);
   }
 }

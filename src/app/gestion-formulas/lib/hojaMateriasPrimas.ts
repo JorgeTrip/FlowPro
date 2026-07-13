@@ -10,7 +10,6 @@ export function agregarHojaMateriasPrimas(wb: ExcelJS.Workbook, propios: Resulta
   const wsM = wb.addWorksheet('Materias Primas');
 
   wsM.columns = [
-    { header: 'ÍD', key: 'id', width: 6 },
     { header: 'CÓDIGO MP', key: 'codigoMP', width: 15 },
     { header: 'DESCRIPCIÓN MP', key: 'descripcionMP', width: 35 },
     { header: 'UM', key: 'unidadMedida', width: 8 },
@@ -21,14 +20,13 @@ export function agregarHojaMateriasPrimas(wb: ExcelJS.Workbook, propios: Resulta
     { header: 'TRANSFERIR MP', key: 'transferir', width: 14 },
     { header: 'CRITICIDAD', key: 'criticidad', width: 14 },
   ];
-  formatearHeaders(wsM, 10);
+  formatearHeaders(wsM, 9);
 
   let filaActual = 2;
   (propios || []).forEach((r, idx) => {
     const colorBg = idx % 2 === 0 ? 'FFF9F9F9' : 'FFFFFFFF';
 
     wsM.addRow({
-      id: idx + 1,
       codigoMP: r.codigoMP,
       descripcionMP: r.descripcionMP,
       unidadMedida: r.unidadMedida,
@@ -45,7 +43,6 @@ export function agregarHojaMateriasPrimas(wb: ExcelJS.Workbook, propios: Resulta
 
     const alignConfigs = [
       { horizontal: 'center' as const, vertical: 'middle' as const },
-      { horizontal: 'center' as const, vertical: 'middle' as const },
       { horizontal: 'left' as const, vertical: 'middle' as const },
       { horizontal: 'center' as const, vertical: 'middle' as const },
       { horizontal: 'right' as const, vertical: 'middle' as const },
@@ -56,13 +53,13 @@ export function agregarHojaMateriasPrimas(wb: ExcelJS.Workbook, propios: Resulta
       { horizontal: 'center' as const, vertical: 'middle' as const }
     ];
 
-    for (let c = 1; c <= 10; c++) {
+    for (let c = 1; c <= 9; c++) {
       const cell = row.getCell(c);
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colorBg } };
       cell.border = borderFino;
       cell.alignment = alignConfigs[c - 1];
       cell.font = { name: 'Segoe UI', size: 9 };
-      if (c === 5 || c === 6 || c === 7 || c === 8 || c === 9) {
+      if (c === 4 || c === 5 || c === 6 || c === 7 || c === 8) {
         cell.numFmt = '#,##0.0';
       }
     }
@@ -70,6 +67,6 @@ export function agregarHojaMateriasPrimas(wb: ExcelJS.Workbook, propios: Resulta
   });
 
   if (filaActual > 2) {
-    aplicarBordesExternos(wsM, filaActual - 1, 10);
+    aplicarBordesExternos(wsM, filaActual - 1, 9);
   }
 }
