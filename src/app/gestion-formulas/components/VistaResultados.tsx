@@ -6,6 +6,7 @@ import { exportarExcelMRP } from '../lib/exportarExcel';
 import { Tooltip, SkeletonTabla } from './ComponentesAuxiliares';
 import { BadgeMovimiento } from './BadgeMovimiento';
 import DropdownFiltrosPedidos from './DropdownFiltrosPedidos';
+import SelectorMesesRotacion from './SelectorMesesRotacion';
 
 function BadgeCriticidad({ criticidad }: { criticidad: 'alta' | 'media' | 'baja' }) {
   const classes = {
@@ -22,7 +23,8 @@ function BadgeCriticidad({ criticidad }: { criticidad: 'alta' | 'media' | 'baja'
 
 export default function VistaResultados() {
   const {
-    busqueda, setBusqueda, filtrosActivos, setFiltrosActivos, scrollSuperiorRef, scrollInferiorRef, anchoScroll,
+    busqueda, setBusqueda, filtrosActivos, setFiltrosActivos, criticidades, setCriticidades, mesesRotacion, setMesesRotacion,
+    scrollSuperiorRef, scrollInferiorRef, anchoScroll,
     resultadosFiltradosPropios, resultadosFiltradosTercerizados,
     cargandoCalculo, resultadosMRP, pestañaActiva, setPestañaActiva, setStep,
     sortPropios, solicitarOrdenPropios, sortTercerizados, solicitarOrdenTercerizados,
@@ -48,7 +50,18 @@ export default function VistaResultados() {
             </div>
           </div>
           <div className="flex flex-col justify-end h-full pt-4">
-            <DropdownFiltrosPedidos filtrosActivos={filtrosActivos} setFiltrosActivos={setFiltrosActivos} />
+            <DropdownFiltrosPedidos 
+              filtrosActivos={filtrosActivos} 
+              setFiltrosActivos={setFiltrosActivos}
+              criticidades={criticidades}
+              setCriticidades={setCriticidades}
+            />
+          </div>
+          <div className="flex flex-col">
+            <SelectorMesesRotacion 
+              mesesRotacion={mesesRotacion}
+              setMesesRotacion={setMesesRotacion}
+            />
           </div>
         </div>
         <div className="flex space-x-2 w-full md:w-auto justify-end">
@@ -100,8 +113,10 @@ export default function VistaResultados() {
                     <th onClick={() => solicitarOrdenPropios('stockMPEntreRios')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Stock MP ER{getIndP('stockMPEntreRios')}</th>
                     <th onClick={() => solicitarOrdenPropios('stockMPCABA')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Stock MP CABA{getIndP('stockMPCABA')}</th>
                     <th onClick={() => solicitarOrdenPropios('cantidadSugerida')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Cant. Sugerida{getIndP('cantidadSugerida')}</th>
-                    <th onClick={() => solicitarOrdenPropios('movimientoSugerido')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Movimiento Sugerido{getIndP('movimientoSugerido')}</th>
+                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Comprar</th>
+                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Transferir</th>
                     <th onClick={() => solicitarOrdenPropios('criticidad')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Criticidad{getIndP('criticidad')}</th>
+                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800">Código</th>
                     <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800">Productos en los que se usa</th>
                     <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right">Cant (rotación)</th>
                   </tr>
@@ -118,8 +133,18 @@ export default function VistaResultados() {
                       <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.stockMPEntreRios ?? 0).toFixed(1)}</td>
                       <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.stockMPCABA ?? 0).toFixed(1)}</td>
                       <td className="px-2.5 py-2 text-right font-semibold font-mono text-gray-900 dark:text-white">{(fila.cantidadSugerida ?? 0).toFixed(1)}</td>
-                      <td className="px-2.5 py-2"><BadgeMovimiento movimiento={fila.movimientoSugerido} /></td>
+                      <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.movimientoSugerido.compra ?? 0).toFixed(1)}</td>
+                      <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.movimientoSugerido.transferencia ?? 0).toFixed(1)}</td>
                       <td className="px-2.5 py-2 text-center"><BadgeCriticidad criticidad={fila.criticidad} /></td>
+                      <td className="px-2.5 py-2">
+                        <div className="space-y-0.5 text-left">
+                          {fila.productosUsados?.map((p, i) => (
+                            <div key={i} className="text-[10px] text-gray-600 dark:text-gray-400 truncate max-w-[100px]" title={p.codigoProducto}>
+                              {p.codigoProducto}
+                            </div>
+                          ))}
+                        </div>
+                      </td>
                       <td className="px-2.5 py-2">
                         <div className="space-y-0.5 text-left">
                           {fila.productosUsados?.map((p, i) => (
@@ -147,7 +172,8 @@ export default function VistaResultados() {
                     <th onClick={() => solicitarOrdenTercerizados('stockPTEntreRios')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Stock PT ER{getIndT('stockPTEntreRios')}</th>
                     <th onClick={() => solicitarOrdenTercerizados('stockPTCABA')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Stock PT CABA{getIndT('stockPTCABA')}</th>
                     <th onClick={() => solicitarOrdenTercerizados('rotacion')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Rotación{getIndT('rotacion')}</th>
-                    <th onClick={() => solicitarOrdenTercerizados('movimientoSugerido')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Movimiento Sugerido{getIndT('movimientoSugerido')}</th>
+                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Comprar</th>
+                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Transferir</th>
                     <th onClick={() => solicitarOrdenTercerizados('criticidad')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Criticidad{getIndT('criticidad')}</th>
                   </tr>
                 </thead>
@@ -162,7 +188,8 @@ export default function VistaResultados() {
                       <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.stockPTEntreRios ?? 0).toFixed(1)}</td>
                       <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.stockPTCABA ?? 0).toFixed(1)}</td>
                       <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.rotacion ?? 0).toFixed(1)}</td>
-                      <td className="px-2.5 py-2"><BadgeMovimiento movimiento={fila.movimientoSugerido} /></td>
+                      <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.movimientoSugerido.compra ?? 0).toFixed(1)}</td>
+                      <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.movimientoSugerido.transferencia ?? 0).toFixed(1)}</td>
                       <td className="px-2.5 py-2 text-center"><BadgeCriticidad criticidad={fila.criticidad} /></td>
                     </tr>
                   ))}

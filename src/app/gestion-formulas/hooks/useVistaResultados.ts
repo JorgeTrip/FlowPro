@@ -7,6 +7,8 @@ export function useVistaResultados() {
   const store = useGestionFormulasStore();
   const [busqueda, setBusqueda] = useState('');
   const [filtrosActivos, setFiltrosActivos] = useState<string[]>(['con_datos']);
+  const [criticidades, setCriticidades] = useState<string[]>(['alta', 'media', 'baja']);
+  const [mesesRotacion, setMesesRotacion] = useState(3);
 
   // Configuración de Ordenamiento
   const [sortPropios, setSortPropios] = useState<{ key: keyof ResultadoMRP; direction: 'asc' | 'desc' } | null>(null);
@@ -42,6 +44,9 @@ export function useVistaResultados() {
     if (filtrosActivos.includes('eliminar_sin_accion')) {
       items = items.filter((r) => r.movimientoSugerido.tipo !== 'sin_accion');
     }
+    
+    // Aplicar filtro de criticidad
+    items = items.filter((r) => criticidades.includes(r.criticidad));
 
     // Aplicar búsqueda
     if (busqueda.trim()) {
@@ -75,7 +80,7 @@ export function useVistaResultados() {
     }
 
     return items;
-  }, [store.resultadosMRP?.propios, busqueda, filtrosActivos, sortPropios]);
+  }, [store.resultadosMRP?.propios, busqueda, filtrosActivos, sortPropios, criticidades]);
 
   const resultadosFiltradosTercerizados = useMemo(() => {
     let items = store.resultadosMRP?.tercerizados || [];
@@ -87,6 +92,9 @@ export function useVistaResultados() {
     if (filtrosActivos.includes('eliminar_sin_accion')) {
       items = items.filter((r) => r.movimientoSugerido.tipo !== 'sin_accion');
     }
+    
+    // Aplicar filtro de criticidad
+    items = items.filter((r) => criticidades.includes(r.criticidad));
 
     // Aplicar búsqueda
     if (busqueda.trim()) {
@@ -120,7 +128,7 @@ export function useVistaResultados() {
     }
 
     return items;
-  }, [store.resultadosMRP?.tercerizados, busqueda, filtrosActivos, sortTercerizados]);
+  }, [store.resultadosMRP?.tercerizados, busqueda, filtrosActivos, sortTercerizados, criticidades]);
 
   useEffect(() => {
     store.ejecutarCalculoMRP();
@@ -169,6 +177,10 @@ export function useVistaResultados() {
     setBusqueda,
     filtrosActivos,
     setFiltrosActivos,
+    criticidades,
+    setCriticidades,
+    mesesRotacion,
+    setMesesRotacion,
     scrollSuperiorRef,
     scrollInferiorRef,
     anchoScroll,
