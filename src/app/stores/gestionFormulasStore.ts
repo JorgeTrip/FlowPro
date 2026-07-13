@@ -77,7 +77,7 @@ export interface GestionFormulasState {
   setError: (error: string | null) => void;
   setFormulasClasificadas: (clasificadas: any) => void;
 
-  ejecutarCalculoMRP: () => Promise<void>;
+  ejecutarCalculoMRP: (mesesRotacion?: number) => Promise<void>;
   guardarImportacionConfirmada: () => void;
   limpiarDatos: () => void;
   reset: () => void;
@@ -129,13 +129,13 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
       setUrlGoogleDriveFormulas: (urlGoogleDriveFormulas) => set({ urlGoogleDriveFormulas }),
       setUrlGoogleDriveStock: (urlGoogleDriveStock) => set({ urlGoogleDriveStock }),
 
-      ejecutarCalculoMRP: async () => {
+      ejecutarCalculoMRP: async (mesesRotacion = 1) => {
         set({ cargandoCalculo: true, error: null });
         try {
           const { productos, formulas, stocks, consumos, stockPT } = get();
           await new Promise((resolve) => setTimeout(resolve, 850));
           const { calcularRequerimientosMRP } = await import('@/app/gestion-formulas/lib/motorMRP');
-          const resultados = calcularRequerimientosMRP(productos, formulas, stocks, consumos, stockPT);
+          const resultados = calcularRequerimientosMRP(productos, formulas, stocks, consumos, stockPT, mesesRotacion);
           set({ resultadosMRP: resultados, cargandoCalculo: false });
         } catch (err: any) {
           set({ error: err.message || 'Error al calcular MRP.', cargandoCalculo: false });

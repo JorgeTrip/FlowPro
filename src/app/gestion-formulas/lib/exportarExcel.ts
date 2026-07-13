@@ -48,18 +48,21 @@ export async function exportarExcelMRP(resultados: ResultadosMRPFinal): Promise<
   const wsP = wb.addWorksheet('Productos Propios');
 
   wsP.columns = [
+    { header: 'ÍD', key: 'id', width: 6 },
     { header: 'CÓDIGO MP', key: 'codigoMP', width: 15 },
     { header: 'DESCRIPCIÓN MP', key: 'descripcionMP', width: 35 },
     { header: 'UM', key: 'unidadMedida', width: 8 },
     { header: 'STOCK MP ENTRE RÍOS', key: 'stockMPEntreRios', width: 18 },
     { header: 'STOCK MP CABA', key: 'stockMPCABA', width: 14 },
     { header: 'CANT. SUGERIDA', key: 'cantidadSugerida', width: 16 },
-    { header: 'MOVIMIENTO SUGERIDO', key: 'movimientoSugerido', width: 25 },
+    { header: 'COMPRAR', key: 'comprar', width: 12 },
+    { header: 'TRANSFERIR', key: 'transferir', width: 12 },
     { header: 'CRITICIDAD', key: 'criticidad', width: 14 },
+    { header: 'CÓDIGO', key: 'codigoProducto', width: 12 },
     { header: 'PRODUCTOS EN LOS QUE SE USA', key: 'productosUsados', width: 40 },
     { header: 'CANTIDAD PRODUCTO (ROTACIÓN)', key: 'rotacionProductos', width: 30 },
   ];
-  formatearHeaders(wsP, 10);
+  formatearHeaders(wsP, 13);
 
   let filaActual = 2;
   (resultados.propios || []).forEach((r, idx) => {
@@ -80,14 +83,17 @@ export async function exportarExcelMRP(resultados: ResultadosMRPFinal): Promise<
     for (let i = 0; i < N; i++) {
       const pt = r.productosUsados?.[i];
       wsP.addRow({
+        id: idx + 1,
         codigoMP: r.codigoMP,
         descripcionMP: r.descripcionMP,
         unidadMedida: r.unidadMedida,
         stockMPEntreRios: r.stockMPEntreRios,
         stockMPCABA: r.stockMPCABA,
         cantidadSugerida: r.cantidadSugerida,
-        movimientoSugerido: movimientoTexto,
+        comprar: r.movimientoSugerido.compra ?? 0,
+        transferir: r.movimientoSugerido.transferencia ?? 0,
         criticidad: r.criticidad.toUpperCase(),
+        codigoProducto: pt?.codigoProducto || '',
         productosUsados: pt?.descripcion || '',
         rotacionProductos: pt?.rotacion !== undefined ? pt.rotacion : '',
       });
@@ -97,8 +103,11 @@ export async function exportarExcelMRP(resultados: ResultadosMRPFinal): Promise<
 
       const alignConfigs = [
         { horizontal: 'center' as const, vertical: 'middle' as const },
+        { horizontal: 'center' as const, vertical: 'middle' as const },
         { horizontal: 'left' as const, vertical: 'middle' as const },
         { horizontal: 'center' as const, vertical: 'middle' as const },
+        { horizontal: 'right' as const, vertical: 'middle' as const },
+        { horizontal: 'right' as const, vertical: 'middle' as const },
         { horizontal: 'right' as const, vertical: 'middle' as const },
         { horizontal: 'right' as const, vertical: 'middle' as const },
         { horizontal: 'right' as const, vertical: 'middle' as const },
@@ -108,28 +117,23 @@ export async function exportarExcelMRP(resultados: ResultadosMRPFinal): Promise<
         { horizontal: 'right' as const, vertical: 'middle' as const }
       ];
 
-      for (let c = 1; c <= 10; c++) {
+      for (let c = 1; c <= 13; c++) {
         const cell = row.getCell(c);
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colorBg } };
         cell.border = borderFino;
         cell.alignment = alignConfigs[c - 1];
         cell.font = { name: 'Segoe UI', size: 9 };
-        if (c === 6 || c === 10 || c === 4 || c === 5) {
+        if (c === 7 || c === 8 || c === 9 || c === 13 || c === 5 || c === 6) {
           cell.numFmt = '#,##0.0';
         }
       }
       filaActual++;
     }
 
-    if (N > 1) {
-      for (let col = 1; col <= 8; col++) {
-        wsP.mergeCells(filaInicio, col, filaFin, col);
-      }
-    }
   });
 
   if (filaActual > 2) {
-    aplicarBordesExternos(wsP, filaActual - 1, 10);
+    aplicarBordesExternos(wsP, filaActual - 1, 13);
   }
 
   // 2. Hoja de Productos Tercerizados
@@ -141,29 +145,22 @@ export async function exportarExcelMRP(resultados: ResultadosMRPFinal): Promise<
       { header: 'STOCK PT ENTRE RÍOS', key: 'stockPTEntreRios', width: 18 },
       { header: 'STOCK PT CABA', key: 'stockPTCABA', width: 14 },
       { header: 'ROTACIÓN', key: 'rotacion', width: 14 },
-      { header: 'MOVIMIENTO SUGERIDO', key: 'movimientoSugerido', width: 25 },
+      { header: 'COMPRAR', key: 'comprar', width: 12 },
+      { header: 'TRANSFERIR', key: 'transferir', width: 12 },
       { header: 'CRITICIDAD', key: 'criticidad', width: 14 },
     ];
-    formatearHeaders(wsT, 7);
+    formatearHeaders(wsT, 8);
 
     let filaActualT = 2;
     resultados.tercerizados.forEach((r, idx) => {
-      let movimientoTexto = '[Sin Acción]';
-      if (r.movimientoSugerido.tipo === 'transferencia' && r.movimientoSugerido.transferencia !== undefined) {
-        movimientoTexto = `[Transf E/R: ${r.movimientoSugerido.transferencia.toFixed(1)}]`;
-      } else if (r.movimientoSugerido.tipo === 'compra' && r.movimientoSugerido.compra !== undefined) {
-        movimientoTexto = `[Compra: ${r.movimientoSugerido.compra.toFixed(1)}]`;
-      } else if (r.movimientoSugerido.tipo === 'combinado' && r.movimientoSugerido.transferencia !== undefined && r.movimientoSugerido.compra !== undefined) {
-        movimientoTexto = `[Transf E/R: ${r.movimientoSugerido.transferencia.toFixed(1)}] + [Compra: ${r.movimientoSugerido.compra.toFixed(1)}]`;
-      }
-
       wsT.addRow({
         codigoPT: r.codigoPT,
         descripcionPT: r.descripcionPT,
         stockPTEntreRios: r.stockPTEntreRios,
         stockPTCABA: r.stockPTCABA,
         rotacion: r.rotacion,
-        movimientoSugerido: movimientoTexto,
+        comprar: r.movimientoSugerido.compra ?? 0,
+        transferir: r.movimientoSugerido.transferencia ?? 0,
         criticidad: r.criticidad.toUpperCase(),
       });
 
@@ -177,17 +174,18 @@ export async function exportarExcelMRP(resultados: ResultadosMRPFinal): Promise<
         { horizontal: 'right' as const, vertical: 'middle' as const },
         { horizontal: 'right' as const, vertical: 'middle' as const },
         { horizontal: 'right' as const, vertical: 'middle' as const },
-        { horizontal: 'center' as const, vertical: 'middle' as const },
+        { horizontal: 'right' as const, vertical: 'middle' as const },
+        { horizontal: 'right' as const, vertical: 'middle' as const },
         { horizontal: 'center' as const, vertical: 'middle' as const }
       ];
 
-      for (let c = 1; c <= 7; c++) {
+      for (let c = 1; c <= 8; c++) {
         const cell = row.getCell(c);
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colorBg } };
         cell.border = borderFino;
         cell.alignment = alignConfigsT[c - 1];
         cell.font = { name: 'Segoe UI', size: 9 };
-        if (c === 3 || c === 4 || c === 5) {
+        if (c === 3 || c === 4 || c === 5 || c === 6 || c === 7) {
           cell.numFmt = '#,##0.0';
         }
       }
@@ -195,7 +193,7 @@ export async function exportarExcelMRP(resultados: ResultadosMRPFinal): Promise<
     });
 
     if (filaActualT > 2) {
-      aplicarBordesExternos(wsT, filaActualT - 1, 7);
+      aplicarBordesExternos(wsT, filaActualT - 1, 8);
     }
   }
 

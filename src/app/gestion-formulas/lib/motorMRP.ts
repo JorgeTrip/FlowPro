@@ -65,7 +65,8 @@ export function calcularCriticidad(stockTotal: number, consumo: number): 'alta' 
 
 export function calcularRequerimientosMRP(
   productos: Producto[], formulas: Formula[], stocks: StockPorDeposito[],
-  consumos: ConsumoMensual[], stockPT: ProductoTerminadoMaestro[] = []
+  consumos: ConsumoMensual[], stockPT: ProductoTerminadoMaestro[] = [],
+  mesesRotacion: number = 1
 ): ResultadosMRPFinal {
   const recetasActivas = formulas.filter((f) => f.estado === 'activa');
   const productosMap = new Map<string, Producto>();
@@ -93,20 +94,20 @@ export function calcularRequerimientosMRP(
       : (maestroPT?.descripcion || productoPT.descripcion || receta.descripcion);
 
     receta.componentes.forEach((componente) => {
-      const cantidadRequerida = rotacionMensual * componente.cantidad;
+      const cantidadRequerida = rotacionMensual * mesesRotacion * componente.cantidad;
       const existente = requerimientosMP.get(componente.codigoComponente);
       if (existente) {
         existente.cantidadTotal += cantidadRequerida;
         const yaUsado = existente.productosUsados.find((p) => p.codigoProducto === receta.codigoProducto);
-        if (yaUsado) yaUsado.rotacion += rotacionMensual;
-        else existente.productosUsados.push({ codigoProducto: receta.codigoProducto, descripcion: descPTConcat, rotacion: rotacionMensual });
+        if (yaUsado) yaUsado.rotacion += rotacionMensual * mesesRotacion;
+        else existente.productosUsados.push({ codigoProducto: receta.codigoProducto, descripcion: descPTConcat, rotacion: rotacionMensual * mesesRotacion });
       } else {
         const productoMP = productosMap.get(componente.codigoComponente);
         requerimientosMP.set(componente.codigoComponente, {
           descripcion: productoMP?.descripcion || componente.descripcion,
           unidadMedida: productoMP?.unidadMedida || componente.unidadMedida,
           cantidadTotal: cantidadRequerida,
-          productosUsados: [{ codigoProducto: receta.codigoProducto, descripcion: descPTConcat, rotacion: rotacionMensual }],
+          productosUsados: [{ codigoProducto: receta.codigoProducto, descripcion: descPTConcat, rotacion: rotacionMensual * mesesRotacion }],
         });
       }
     });
@@ -133,7 +134,8 @@ export function calcularRequerimientosMRP(
   const resultadosTercerizados: ResultadoTercerizadosMRP[] = [];
   listaTercerizados.forEach((pt) => {
     const consumosPT = consumos.filter((c) => c.codigoProducto === pt.codigo);
-    const rotacion = consumosPT.length > 0 ? consumosPT.reduce((sum, c) => sum + c.cantidadConsumida, 0) / consumosPT.length : 0;
+    const rotacionMensual = consumosPT.length > 0 ? consumosPT.reduce((sum, c) => sum + c.cantidadConsumida, 0) / consumosPT.length : 0;
+    const rotacion = rotacionMensual * mesesRotacion;
 
     const stocksPT = stocks.filter((s) => s.codigoProducto === pt.codigo);
     const stockCABA = stocksPT.find((s) => s.deposito.toLowerCase().includes('caba'))?.stockFisico || 0;

@@ -77,6 +77,7 @@ export default function DropdownFiltrosPedidos({
 
       {abierto && (
         <div className="absolute left-0 mt-1.5 w-60 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-250 dark:border-gray-800 shadow-lg p-3 z-30 space-y-3 transition-all animate-in fade-in slide-in-from-top-1 duration-100">
+          <h3 className="text-xs font-bold text-gray-700 dark:text-gray-200">Filtros</h3>
           <h4 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Criterios de Vista</h4>
           <div className="space-y-2">
             {opciones.map((op) => (

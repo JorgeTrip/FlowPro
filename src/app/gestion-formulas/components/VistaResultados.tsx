@@ -34,7 +34,7 @@ export default function VistaResultados() {
   const getIndT = (k: any) => (sortTercerizados && sortTercerizados.key === k) ? (sortTercerizados.direction === 'asc' ? ' ▲' : ' ▼') : '';
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6 w-full">
       {/* Buscador, Filtros y Acciones */}
       <div className="flex flex-col md:flex-row items-end justify-between p-4 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-gray-800 gap-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
@@ -104,7 +104,7 @@ export default function VistaResultados() {
 
           <div ref={scrollInferiorRef} className="overflow-x-auto max-h-[580px] overflow-y-auto rounded-b-xl md:rounded-t-none border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1C1C1E] shadow-sm">
             {pestañaActiva === 'propios' ? (
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 text-left text-[11px]">
+              <table className="min-w-[1200px] divide-y divide-gray-200 dark:divide-gray-800 text-left text-[11px]">
                 <thead className="bg-gray-50 dark:bg-[#2C2C2E] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider select-none">
                   <tr className="divide-x divide-gray-100 dark:divide-gray-800">
                     <th onClick={() => solicitarOrdenPropios('codigoMP')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Código MP{getIndP('codigoMP')}</th>
@@ -164,7 +164,7 @@ export default function VistaResultados() {
                 </tbody>
               </table>
             ) : (
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 text-left text-[11px]">
+              <table className="min-w-[1000px] divide-y divide-gray-200 dark:divide-gray-800 text-left text-[11px]">
                 <thead className="bg-gray-50 dark:bg-[#2C2C2E] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider select-none">
                   <tr className="divide-x divide-gray-100 dark:divide-gray-800">
                     <th onClick={() => solicitarOrdenTercerizados('codigoPT')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Código PT{getIndT('codigoPT')}</th>

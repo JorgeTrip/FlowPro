@@ -8,7 +8,7 @@ export function useVistaResultados() {
   const [busqueda, setBusqueda] = useState('');
   const [filtrosActivos, setFiltrosActivos] = useState<string[]>(['con_datos']);
   const [criticidades, setCriticidades] = useState<string[]>(['alta', 'media', 'baja']);
-  const [mesesRotacion, setMesesRotacion] = useState(3);
+  const [mesesRotacion, setMesesRotacion] = useState(1);
 
   // Configuración de Ordenamiento
   const [sortPropios, setSortPropios] = useState<{ key: keyof ResultadoMRP; direction: 'asc' | 'desc' } | null>(null);
@@ -131,8 +131,8 @@ export function useVistaResultados() {
   }, [store.resultadosMRP?.tercerizados, busqueda, filtrosActivos, sortTercerizados, criticidades]);
 
   useEffect(() => {
-    store.ejecutarCalculoMRP();
-  }, []);
+    store.ejecutarCalculoMRP(mesesRotacion);
+  }, [mesesRotacion]);
 
   const activeListLength = store.pestañaActiva === 'propios'
     ? resultadosFiltradosPropios.length
@@ -147,7 +147,7 @@ export function useVistaResultados() {
       }, 50);
       return () => clearTimeout(timer);
     }
-  }, [activeListLength, store.cargandoCalculo, store.pestañaActiva]);
+  }, [activeListLength, store.cargandoCalculo, store.pestañaActiva, criticidades, filtrosActivos, mesesRotacion]);
 
   useEffect(() => {
     const sup = scrollSuperiorRef.current;
