@@ -10,7 +10,7 @@ import {
   ConfiguracionMapeoFormulas,
   ProductoTerminadoMaestro,
 } from '@/app/gestion-formulas/lib/types';
-import { ResultadosMRPFinal } from '@/app/gestion-formulas/lib/motorMRP';
+import { ResultadosMRPFinal } from '@/app/gestion-formulas/lib/types';
 
 export interface GestionFormulasState {
   productos: Producto[];

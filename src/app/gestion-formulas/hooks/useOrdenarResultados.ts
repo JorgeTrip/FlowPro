@@ -1,6 +1,6 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 import { useMemo, useState } from 'react';
-import { ResultadoMRP } from '../lib/motorMRP';
+import { ResultadoMRP } from '../lib/types';
 
 /**
  * Hook puro que administra el ordenamiento interactivo de los resultados del cálculo MRP.

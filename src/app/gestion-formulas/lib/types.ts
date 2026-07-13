@@ -169,3 +169,68 @@ export interface ConfiguracionMapeoFormulas {
   consumo: MapeoConsumo | null;
   stockPT: MapeoStockPT | null;
 }
+
+/**
+ * ==========================================
+ * SECCIÓN 4: ESTRUCTURAS DE RESULTADOS MRP
+ * ==========================================
+ */
+
+/**
+ * Representa el desglose del producto terminado que demanda una materia prima.
+ */
+export interface DesgloseProducto {
+  codigoProducto: string;
+  descripcion: string;
+  rotacion: number;
+  stockPTEntreRios: number;
+  stockPTCABA: number;
+  cantidadFabricarCABA: number;
+  cantidadFabricarER: number;
+  transferirPT: number;
+}
+
+/**
+ * Representa el cálculo de requerimiento sugerido de una materia prima.
+ */
+export interface ResultadoMRP {
+  codigoMP: string;
+  descripcionMP: string;
+  unidadMedida: string;
+  stockMPEntreRios: number;
+  stockMPCABA: number;
+  cantidadSugerida: number;
+  movimientoSugerido: {
+    tipo: 'sin_accion' | 'transferencia' | 'compra' | 'combinado';
+    transferencia?: number;
+    compra?: number;
+  };
+  criticidad: 'alta' | 'media' | 'baja';
+  productosUsados: DesgloseProducto[];
+}
+
+/**
+ * Representa la propuesta de abastecimiento de un producto terminado tercerizado.
+ */
+export interface ResultadoTercerizadosMRP {
+  codigoPT: string;
+  descripcionPT: string;
+  stockPTEntreRios: number;
+  stockPTCABA: number;
+  rotacion: number;
+  movimientoSugerido: {
+    tipo: 'sin_accion' | 'transferencia' | 'compra' | 'combinado';
+    transferencia?: number;
+    compra?: number;
+  };
+  criticidad: 'alta' | 'media' | 'baja';
+}
+
+/**
+ * Agrupa los resultados consolidados de productos propios y tercerizados.
+ */
+export interface ResultadosMRPFinal {
+  propios: ResultadoMRP[];
+  tercerizados: ResultadoTercerizadosMRP[];
+}
+

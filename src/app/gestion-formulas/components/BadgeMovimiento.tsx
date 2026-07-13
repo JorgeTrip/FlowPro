@@ -1,6 +1,6 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 import React from 'react';
-import { ResultadoMRP } from '../lib/motorMRP';
+import { ResultadoMRP } from '../lib/types';
 
 interface BadgeMovimientoProps {
   movimiento: ResultadoMRP['movimientoSugerido'];
