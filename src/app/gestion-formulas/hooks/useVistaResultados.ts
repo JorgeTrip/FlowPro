@@ -132,7 +132,7 @@ export function useVistaResultados() {
 
   useEffect(() => {
     store.ejecutarCalculoMRP(mesesRotacion);
-  }, [mesesRotacion, store]);
+  }, [mesesRotacion]);
 
   const activeListLength = store.pestañaActiva === 'propios'
     ? resultadosFiltradosPropios.length
