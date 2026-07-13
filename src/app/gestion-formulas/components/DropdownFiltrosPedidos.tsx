@@ -57,7 +57,6 @@ export default function DropdownFiltrosPedidos({
   ];
 
   const cantidadActivos = filtrosActivos.length + (3 - criticidades.length);
-  const totalFiltros = 5; // 2 filtros básicos + 3 criticidades
 
   return (
     <div ref={refContenedor} className="relative inline-block text-left">

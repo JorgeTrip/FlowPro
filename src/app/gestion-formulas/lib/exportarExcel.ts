@@ -68,17 +68,6 @@ export async function exportarExcelMRP(resultados: ResultadosMRPFinal): Promise<
   (resultados.propios || []).forEach((r, idx) => {
     const N = Math.max(1, r.productosUsados?.length || 0);
     const colorBg = idx % 2 === 0 ? 'FFF9F9F9' : 'FFFFFFFF';
-    const filaInicio = filaActual;
-    const filaFin = filaActual + N - 1;
-
-    let movimientoTexto = '[Sin Acción]';
-    if (r.movimientoSugerido.tipo === 'transferencia' && r.movimientoSugerido.transferencia !== undefined) {
-      movimientoTexto = `[Transf E/R: ${r.movimientoSugerido.transferencia.toFixed(1)}]`;
-    } else if (r.movimientoSugerido.tipo === 'compra' && r.movimientoSugerido.compra !== undefined) {
-      movimientoTexto = `[Compra: ${r.movimientoSugerido.compra.toFixed(1)}]`;
-    } else if (r.movimientoSugerido.tipo === 'combinado' && r.movimientoSugerido.transferencia !== undefined && r.movimientoSugerido.compra !== undefined) {
-      movimientoTexto = `[Transf E/R: ${r.movimientoSugerido.transferencia.toFixed(1)}] + [Compra: ${r.movimientoSugerido.compra.toFixed(1)}]`;
-    }
 
     for (let i = 0; i < N; i++) {
       const pt = r.productosUsados?.[i];

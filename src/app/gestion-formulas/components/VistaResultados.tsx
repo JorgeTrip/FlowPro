@@ -4,7 +4,6 @@
 import { useVistaResultados } from '../hooks/useVistaResultados';
 import { exportarExcelMRP } from '../lib/exportarExcel';
 import { Tooltip, SkeletonTabla } from './ComponentesAuxiliares';
-import { BadgeMovimiento } from './BadgeMovimiento';
 import DropdownFiltrosPedidos from './DropdownFiltrosPedidos';
 import SelectorMesesRotacion from './SelectorMesesRotacion';
 
