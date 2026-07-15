@@ -51,16 +51,16 @@ export const MODULOS_DISPONIBLES: Modulo[] = [
     }
   },
   {
-    id: 'gestion-formulas',
-    nombre: 'Pedido MP/PT',
-    ruta: '/gestion-formulas',
-    icono: '⚗️',
-    descripcion: 'Gestión de fórmulas, stock y optimización para Pedido MP/PT',
+    id: 'control-asistencias',
+    nombre: 'Control de Asistencias',
+    ruta: '/control-asistencias',
+    icono: '🕒',
+    descripcion: 'Fichadas, horarios y análisis de puntualidad',
     activo: true,
-    categoria: 'inventario',
+    categoria: 'personal',
     tooltip: {
-      descripcion: 'Optimiza el cálculo de fórmulas (BOM/MRP) de forma intermedia procesando datos de stock y recetas en el cliente para volcar en la planilla de Excel oficial.',
-      inputRequerido: 'Requiere archivos Excel de Tango: 1) Catálogo de productos, 2) Fórmulas/recetas (BOM) y 3) Stock actual por depósito.'
+      descripcion: 'Importa fichadas desde Excel, asigna horarios y analiza llegadas/salidas y almuerzos.',
+      inputRequerido: 'Requiere 1 planilla Excel con columnas: Empleado, Fecha, Hora, Tipo (Entrada/Salida).'
     }
   },
   {
@@ -82,16 +82,16 @@ export const MODULOS_DISPONIBLES: Modulo[] = [
     categoria: 'finanzas'
   },
   {
-    id: 'control-asistencias',
-    nombre: 'Control de Asistencias',
-    ruta: '/control-asistencias',
-    icono: '🕒',
-    descripcion: 'Fichadas, horarios y análisis de puntualidad',
+    id: 'gestion-formulas',
+    nombre: 'Pedido MP/PT',
+    ruta: '/gestion-formulas',
+    icono: '⚗️',
+    descripcion: 'Gestión de fórmulas, stock y optimización para Pedido MP/PT',
     activo: true,
-    categoria: 'personal',
+    categoria: 'inventario',
     tooltip: {
-      descripcion: 'Importa fichadas desde Excel, asigna horarios y analiza llegadas/salidas y almuerzos.',
-      inputRequerido: 'Requiere 1 planilla Excel con columnas: Empleado, Fecha, Hora, Tipo (Entrada/Salida).'
+      descripcion: 'Optimiza el cálculo de fórmulas (BOM/MRP) de forma intermedia procesando datos de stock y recetas en el cliente para volcar en la planilla de Excel oficial.',
+      inputRequerido: 'Requiere archivos Excel de Tango: 1) Catálogo de productos, 2) Fórmulas/recetas (BOM) y 3) Stock actual por depósito.'
     }
   },
   {
