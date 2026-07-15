@@ -16,9 +16,9 @@ export function agregarHojaRelacionMPPT(wb: ExcelJS.Workbook, propios: Resultado
     { header: 'PRODUCTO TERMINADO', key: 'productosUsados', width: 40 },
     { header: 'STOCK PT E.R.', key: 'stockPTEntreRios', width: 15 },
     { header: 'STOCK PT CABA', key: 'stockPTCABA', width: 15 },
-    { header: 'PRODUCIR CABA', key: 'cantidadFabricarCABA', width: 18 },
-    { header: 'PRODUCIR E.R.', key: 'cantidadFabricarER', width: 18 },
-    { header: 'TRANSFERIR PT', key: 'transferirPT', width: 15 },
+    { header: 'PRODUCIR PT CABA', key: 'cantidadFabricarCABA', width: 18 },
+    { header: 'PRODUCIR PT E.R.', key: 'cantidadFabricarER', width: 18 },
+    { header: 'TRANSFERIR PT (E.R.→CABA)', key: 'transferirPT', width: 22 },
     { header: 'CANT (ROTACIÓN)', key: 'rotacionProductos', width: 30 },
   ];
   formatearHeaders(wsR, 10);
@@ -70,8 +70,8 @@ export function agregarHojaRelacionMPPT(wb: ExcelJS.Workbook, propios: Resultado
           productosUsados: pt.descripcion,
           stockPTEntreRios: pt.stockPTEntreRios,
           stockPTCABA: pt.stockPTCABA,
-          cantidadFabricarCABA: pt.cantidadFabricarCABA,
-          cantidadFabricarER: pt.cantidadFabricarER,
+          cantidadFabricarCABA: pt.produccionExistenteCABA,
+          cantidadFabricarER: pt.produccionExistenteER,
           transferirPT: pt.transferirPT,
           rotacionProductos: pt.rotacion !== undefined ? pt.rotacion : '',
         });

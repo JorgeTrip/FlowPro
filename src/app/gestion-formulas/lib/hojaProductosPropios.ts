@@ -15,31 +15,31 @@ export function agregarHojaProductosPropios(
 ): void {
   const wsP = wb.addWorksheet('Productos Propios');
 
-  const descCompra = `DEMANDA ${mesesCompra} ${mesesCompra === 1 ? 'MES' : 'MESES'} (COMPRA)`;
-  const descTransf = `DEMANDA ${mesesTransferencia} ${mesesTransferencia === 1 ? 'MES' : 'MESES'} (TRANSF.)`;
-
   wsP.columns = [
     { header: 'CÓDIGO MP', key: 'codigoMP', width: 15 },
     { header: 'DESCRIPCIÓN MP', key: 'descripcionMP', width: 35 },
     { header: 'UM', key: 'unidadMedida', width: 8 },
     { header: 'STOCK MP E.R.', key: 'stockMPEntreRios', width: 18 },
-    { header: 'STOCK MP CABA', key: 'stockMPCABA', width: 14 },
-    { header: 'CANT. SUGERIDA', key: 'cantidadSugerida', width: 16 },
-    { header: descCompra, key: 'comprar', width: 28 },
-    { header: descTransf, key: 'transferir', width: 28 },
-    { header: 'CRITICIDAD', key: 'criticidad', width: 14 },
-    { header: 'CÓDIGO', key: 'codigoProducto', width: 12 },
+    { header: 'STOCK MP CABA', key: 'stockMPCABA', width: 18 },
+    { header: 'CÓDIGO PT', key: 'codigoProducto', width: 12 },
     { header: 'PRODUCTOS EN LOS QUE SE USA', key: 'productosUsados', width: 40 },
     { header: 'LÍNEA DE PRODUCTO', key: 'linea', width: 22 },
     { header: 'PLANTA FABRICACIÓN', key: 'sitioFabricacion', width: 22 },
-    { header: 'STOCK PT E.R.', key: 'stockPTEntreRios', width: 12 },
-    { header: 'STOCK PT CABA', key: 'stockPTCABA', width: 12 },
-    { header: 'PRODUCIR CABA', key: 'cantidadFabricarCABA', width: 18 },
-    { header: 'PRODUCIR E.R.', key: 'cantidadFabricarER', width: 18 },
-    { header: 'TRANSFERIR PT', key: 'transferirPT', width: 12 },
-    { header: 'CANT (ROTACIÓN)', key: 'rotacionProductos', width: 30 },
+    { header: 'STOCK PT E.R.', key: 'stockPTEntreRios', width: 15 },
+    { header: 'STOCK PT CABA', key: 'stockPTCABA', width: 15 },
+    { header: 'ROT. MENSUAL PT', key: 'rotacionMensual', width: 18 },
+    { header: `ROT. ${mesesTransferencia}M PT (TRANSF.)`, key: 'rotacionTransf', width: 25 },
+    { header: `ROT. ${mesesCompra}M PT (COMPRA)`, key: 'rotacionCompra', width: 25 },
+    { header: 'TRANSF. PT (E.R.→CABA)', key: 'transferirPT', width: 22 },
+    { header: 'TRANSF. MP (E.R.→CABA)', key: 'transferirMP', width: 22 },
+    { header: 'TRANSF. MP (CABA→E.R.)', key: 'transferirMPCabaEr', width: 22 },
+    { header: 'PRODUCIR PT CABA', key: 'cantidadFabricarCABA', width: 18 },
+    { header: 'PRODUCIR PT E.R.', key: 'cantidadFabricarER', width: 18 },
+    { header: 'COMPRA MP', key: 'comprar', width: 18 },
+    { header: 'CANTIDAD NECESARIA MP', key: 'cantidadSugerida', width: 22 },
+    { header: 'CRITICIDAD', key: 'criticidad', width: 14 },
   ];
-  formatearHeaders(wsP, 19);
+  formatearHeaders(wsP, 22);
 
   let filaActual = 2;
   (propios || []).forEach((r, idx) => {
@@ -57,20 +57,23 @@ export function agregarHojaProductosPropios(
         unidadMedida: esPrimeraFila ? r.unidadMedida : '',
         stockMPEntreRios: esPrimeraFila ? r.stockMPEntreRios : null,
         stockMPCABA: esPrimeraFila ? r.stockMPCABA : null,
-        cantidadSugerida: esPrimeraFila ? r.cantidadSugerida : null,
-        comprar: esPrimeraFila ? (r.movimientoSugerido.compra ?? 0) : null,
-        transferir: esPrimeraFila ? (r.movimientoSugerido.transferencia ?? 0) : null,
-        criticidad: esPrimeraFila ? r.criticidad.toUpperCase() : '',
         codigoProducto: pt?.codigoProducto || '',
         productosUsados: pt?.descripcion || '',
         linea: pt?.linea || '',
         sitioFabricacion: pt?.sitioFabricacion || '',
         stockPTEntreRios: pt?.stockPTEntreRios ?? 0,
         stockPTCABA: pt?.stockPTCABA ?? 0,
-        cantidadFabricarCABA: pt?.cantidadFabricarCABA ?? 0,
-        cantidadFabricarER: pt?.cantidadFabricarER ?? 0,
+        rotacionMensual: pt?.rotacionMensual ?? 0,
+        rotacionTransf: pt?.rotacionMensual !== undefined ? pt.rotacionMensual * mesesTransferencia : 0,
+        rotacionCompra: pt?.rotacionMensual !== undefined ? pt.rotacionMensual * mesesCompra : 0,
         transferirPT: pt?.transferirPT ?? 0,
-        rotacionProductos: pt?.rotacion !== undefined ? pt.rotacion : '',
+        transferirMP: esPrimeraFila ? (r.movimientoSugerido.transferencia ?? 0) : null,
+        transferirMPCabaEr: esPrimeraFila ? (r.movimientoSugerido.transferenciaCabaEr ?? 0) : null,
+        cantidadFabricarCABA: pt?.produccionExistenteCABA ?? 0,
+        cantidadFabricarER: pt?.produccionExistenteER ?? 0,
+        comprar: esPrimeraFila ? (r.movimientoSugerido.compra ?? 0) : null,
+        cantidadSugerida: esPrimeraFila ? r.cantidadSugerida : null,
+        criticidad: esPrimeraFila ? r.criticidad.toUpperCase() : '',
       });
 
       const row = wsP.getRow(filaActual);
@@ -82,10 +85,6 @@ export function agregarHojaProductosPropios(
         { horizontal: 'center' as const, vertical: 'top' as const },
         { horizontal: 'right' as const, vertical: 'top' as const },
         { horizontal: 'right' as const, vertical: 'top' as const },
-        { horizontal: 'right' as const, vertical: 'top' as const },
-        { horizontal: 'right' as const, vertical: 'top' as const },
-        { horizontal: 'right' as const, vertical: 'top' as const },
-        { horizontal: 'center' as const, vertical: 'top' as const },
         { horizontal: 'center' as const, vertical: 'top' as const },
         { horizontal: 'left' as const, vertical: 'top' as const },
         { horizontal: 'left' as const, vertical: 'top' as const },
@@ -95,10 +94,17 @@ export function agregarHojaProductosPropios(
         { horizontal: 'right' as const, vertical: 'top' as const },
         { horizontal: 'right' as const, vertical: 'top' as const },
         { horizontal: 'right' as const, vertical: 'top' as const },
-        { horizontal: 'right' as const, vertical: 'top' as const }
+        { horizontal: 'right' as const, vertical: 'top' as const },
+        { horizontal: 'right' as const, vertical: 'top' as const },
+        { horizontal: 'right' as const, vertical: 'top' as const },
+        { horizontal: 'right' as const, vertical: 'top' as const },
+        { horizontal: 'right' as const, vertical: 'top' as const },
+        { horizontal: 'right' as const, vertical: 'top' as const },
+        { horizontal: 'right' as const, vertical: 'top' as const },
+        { horizontal: 'center' as const, vertical: 'top' as const },
       ];
 
-      for (let c = 1; c <= 19; c++) {
+      for (let c = 1; c <= 22; c++) {
         const cell = row.getCell(c);
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colorBg } };
         cell.border = borderFino;
@@ -106,23 +112,23 @@ export function agregarHojaProductosPropios(
         cell.font = { name: 'Segoe UI', size: 9 };
         
         const tieneValor = cell.value !== null && cell.value !== '';
-        if (tieneValor && (c === 4 || c === 5 || c === 6 || c === 7 || c === 8 || c === 14 || c === 15 || c === 16 || c === 17 || c === 18 || c === 19)) {
+        if (tieneValor && [4, 5, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21].includes(c)) {
           cell.numFmt = '#,##0.0';
         }
       }
       filaActual++;
     }
 
-    // Combinar las celdas de las columnas correspondientes a la Materia Prima (1 a 9)
+    // Combinar las celdas de las columnas correspondientes a la Materia Prima
     if (N > 1) {
       const filaFin = filaInicio + N - 1;
-      for (let c = 1; c <= 9; c++) {
+      [1, 2, 3, 4, 5, 16, 17, 20, 21, 22].forEach((c) => {
         wsP.mergeCells(filaInicio, c, filaFin, c);
-      }
+      });
     }
   });
 
   if (filaActual > 2) {
-    aplicarBordesExternos(wsP, filaActual - 1, 19);
+    aplicarBordesExternos(wsP, filaActual - 1, 22);
   }
 }

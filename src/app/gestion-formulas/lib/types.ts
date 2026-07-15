@@ -188,6 +188,8 @@ export interface DesgloseProducto {
   stockPTCABA: number;
   cantidadFabricarCABA: number;
   cantidadFabricarER: number;
+  produccionExistenteCABA: number;
+  produccionExistenteER: number;
   transferirPT: number;
   linea?: string;
   sitioFabricacion?: 'CABA' | 'ENTRE RIOS' | 'CABA + ENTRE RIOS' | 'TERC. CABA' | 'TERC. ENTRE RIOS' | 'TERC. CON PROV. MP';
@@ -205,7 +207,8 @@ export interface ResultadoMRP {
   cantidadSugerida: number;
   movimientoSugerido: {
     tipo: 'sin_accion' | 'transferencia' | 'compra' | 'combinado';
-    transferencia?: number;
+    transferencia?: number; // ER -> CABA
+    transferenciaCabaEr?: number; // CABA -> ER
     compra?: number;
   };
   criticidad: 'alta' | 'media' | 'baja';

@@ -4,51 +4,16 @@ import { ResultadoMRP, ReglaPrefijo } from './types';
  * Determina si un depósito corresponde a CABA.
  */
 export function esDepositoCABA(deposito: string): boolean {
-  const dep = deposito.toLowerCase();
-  return (
-    dep.includes('caba') ||
-    dep.includes('capital') ||
-    dep.includes('buenos aires') ||
-    dep.includes('bue') ||
-    dep.includes('central')
-  );
+  const d = deposito.toLowerCase();
+  return d.includes('caba') || d.includes('capital') || d.includes('buenos aires') || d.includes('bue') || d.includes('central');
 }
 
 /**
  * Determina si un depósito corresponde a Entre Ríos.
  */
 export function esDepositoEntreRios(deposito: string): boolean {
-  const dep = deposito.toLowerCase();
-  return (
-    dep.includes('entre') ||
-    dep.includes('rios') ||
-    dep.includes('ríos') ||
-    dep.includes('er') ||
-    dep.includes('e.r')
-  );
-}
-
-/**
- * Calcula el movimiento sugerido (compra o transferencia) para cubrir una demanda
- * considerando el stock de CABA y el de Entre Ríos.
- * Se prioriza abastecer con stock físico disponible en CABA. Si no alcanza,
- * se transfiere desde Entre Ríos. Si aún así falta, se sugiere compra.
- * 
- * @param demanda Cantidad de recurso requerida
- * @param stockCABA Stock físico en CABA
- * @param stockER Stock físico en Entre Ríos
- */
-export function calcularMovimientoSugerido(
-  demanda: number, stockCABA: number, stockER: number
-): ResultadoMRP['movimientoSugerido'] {
-  const dispCABA = Math.max(0, stockCABA);
-  const dispER = Math.max(0, stockER);
-  if (dispCABA >= demanda) return { tipo: 'sin_accion' };
-  const faltante = demanda - dispCABA;
-  const transf = Math.min(faltante, dispER);
-  const compra = faltante - transf;
-  if (transf > 0 && compra > 0) return { tipo: 'combinado', transferencia: transf, compra };
-  return transf > 0 ? { tipo: 'transferencia', transferencia: transf } : { tipo: 'compra', compra };
+  const d = deposito.toLowerCase();
+  return d.includes('entre') || d.includes('rios') || d.includes('ríos') || d.includes('er') || d.includes('e.r');
 }
 
 /**
@@ -77,9 +42,6 @@ export function calcularMovimientoSugeridoDoble(
 /**
  * Determina el nivel de criticidad (alta, media, baja) según el stock total
  * disponible en comparación con el consumo o demanda calculada.
- * 
- * @param stockTotal Sumatoria de stock de ambos depósitos
- * @param consumo Demanda o rotación a cubrir
  */
 export function calcularCriticidad(stockTotal: number, consumo: number): 'alta' | 'media' | 'baja' {
   if (consumo <= 0) return 'baja';
@@ -100,11 +62,12 @@ export interface ResultadoDecisionStock {
   cantidadFabricarER: number;
   transferirPT: number;
   compraMP: number;
-  transfMP: number;
+  transfMP: number; // representa ER -> CABA
+  transfMPCabaEr?: number; // representa CABA -> ER
 }
 
 /**
- * Aplica los pasos de cortocircuito (short-circuits) lógicos y las prioridades de planta
+ * Aplica los pasos de cortocorticuitos lógicos y las prioridades de planta
  * para determinar las transferencias, fabricaciones y compras de MP o PT requeridas.
  */
 export function calcularDecisionStock(
@@ -122,6 +85,7 @@ export function calcularDecisionStock(
   let transferirPT = 0;
   let compraMP = 0;
   let transfMP = 0;
+  let transfMPCabaEr = 0;
 
   const R = Math.max(0, rotacionTotal - dispPTCABA);
 
@@ -135,12 +99,23 @@ export function calcularDecisionStock(
           cantidadFabricarER = R - dispPTER;
           transferirPT = R;
         } else {
-          cantidadFabricarER = PT_pot;
-          transferirPT = dispPTER + PT_pot;
-          const R_falta = R - (dispPTER + PT_pot);
-          cantidadFabricarER += R_falta;
-          transferirPT += R_falta;
-          compraMP = R_falta * cantidadComponente;
+          // No alcanza con la MP local de ER. Se intenta transferir MP de CABA.
+          const dispMPCABA = maxCABA === 99999999 ? 0 : maxCABA * cantidadComponente;
+          const R_restante = R - (dispPTER + PT_pot);
+          
+          if (maxCABA >= R_restante) {
+            transfMPCabaEr = R_restante * cantidadComponente;
+            cantidadFabricarER = R - dispPTER;
+            transferirPT = R;
+          } else {
+            transfMPCabaEr = dispMPCABA;
+            cantidadFabricarER = PT_pot + maxCABA;
+            transferirPT = dispPTER + PT_pot + maxCABA;
+            const R_falta = R_restante - maxCABA;
+            cantidadFabricarER += R_falta;
+            transferirPT += R_falta;
+            compraMP = R_falta * cantidadComponente;
+          }
         }
       }
     } else if (sitio === 'CABA') {
@@ -160,8 +135,7 @@ export function calcularDecisionStock(
         }
       }
     } else if (sitio === 'TERC. CON PROV. MP') {
-      // Caso Maquila: Fabricación externa proveyendo materias primas desde depósitos propios
-      cantidadFabricarCABA = R; // Representa el PT que requerirá elaboración externa con nuestra MP
+      cantidadFabricarCABA = R;
       const dispMPCABA_real = maxCABA === 99999999 ? 0 : maxCABA * cantidadComponente;
       const MP_Req = R * cantidadComponente;
 
@@ -169,8 +143,8 @@ export function calcularDecisionStock(
         transfMP = 0;
         compraMP = 0;
       } else {
-        transfMP = 0; // No se consulta ni se transfiere desde Entre Ríos
-        compraMP = MP_Req - dispMPCABA_real; // Se compra la materia prima faltante directamente en CABA
+        transfMP = 0;
+        compraMP = MP_Req - dispMPCABA_real;
       }
     } else {
       // CABA + ENTRE RIOS (Ambas plantas)
@@ -200,5 +174,5 @@ export function calcularDecisionStock(
     }
   }
 
-  return { cantidadFabricarCABA, cantidadFabricarER, transferirPT, compraMP, transfMP };
+  return { cantidadFabricarCABA, cantidadFabricarER, transferirPT, compraMP, transfMP, transfMPCabaEr };
 }
