@@ -1,5 +1,7 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
-import React, { useRef } from 'react';
+'use client';
+
+import React, { useRef, useState, useEffect } from 'react';
 
 interface CabeceraAccionesProps {
   ui: {
@@ -7,17 +9,35 @@ interface CabeceraAccionesProps {
     setBusqueda: (v: string) => void;
     abrirModalCrear: () => void;
     exportarAJSON: () => void;
-    importarDesdeJSON: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    exportarAExcel: () => void;
+    exportarACSV: () => void;
+    importarDesdeArchivo: (e: React.ChangeEvent<HTMLInputElement>) => void;
     procesando: boolean;
   };
 }
 
 export function CabeceraAcciones({ ui }: CabeceraAccionesProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [exportMenuAbierto, setExportMenuAbierto] = useState(false);
+  const exportRef = useRef<HTMLDivElement>(null);
 
   const dispararImportacion = () => {
     fileInputRef.current?.click();
   };
+
+  useEffect(() => {
+    const alHacerClickAfuera = (evento: MouseEvent) => {
+      if (exportRef.current && !exportRef.current.contains(evento.target as Node)) {
+        setExportMenuAbierto(false);
+      }
+    };
+    if (exportMenuAbierto) {
+      document.addEventListener('mousedown', alHacerClickAfuera);
+    }
+    return () => {
+      document.removeEventListener('mousedown', alHacerClickAfuera);
+    };
+  }, [exportMenuAbierto]);
 
   return (
     <div className="flex flex-col md:flex-row items-center justify-between p-4 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-gray-800 gap-4 shadow-sm">
@@ -40,12 +60,12 @@ export function CabeceraAcciones({ ui }: CabeceraAccionesProps) {
 
       {/* Botones de acción */}
       <div className="flex flex-wrap gap-2 w-full md:w-auto justify-end">
-        {/* Input file oculto para importar */}
+        {/* Input file oculto para importar múltiples formatos */}
         <input
           type="file"
-          accept=".json"
+          accept=".json,.csv,.xlsx"
           ref={fileInputRef}
-          onChange={ui.importarDesdeJSON}
+          onChange={ui.importarDesdeArchivo}
           className="hidden"
           disabled={ui.procesando}
         />
@@ -54,20 +74,59 @@ export function CabeceraAcciones({ ui }: CabeceraAccionesProps) {
           onClick={dispararImportacion}
           disabled={ui.procesando}
           className="flex items-center space-x-1 px-3 h-9 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-bold hover:bg-gray-50 dark:hover:bg-[#2C2C2E]/50 text-gray-700 dark:text-gray-300 transition-all cursor-pointer shadow-sm disabled:opacity-50"
-          title="Importar reglas desde archivo JSON"
+          title="Importar reglas desde archivo JSON, CSV o Excel"
         >
           <span>📥</span>
           <span>Importar</span>
         </button>
 
-        <button
-          onClick={ui.exportarAJSON}
-          className="flex items-center space-x-1 px-3 h-9 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-bold hover:bg-gray-50 dark:hover:bg-[#2C2C2E]/50 text-gray-700 dark:text-gray-300 transition-all cursor-pointer shadow-sm"
-          title="Exportar reglas a archivo JSON"
-        >
-          <span>📤</span>
-          <span>Exportar</span>
-        </button>
+        {/* Dropdown de Exportación */}
+        <div ref={exportRef} className="relative inline-block text-left">
+          <button
+            onClick={() => setExportMenuAbierto(!exportMenuAbierto)}
+            className="flex items-center space-x-1.5 px-3 h-9 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-bold hover:bg-gray-50 dark:hover:bg-[#2C2C2E]/50 text-gray-700 dark:text-gray-300 transition-all cursor-pointer shadow-sm"
+            title="Exportar reglas a distintos formatos"
+          >
+            <span>📤</span>
+            <span>Exportar</span>
+            <span className="text-[9px] text-gray-400">▼</span>
+          </button>
+
+          {exportMenuAbierto && (
+            <div className="absolute right-0 mt-1.5 w-48 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-250 dark:border-gray-800 shadow-lg p-2.5 z-40 space-y-1 transition-all animate-in fade-in slide-in-from-top-1 duration-100">
+              <button
+                onClick={() => {
+                  ui.exportarAExcel();
+                  setExportMenuAbierto(false);
+                }}
+                className="w-full text-left flex items-center space-x-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-[#2C2C2E]/40 text-xs text-gray-700 dark:text-gray-300 cursor-pointer font-bold"
+              >
+                <span>📊</span>
+                <span>Exportar a Excel (.xlsx)</span>
+              </button>
+              <button
+                onClick={() => {
+                  ui.exportarACSV();
+                  setExportMenuAbierto(false);
+                }}
+                className="w-full text-left flex items-center space-x-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-[#2C2C2E]/40 text-xs text-gray-700 dark:text-gray-300 cursor-pointer font-bold"
+              >
+                <span>📝</span>
+                <span>Exportar a CSV (.csv)</span>
+              </button>
+              <button
+                onClick={() => {
+                  ui.exportarAJSON();
+                  setExportMenuAbierto(false);
+                }}
+                className="w-full text-left flex items-center space-x-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-[#2C2C2E]/40 text-xs text-gray-700 dark:text-gray-300 cursor-pointer font-bold"
+              >
+                <span>⚙️</span>
+                <span>Exportar a JSON (.json)</span>
+              </button>
+            </div>
+          )}
+        </div>
 
         <button
           onClick={ui.abrirModalCrear}
