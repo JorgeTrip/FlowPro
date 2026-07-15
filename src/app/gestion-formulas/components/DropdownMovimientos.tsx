@@ -3,23 +3,23 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 
-interface DropdownFiltrosPedidosProps {
-  filtrosActivos: string[];
-  setFiltrosActivos: (filtros: string[]) => void;
+interface DropdownMovimientosProps {
+  movimientosFiltrados: string[];
+  setMovimientosFiltrados: (movimientos: string[]) => void;
 }
 
-export default function DropdownFiltrosPedidos({
-  filtrosActivos,
-  setFiltrosActivos,
-}: DropdownFiltrosPedidosProps) {
+export default function DropdownMovimientos({
+  movimientosFiltrados,
+  setMovimientosFiltrados,
+}: DropdownMovimientosProps) {
   const [abierto, setAbierto] = useState(false);
   const refContenedor = useRef<HTMLDivElement>(null);
 
-  const toggleFiltro = (filtro: string) => {
-    if (filtrosActivos.includes(filtro)) {
-      setFiltrosActivos(filtrosActivos.filter((f) => f !== filtro));
+  const toggleMovimiento = (m: string) => {
+    if (movimientosFiltrados.includes(m)) {
+      setMovimientosFiltrados(movimientosFiltrados.filter((x) => x !== m));
     } else {
-      setFiltrosActivos([...filtrosActivos, filtro]);
+      setMovimientosFiltrados([...movimientosFiltrados, m]);
     }
   };
 
@@ -38,11 +38,12 @@ export default function DropdownFiltrosPedidos({
   }, [abierto]);
 
   const opciones = [
-    { id: 'eliminar_sin_accion', etiqueta: 'Eliminar Sin acción' },
-    { id: 'con_datos', etiqueta: 'Productos con datos' },
+    { id: 'transf_mp', etiqueta: 'Transferencia MP (ER -> CABA)' },
+    { id: 'transf_pt', etiqueta: 'Transferencia PT (ER -> CABA)' },
+    { id: 'compra', etiqueta: 'Compra' },
   ];
 
-  const cantidadActivos = filtrosActivos.length;
+  const cantidadActivos = movimientosFiltrados.length;
 
   return (
     <div ref={refContenedor} className="relative inline-block text-left">
@@ -51,7 +52,7 @@ export default function DropdownFiltrosPedidos({
         type="button"
         className="px-4 h-9 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#2C2C2E] hover:bg-gray-50 dark:hover:bg-[#3A3A3C] text-xs font-bold text-gray-700 dark:text-gray-200 transition-all flex items-center space-x-2 cursor-pointer shadow-sm"
       >
-        <span>Filtros Vista</span>
+        <span>Acción/Movimiento</span>
         {cantidadActivos > 0 && (
           <span className="w-5 h-5 rounded-full bg-blue-500 text-white text-[10px] flex items-center justify-center font-bold font-mono">
             {cantidadActivos}
@@ -61,8 +62,8 @@ export default function DropdownFiltrosPedidos({
       </button>
 
       {abierto && (
-        <div className="absolute left-0 mt-1.5 w-52 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-250 dark:border-gray-800 shadow-lg p-3 z-30 space-y-2 transition-all animate-in fade-in slide-in-from-top-1 duration-100">
-          <h3 className="text-xs font-bold text-gray-700 dark:text-gray-200 mb-1">Criterios de Vista</h3>
+        <div className="absolute left-0 mt-1.5 w-64 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-250 dark:border-gray-800 shadow-lg p-3 z-30 space-y-2 transition-all animate-in fade-in slide-in-from-top-1 duration-100">
+          <h3 className="text-xs font-bold text-gray-700 dark:text-gray-200 mb-1">Filtrar por Acción</h3>
           <div className="space-y-1.5">
             {opciones.map((op) => (
               <label
@@ -71,8 +72,8 @@ export default function DropdownFiltrosPedidos({
               >
                 <input
                   type="checkbox"
-                  checked={filtrosActivos.includes(op.id)}
-                  onChange={() => toggleFiltro(op.id)}
+                  checked={movimientosFiltrados.includes(op.id)}
+                  onChange={() => toggleMovimiento(op.id)}
                   className="rounded border-gray-300 dark:border-gray-700 text-blue-600 focus:ring-blue-500 h-4 w-4 bg-white dark:bg-[#2C2C2E]"
                 />
                 <span className="font-medium select-none text-[11px]">{op.etiqueta}</span>

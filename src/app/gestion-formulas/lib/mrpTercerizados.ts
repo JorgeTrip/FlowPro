@@ -76,8 +76,10 @@ export function calcularMRPTercerizados(
       stockPTEntreRios: stockER,
       stockPTCABA: stockCABA,
       rotacion: rotacionCompra,
+      rotacionMensual,
       movimientoSugerido: movimiento,
-      criticidad: calcularCriticidad(dispPTCABA + dispPTER, rotacionCompra)
+      criticidad: calcularCriticidad(dispPTCABA + dispPTER, rotacionCompra),
+      linea: regla?.linea
     });
   });
 

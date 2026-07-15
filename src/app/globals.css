@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Tema claro personalizado con tonos de gris */
 :root {
   --gray-50: #f8fafc;

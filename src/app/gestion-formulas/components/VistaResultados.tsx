@@ -5,6 +5,10 @@ import { useVistaResultados } from '../hooks/useVistaResultados';
 import { exportarExcelMRP } from '../lib/exportarExcel';
 import { SkeletonTabla } from './ComponentesAuxiliares';
 import DropdownFiltrosPedidos from './DropdownFiltrosPedidos';
+import DropdownCriticidad from './DropdownCriticidad';
+import DropdownMovimientos from './DropdownMovimientos';
+import DropdownPlanta from './DropdownPlanta';
+import DropdownLinea from './DropdownLinea';
 import * as Select from '@radix-ui/react-select';
 import { TablaProductosPropios } from './TablaProductosPropios';
 import { TablaProductosTercerizados } from './TablaProductosTercerizados';
@@ -12,6 +16,8 @@ import { TablaProductosTercerizados } from './TablaProductosTercerizados';
 export default function VistaResultados() {
   const {
     busqueda, setBusqueda, filtrosActivos, setFiltrosActivos, criticidades, setCriticidades,
+    movimientosFiltrados, setMovimientosFiltrados, plantasFiltradas, setPlantasFiltradas,
+    lineasFiltradas, setLineasFiltradas, lineasDisponibles,
     mesesProyeccionTransferencia, mesesProyeccionCompra, setMesesProyeccionTransferencia, setMesesProyeccionCompra,
     scrollSuperiorRef, scrollInferiorRef, anchoScroll,
     resultadosFiltradosPropios, resultadosFiltradosTercerizados,
@@ -72,12 +78,29 @@ export default function VistaResultados() {
               <span className="absolute left-2.5 top-2.5 text-gray-400 text-xs">🔍</span>
             </div>
           </div>
-          <div className="flex flex-col justify-end h-full pt-4">
+          <div className="flex flex-wrap gap-2.5 items-end">
             <DropdownFiltrosPedidos 
               filtrosActivos={filtrosActivos} 
               setFiltrosActivos={setFiltrosActivos}
+            />
+            <DropdownCriticidad 
               criticidades={criticidades}
               setCriticidades={setCriticidades}
+            />
+            <DropdownMovimientos 
+              movimientosFiltrados={movimientosFiltrados}
+              setMovimientosFiltrados={setMovimientosFiltrados}
+            />
+            {pestañaActiva === 'propios' && (
+              <DropdownPlanta 
+                plantasFiltradas={plantasFiltradas}
+                setPlantasFiltradas={setPlantasFiltradas}
+              />
+            )}
+            <DropdownLinea 
+              lineasFiltradas={lineasFiltradas}
+              setLineasFiltradas={setLineasFiltradas}
+              lineasDisponibles={lineasDisponibles}
             />
           </div>
           <div className="flex items-center gap-2.5">
@@ -118,7 +141,23 @@ export default function VistaResultados() {
       {cargandoCalculo ? (
         <SkeletonTabla />
       ) : resultadosMRP ? (
-        <div className="space-y-1">
+        <div className="space-y-3">
+          {/* Referencia de Colores */}
+          <div className="flex flex-wrap items-center gap-5 px-3 py-2 bg-gray-50/50 dark:bg-[#2C2C2E]/20 border border-gray-150 dark:border-gray-800/30 rounded-lg text-[10px] font-bold text-gray-500 dark:text-gray-400 select-none">
+            <span className="flex items-center space-x-1.5">
+              <span className="w-3.5 h-3.5 rounded bg-[#E6F4EA] dark:bg-[#193220] border border-emerald-200/50 dark:border-emerald-900/30" />
+              <span>Verde: Datos extraídos (planillas)</span>
+            </span>
+            <span className="flex items-center space-x-1.5">
+              <span className="w-3.5 h-3.5 rounded bg-[#E6F0FA] dark:bg-[#192B40] border border-blue-200/50 dark:border-blue-900/30" />
+              <span>Azul: Cantidades necesarias (cálculo)</span>
+            </span>
+            <span className="flex items-center space-x-1.5">
+              <span className="w-3.5 h-3.5 rounded bg-[#FFF4E5] dark:bg-[#332211] border border-amber-200/50 dark:border-amber-900/30" />
+              <span>Amarillo: Acciones sugeridas (traslado/compra)</span>
+            </span>
+          </div>
+
           <div ref={scrollSuperiorRef} className="overflow-x-auto w-full border border-gray-200 dark:border-gray-800 rounded-t-xl bg-white dark:bg-[#1C1C1E] md:block hidden h-3 overflow-y-hidden">
             <div style={{ width: `${anchoScroll}px`, height: '1px' }} />
           </div>
@@ -127,7 +166,6 @@ export default function VistaResultados() {
             {pestañaActiva === 'propios' ? (
               <TablaProductosPropios
                 resultadosFiltradosPropios={resultadosFiltradosPropios}
-                sortPropios={sortPropios}
                 solicitarOrdenPropios={solicitarOrdenPropios}
                 getIndP={getIndP}
                 mesesProyeccionTransferencia={mesesProyeccionTransferencia}
@@ -136,7 +174,6 @@ export default function VistaResultados() {
             ) : (
               <TablaProductosTercerizados
                 resultadosFiltradosTercerizados={resultadosFiltradosTercerizados}
-                sortTercerizados={sortTercerizados}
                 solicitarOrdenTercerizados={solicitarOrdenTercerizados}
                 getIndT={getIndT}
                 mesesProyeccionTransferencia={mesesProyeccionTransferencia}

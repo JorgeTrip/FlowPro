@@ -131,6 +131,7 @@ export function calcularMRPPropios(
         const yaUsado = existente.productosUsados.find((p) => p.codigoProducto === receta.codigoProducto);
         if (yaUsado) {
           yaUsado.rotacion += rotacionTotalCompra;
+          yaUsado.rotacionMensual += rotacionMensual;
           yaUsado.stockPTEntreRios = stockPTER;
           yaUsado.stockPTCABA = stockPTCABA;
           yaUsado.cantidadFabricarCABA += cantidadFabricarCABA;
@@ -141,6 +142,7 @@ export function calcularMRPPropios(
             codigoProducto: receta.codigoProducto,
             descripcion: descPTConcat,
             rotacion: rotacionTotalCompra,
+            rotacionMensual,
             stockPTEntreRios: stockPTER,
             stockPTCABA: stockPTCABA,
             cantidadFabricarCABA,
@@ -163,6 +165,7 @@ export function calcularMRPPropios(
               codigoProducto: receta.codigoProducto,
               descripcion: descPTConcat,
               rotacion: rotacionTotalCompra,
+              rotacionMensual,
               stockPTEntreRios: stockPTER,
               stockPTCABA: stockPTCABA,
               cantidadFabricarCABA,

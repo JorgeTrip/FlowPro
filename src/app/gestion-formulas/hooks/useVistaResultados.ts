@@ -2,12 +2,23 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useGestionFormulasStore } from '@/app/stores/gestionFormulasStore';
 import { ResultadoMRP, ResultadoTercerizadosMRP } from '../lib/types';
+import { usePrefijosStore } from '@/app/stores/prefijosStore';
 
 export function useVistaResultados() {
   const store = useGestionFormulasStore();
   const [busqueda, setBusqueda] = useState('');
-  const [filtrosActivos, setFiltrosActivos] = useState<string[]>(['con_datos']);
+  const [filtrosActivos, setFiltrosActivos] = useState<string[]>([]);
   const [criticidades, setCriticidades] = useState<string[]>(['alta', 'media', 'baja']);
+  const [movimientosFiltrados, setMovimientosFiltrados] = useState<string[]>([]);
+  const [plantasFiltradas, setPlantasFiltradas] = useState<string[]>([]);
+  const [lineasFiltradas, setLineasFiltradas] = useState<string[]>([]);
+
+  const reglas = usePrefijosStore((state) => state.reglas);
+  const lineasDisponibles = useMemo(() => {
+    const arr = reglas || [];
+    const setLineas = new Set(arr.map((r) => r.linea).filter(Boolean));
+    return Array.from(setLineas).sort();
+  }, [reglas]);
 
   // Configuración de Ordenamiento
   const [sortPropios, setSortPropios] = useState<{ key: keyof ResultadoMRP; direction: 'asc' | 'desc' } | null>(null);
@@ -47,6 +58,30 @@ export function useVistaResultados() {
     // Aplicar filtro de criticidad
     items = items.filter((r) => criticidades.includes(r.criticidad));
 
+    // Aplicar filtro de movimientos/acciones
+    if (movimientosFiltrados.length > 0) {
+      items = items.filter((r) => {
+        const hasTransfMP = movimientosFiltrados.includes('transf_mp') && (r.movimientoSugerido.transferencia ?? 0) > 0;
+        const hasCompra = movimientosFiltrados.includes('compra') && (r.movimientoSugerido.compra ?? 0) > 0;
+        const hasTransfPT = movimientosFiltrados.includes('transf_pt') && r.productosUsados.some((p) => (p.transferirPT ?? 0) > 0);
+        return hasTransfMP || hasCompra || hasTransfPT;
+      });
+    }
+
+    // Aplicar filtro de Planta de fabricación
+    if (plantasFiltradas.length > 0) {
+      items = items.filter((r) =>
+        r.productosUsados.some((p) => p.sitioFabricacion && plantasFiltradas.includes(p.sitioFabricacion))
+      );
+    }
+
+    // Aplicar filtro de Línea de PT
+    if (lineasFiltradas.length > 0) {
+      items = items.filter((r) =>
+        r.productosUsados.some((p) => p.linea && lineasFiltradas.includes(p.linea))
+      );
+    }
+
     // Aplicar búsqueda
     if (busqueda.trim()) {
       const term = busqueda.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -79,7 +114,7 @@ export function useVistaResultados() {
     }
 
     return items;
-  }, [store.resultadosMRP?.propios, busqueda, filtrosActivos, sortPropios, criticidades]);
+  }, [store.resultadosMRP?.propios, busqueda, filtrosActivos, sortPropios, criticidades, movimientosFiltrados, plantasFiltradas, lineasFiltradas]);
 
   const resultadosFiltradosTercerizados = useMemo(() => {
     let items = store.resultadosMRP?.tercerizados || [];
@@ -94,6 +129,20 @@ export function useVistaResultados() {
     
     // Aplicar filtro de criticidad
     items = items.filter((r) => criticidades.includes(r.criticidad));
+
+    // Aplicar filtro de movimientos/acciones
+    if (movimientosFiltrados.length > 0) {
+      items = items.filter((r) => {
+        const hasCompra = movimientosFiltrados.includes('compra') && (r.movimientoSugerido.compra ?? 0) > 0;
+        const hasTransfPT = movimientosFiltrados.includes('transf_pt') && (r.movimientoSugerido.transferencia ?? 0) > 0;
+        return hasCompra || hasTransfPT;
+      });
+    }
+
+    // Aplicar filtro de Línea de PT (para tercerizados)
+    if (lineasFiltradas.length > 0) {
+      items = items.filter((r) => r.linea && lineasFiltradas.includes(r.linea));
+    }
 
     // Aplicar búsqueda
     if (busqueda.trim()) {
@@ -127,7 +176,7 @@ export function useVistaResultados() {
     }
 
     return items;
-  }, [store.resultadosMRP?.tercerizados, busqueda, filtrosActivos, sortTercerizados, criticidades]);
+  }, [store.resultadosMRP?.tercerizados, busqueda, filtrosActivos, sortTercerizados, criticidades, movimientosFiltrados, lineasFiltradas]);
 
   useEffect(() => {
     store.ejecutarCalculoMRP(store.mesesProyeccionTransferencia, store.mesesProyeccionCompra);
@@ -147,7 +196,7 @@ export function useVistaResultados() {
       }, 50);
       return () => clearTimeout(timer);
     }
-  }, [activeListLength, store.cargandoCalculo, store.pestañaActiva, criticidades, filtrosActivos, store.mesesProyeccionTransferencia, store.mesesProyeccionCompra]);
+  }, [activeListLength, store.cargandoCalculo, store.pestañaActiva, criticidades, filtrosActivos, movimientosFiltrados, plantasFiltradas, lineasFiltradas, store.mesesProyeccionTransferencia, store.mesesProyeccionCompra]);
 
   useEffect(() => {
     const sup = scrollSuperiorRef.current;
@@ -179,6 +228,13 @@ export function useVistaResultados() {
     setFiltrosActivos,
     criticidades,
     setCriticidades,
+    movimientosFiltrados,
+    setMovimientosFiltrados,
+    plantasFiltradas,
+    setPlantasFiltradas,
+    lineasFiltradas,
+    setLineasFiltradas,
+    lineasDisponibles,
     mesesProyeccionTransferencia: store.mesesProyeccionTransferencia,
     mesesProyeccionCompra: store.mesesProyeccionCompra,
     setMesesProyeccionTransferencia: store.setMesesProyeccionTransferencia,

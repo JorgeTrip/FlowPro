@@ -183,6 +183,7 @@ export interface DesgloseProducto {
   codigoProducto: string;
   descripcion: string;
   rotacion: number;
+  rotacionMensual: number;
   stockPTEntreRios: number;
   stockPTCABA: number;
   cantidadFabricarCABA: number;
@@ -220,12 +221,14 @@ export interface ResultadoTercerizadosMRP {
   stockPTEntreRios: number;
   stockPTCABA: number;
   rotacion: number;
+  rotacionMensual: number;
   movimientoSugerido: {
     tipo: 'sin_accion' | 'transferencia' | 'compra' | 'combinado';
     transferencia?: number;
     compra?: number;
   };
   criticidad: 'alta' | 'media' | 'baja';
+  linea?: string;
 }
 
 /**
