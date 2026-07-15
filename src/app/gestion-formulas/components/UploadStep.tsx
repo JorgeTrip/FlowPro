@@ -6,6 +6,7 @@ import { useGestionFormulasStore } from '@/app/stores/gestionFormulasStore';
 import { FileUpload } from '@/app/components/shared/FileUpload';
 import { GoogleDriveSection } from './GoogleDriveSection';
 import { useGoogleDriveSync } from '../hooks/useGoogleDriveSync';
+import { usePrefijosStore } from '@/app/stores/prefijosStore';
 
 export default function UploadStep() {
   const store = useGestionFormulasStore();
@@ -18,6 +19,9 @@ export default function UploadStep() {
     solapasSeleccionadas,
     handleCambioSolapa,
   } = useGoogleDriveSync();
+
+  const reglasPrefijos = usePrefijosStore((state) => state.reglas) || [];
+  const tienePrefijos = reglasPrefijos.length > 0 && !(reglasPrefijos.length === 1 && reglasPrefijos[0].id === 'semilla-1');
 
   const listoParaContinuar =
     store.datosCrudosFormulas.length > 0 &&
@@ -55,6 +59,10 @@ export default function UploadStep() {
               const solapaConsumo = buscarSolapa(['consumo', 'demanda', 'venta']);
               const solapaStockPT = buscarSolapa(['stock pt', 'maestro pt', 'productos terminados', 'pt']);
               const solapaPrefijos = buscarSolapa(['prefijo de codigos - lineas pt', 'prefijo de codigos', 'lineas pt', 'prefijos']);
+
+              if (!solapaFormulas) throw new Error('No se encontró la solapa de Fórmulas / Recetas en el archivo.');
+              if (!solapaStock) throw new Error('No se encontró la solapa de Stock / Existencias en el archivo.');
+              if (!solapaConsumo) throw new Error('No se encontró la solapa de Consumos en el archivo.');
 
               if (solapaFormulas) {
                 const { data, columns, previewData } = await procesarHojaEspecifica(file, solapaFormulas);
@@ -134,6 +142,10 @@ export default function UploadStep() {
               <div className="flex items-center space-x-1.5">
                 <span className={`w-2.5 h-2.5 rounded-full ${store.datosCrudosStockPT.length > 0 ? 'bg-green-500' : 'bg-amber-500'}`} />
                 <span className="text-gray-700 dark:text-gray-300">Maestro PT: {store.datosCrudosStockPT.length}</span>
+              </div>
+              <div className="flex items-center space-x-1.5">
+                <span className={`w-2.5 h-2.5 rounded-full ${tienePrefijos ? 'bg-green-500' : 'bg-amber-500'}`} />
+                <span className="text-gray-700 dark:text-gray-300">Prefijos PT: {tienePrefijos ? reglasPrefijos.length : 0}</span>
               </div>
             </div>
           </div>

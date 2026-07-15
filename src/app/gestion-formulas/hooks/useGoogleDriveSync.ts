@@ -77,6 +77,9 @@ export function useGoogleDriveSync() {
       const hojaStock = hojas.find((h) => h.toUpperCase() === 'BASE DE DATOS STOCK');
       const hojaStockPT = hojas.find((h) => h.toUpperCase() === 'BASE DE DATOS STOCK PT' || h.toUpperCase() === 'STOCK PT');
 
+      if (!hojaStock) throw new Error('No se encontró la hoja obligatoria "BASE DE DATOS STOCK" en la planilla de Drive.');
+      if (!hojaRotacion) throw new Error('No se encontró la hoja obligatoria "BASE DE DATOS ROTACIÓN MENSUAL" en la planilla de Drive.');
+
       setSolapasSeleccionadas({
         formulas: '',
         stock: hojaStock || '',
