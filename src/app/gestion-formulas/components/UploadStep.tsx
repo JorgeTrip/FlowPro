@@ -1,6 +1,7 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
+import { useState } from 'react';
 import { useGestionFormulasStore } from '@/app/stores/gestionFormulasStore';
 import { FileUpload } from '@/app/components/shared/FileUpload';
 import { GoogleDriveSection } from './GoogleDriveSection';
@@ -8,9 +9,10 @@ import { useGoogleDriveSync } from '../hooks/useGoogleDriveSync';
 
 export default function UploadStep() {
   const store = useGestionFormulasStore();
+  const [archivoConsolidadoLocal, setArchivoConsolidadoLocal] = useState<File | null>(null);
+  
   const {
     hojasDisponibles,
-    archivoConsolidado,
     solapasSeleccionadas,
     handleCambioSolapa,
   } = useGoogleDriveSync();
@@ -31,8 +33,9 @@ export default function UploadStep() {
         </p>
         <FileUpload
           title="Planilla Consolidada de Tango"
-          file={archivoConsolidado}
+          file={archivoConsolidadoLocal}
           onFileLoad={async (file) => {
+            setArchivoConsolidadoLocal(file);
             store.setIsLoading(true); store.setError(null);
             try {
               const { leerHojasExcel, procesarHojaEspecifica } = await import('../lib/lectorExcel');
@@ -131,7 +134,7 @@ export default function UploadStep() {
         )}
       </div>
 
-      {!archivoConsolidado && (
+      {!archivoConsolidadoLocal && (
         <div className="p-5 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-gray-800 shadow-sm space-y-4">
           <h3 className="text-lg font-bold text-gray-800 dark:text-white">Opción B: Cargar Archivos Individuales</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

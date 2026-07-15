@@ -6,7 +6,7 @@ import { leerHojasExcel, procesarHojaEspecifica } from '../lib/lectorExcel';
 export function useGoogleDriveSync() {
   const store = useGestionFormulasStore();
   const [hojasDisponibles, setHojasDisponibles] = useState<string[]>([]);
-  const [archivoConsolidado, setArchivoConsolidado] = useState<File | null>(null);
+  const [archivoConsolidadoDrive, setArchivoConsolidadoDrive] = useState<File | null>(null);
   const [solapasSeleccionadas, setSolapasSeleccionadas] = useState({
     formulas: '', stock: '', consumo: '', stockPT: '',
   });
@@ -34,13 +34,13 @@ export function useGoogleDriveSync() {
     try {
       const { data, columns, previewData } = await procesarHojaEspecifica(file, hoja);
       if (destino === 'formulas') {
-        store.setArchivoFormulas(file); store.setDatosCrudosFormulas(data, columns, previewData);
+        store.setDatosCrudosFormulas(data, columns, previewData);
       } else if (destino === 'stock') {
-        store.setArchivoStock(file); store.setDatosCrudosStock(data, columns, previewData);
+        store.setDatosCrudosStock(data, columns, previewData);
       } else if (destino === 'consumo') {
-        store.setArchivoConsumo(file); store.setDatosCrudosConsumo(data, columns, previewData);
+        store.setDatosCrudosConsumo(data, columns, previewData);
       } else {
-        store.setArchivoStockPT(file); store.setDatosCrudosStockPT(data, columns, previewData);
+        store.setDatosCrudosStockPT(data, columns, previewData);
       }
     } catch (err: any) {
       throw new Error(`Error procesando la hoja '${hoja}': ${err.message}`);
@@ -71,7 +71,7 @@ export function useGoogleDriveSync() {
     try {
       const archivo = await descargarDesdeDrive(url);
       const hojas = await leerHojasExcel(archivo);
-      setHojasDisponibles(hojas); setArchivoConsolidado(archivo);
+      setHojasDisponibles(hojas); setArchivoConsolidadoDrive(archivo);
 
       const hojaRotacion = hojas.find((h) => h.toUpperCase() === 'BASE DE DATOS ROTACIÓN MENSUAL');
       const hojaStock = hojas.find((h) => h.toUpperCase() === 'BASE DE DATOS STOCK');
@@ -96,14 +96,14 @@ export function useGoogleDriveSync() {
 
   const handleCambioSolapa = async (destino: 'formulas' | 'stock' | 'consumo' | 'stockPT', hoja: string) => {
     setSolapasSeleccionadas((prev) => ({ ...prev, [destino]: hoja }));
-    if (archivoConsolidado && hoja) {
-      await procesarYGuardarHoja(archivoConsolidado, hoja, destino);
+    if (archivoConsolidadoDrive && hoja) {
+      await procesarYGuardarHoja(archivoConsolidadoDrive, hoja, destino);
     }
   };
 
   return {
     hojasDisponibles,
-    archivoConsolidado,
+    archivoConsolidadoDrive,
     solapasSeleccionadas,
     isSincronizando,
     fuenteSincronizando,
@@ -113,7 +113,7 @@ export function useGoogleDriveSync() {
     sincronizarTodo: async () => { await sincronizarFormulas(); await sincronizarStock(); },
     handleCambioSolapa,
     limpiarEstado: () => {
-      setHojasDisponibles([]); setArchivoConsolidado(null);
+      setHojasDisponibles([]); setArchivoConsolidadoDrive(null);
       setSolapasSeleccionadas({ formulas: '', stock: '', consumo: '', stockPT: '' });
       setErrorSincronizacion(null);
     },

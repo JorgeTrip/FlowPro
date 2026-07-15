@@ -1,115 +1,9 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import { useState } from 'react';
 import { useGestionFormulasStore } from '@/app/stores/gestionFormulasStore';
-import { SplitButton } from '@/app/components/shared/SplitButton';
 import { useGoogleDriveSync } from '../hooks/useGoogleDriveSync';
-
-/**
- * Sección de vinculación para una fuente específica de Google Drive.
- */
-function VinculadorFuente({
-  titulo,
-  descripcion,
-  urlGuardada,
-  onGuardarUrl,
-  onCambiarEnlace,
-  onSincronizar,
-  isSincronizando,
-  error,
-}: {
-  titulo: string;
-  descripcion: string;
-  urlGuardada: string | null;
-  onGuardarUrl: (url: string) => void;
-  onCambiarEnlace: () => void;
-  onSincronizar: () => void;
-  isSincronizando: boolean;
-  error: string | null;
-}) {
-  const [mostrarInput, setMostrarInput] = useState(false);
-  const [inputUrl, setInputUrl] = useState('');
-
-  const handleGuardar = () => {
-    if (inputUrl.trim()) {
-      onGuardarUrl(inputUrl.trim());
-      setMostrarInput(false);
-      setInputUrl('');
-    }
-  };
-
-  const handleCambiar = () => {
-    setMostrarInput(true);
-    setInputUrl(urlGuardada || '');
-    onCambiarEnlace();
-  };
-
-  return (
-    <div className="p-4 rounded-lg bg-gray-50 dark:bg-[#2C2C2E]/40 border border-gray-200 dark:border-gray-700">
-      <h4 className="text-sm font-bold text-gray-800 dark:text-white mb-1">{titulo}</h4>
-      <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">{descripcion}</p>
-
-      {mostrarInput ? (
-        <div className="space-y-2">
-          <input
-            type="url"
-            value={inputUrl}
-            onChange={(e) => setInputUrl(e.target.value)}
-            placeholder="https://docs.google.com/spreadsheets/d/..."
-            className="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1C1C1E] text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-          />
-          <div className="flex space-x-2">
-            <button
-              onClick={handleGuardar}
-              disabled={!inputUrl.trim()}
-              className="px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed cursor-pointer"
-            >
-              Guardar
-            </button>
-            <button
-              onClick={() => setMostrarInput(false)}
-              className="px-3 py-1.5 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-semibold transition-all cursor-pointer"
-            >
-              Cancelar
-            </button>
-          </div>
-        </div>
-      ) : urlGuardada ? (
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2 text-xs text-gray-600 dark:text-gray-400">
-            <span className="font-semibold">Enlace:</span>
-            <span className="truncate max-w-xs">{urlGuardada}</span>
-          </div>
-          <SplitButton
-            textoPrincipal="Sincronizar"
-            onPrincipalClick={onSincronizar}
-            isLoading={isSincronizando}
-            opciones={[
-              {
-                label: 'Cambiar enlace 🔗',
-                onClick: handleCambiar,
-              },
-            ]}
-          />
-        </div>
-      ) : (
-        <button
-          onClick={() => setMostrarInput(true)}
-          className="px-3 py-1.5 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-semibold transition-all cursor-pointer"
-        >
-          + Vincular enlace
-        </button>
-      )}
-
-      {error && (
-        <div className="mt-2 p-2 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded text-xs">
-          {error}
-        </div>
-      )}
-    </div>
-  );
-}
+import { VinculadorFuente } from './VinculadorFuente';
 
 /**
  * Sección de sincronización con Google Drive.
@@ -132,14 +26,53 @@ export function GoogleDriveSection() {
     store.datosCrudosStock.length > 0 &&
     store.datosCrudosConsumo.length > 0;
 
-  return (
-    <div className="p-5 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-gray-800 shadow-sm">
-      <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">Sincronización con Google Drive</h3>
-      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-        Vincula las planillas de Google Drive para sincronizar fórmulas, stock y rotación mensual.
-      </p>
+  // Indicadores de carga en tiempo real para Fórmulas
+  const formulasCargadas = store.datosCrudosFormulas.length;
+  const statusFormulas = formulasCargadas > 0 ? (
+    <div className="flex items-center space-x-2 text-xs font-semibold text-green-700 dark:text-green-400 bg-green-500/10 border border-green-500/20 px-2.5 py-1.5 rounded-lg shadow-sm">
+      <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+      <span>✓ {formulasCargadas.toLocaleString()} recetas cargadas correctamente</span>
+    </div>
+  ) : null;
 
-      <div className="space-y-4">
+  // Indicadores de carga en tiempo real para Stock y Rotación
+  const stockCargado = store.datosCrudosStock.length;
+  const consumoCargado = store.datosCrudosConsumo.length;
+  const stockPTCargado = store.datosCrudosStockPT.length;
+  
+  const statusStock = (stockCargado > 0 || consumoCargado > 0 || stockPTCargado > 0) ? (
+    <div className="space-y-1.5 p-2.5 rounded-lg bg-green-500/10 border border-green-500/20 shadow-sm text-xs font-semibold">
+      {stockCargado > 0 && (
+        <div className="flex items-center space-x-2 text-green-700 dark:text-green-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+          <span>Existencias de Stock: {stockCargado.toLocaleString()} filas</span>
+        </div>
+      )}
+      {consumoCargado > 0 && (
+        <div className="flex items-center space-x-2 text-green-700 dark:text-green-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+          <span>Consumo Mensual: {consumoCargado.toLocaleString()} filas</span>
+        </div>
+      )}
+      {stockPTCargado > 0 && (
+        <div className="flex items-center space-x-2 text-green-700 dark:text-green-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+          <span>Maestro PT (STOCK PT): {stockPTCargado.toLocaleString()} filas</span>
+        </div>
+      )}
+    </div>
+  ) : null;
+
+  return (
+    <div className="p-5 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-gray-800 shadow-sm space-y-4">
+      <div>
+        <h3 className="text-lg font-bold text-gray-800 dark:text-white">Sincronización con Google Drive</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          Vincula las planillas de Google Drive para sincronizar fórmulas, stock y rotación mensual.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4">
         <VinculadorFuente
           titulo="Fórmulas"
           descripcion="Hoja: BASE DE DATOS FORMULAS"
@@ -149,6 +82,7 @@ export function GoogleDriveSection() {
           onSincronizar={sincronizarFormulas}
           isSincronizando={isSincronizando && fuenteSincronizando === 'formulas'}
           error={fuenteSincronizando === 'formulas' ? errorSincronizacion : null}
+          statusComponent={statusFormulas}
         />
 
         <VinculadorFuente
@@ -160,10 +94,11 @@ export function GoogleDriveSection() {
           onSincronizar={sincronizarStock}
           isSincronizando={isSincronizando && fuenteSincronizando === 'stock'}
           error={fuenteSincronizando === 'stock' ? errorSincronizacion : null}
+          statusComponent={statusStock}
         />
 
         {store.urlGoogleDriveFormulas && store.urlGoogleDriveStock && (
-          <div className="space-y-3">
+          <div className="space-y-3 pt-2">
             <button
               onClick={sincronizarTodo}
               disabled={isSincronizando || todoSincronizado}
