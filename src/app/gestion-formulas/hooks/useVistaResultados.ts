@@ -7,8 +7,8 @@ import { usePrefijosStore } from '@/app/stores/prefijosStore';
 function ordenarItems<T>(items: T[], config: { key: keyof T; direction: 'asc' | 'desc' } | null): T[] {
   if (!config) return items;
   return [...items].sort((a, b) => {
-    let valA = config.key === 'movimientoSugerido' ? (a as any).movimientoSugerido.tipo : a[config.key];
-    let valB = config.key === 'movimientoSugerido' ? (b as any).movimientoSugerido.tipo : b[config.key];
+    const valA = config.key === 'movimientoSugerido' ? (a as any).movimientoSugerido.tipo : a[config.key];
+    const valB = config.key === 'movimientoSugerido' ? (b as any).movimientoSugerido.tipo : b[config.key];
     if (valA === undefined) return 1;
     if (valB === undefined) return -1;
     if (typeof valA === 'string' && typeof valB === 'string') {
