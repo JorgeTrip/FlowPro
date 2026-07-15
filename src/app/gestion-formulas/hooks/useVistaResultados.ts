@@ -8,7 +8,6 @@ export function useVistaResultados() {
   const [busqueda, setBusqueda] = useState('');
   const [filtrosActivos, setFiltrosActivos] = useState<string[]>(['con_datos']);
   const [criticidades, setCriticidades] = useState<string[]>(['alta', 'media', 'baja']);
-  const [mesesRotacion, setMesesRotacion] = useState(1);
 
   // Configuración de Ordenamiento
   const [sortPropios, setSortPropios] = useState<{ key: keyof ResultadoMRP; direction: 'asc' | 'desc' } | null>(null);
@@ -131,9 +130,9 @@ export function useVistaResultados() {
   }, [store.resultadosMRP?.tercerizados, busqueda, filtrosActivos, sortTercerizados, criticidades]);
 
   useEffect(() => {
-    store.ejecutarCalculoMRP(mesesRotacion);
+    store.ejecutarCalculoMRP(store.mesesProyeccionTransferencia, store.mesesProyeccionCompra);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mesesRotacion]);
+  }, [store.mesesProyeccionTransferencia, store.mesesProyeccionCompra]);
 
   const activeListLength = store.pestañaActiva === 'propios'
     ? resultadosFiltradosPropios.length
@@ -148,7 +147,7 @@ export function useVistaResultados() {
       }, 50);
       return () => clearTimeout(timer);
     }
-  }, [activeListLength, store.cargandoCalculo, store.pestañaActiva, criticidades, filtrosActivos, mesesRotacion]);
+  }, [activeListLength, store.cargandoCalculo, store.pestañaActiva, criticidades, filtrosActivos, store.mesesProyeccionTransferencia, store.mesesProyeccionCompra]);
 
   useEffect(() => {
     const sup = scrollSuperiorRef.current;
@@ -180,8 +179,10 @@ export function useVistaResultados() {
     setFiltrosActivos,
     criticidades,
     setCriticidades,
-    mesesRotacion,
-    setMesesRotacion,
+    mesesProyeccionTransferencia: store.mesesProyeccionTransferencia,
+    mesesProyeccionCompra: store.mesesProyeccionCompra,
+    setMesesProyeccionTransferencia: store.setMesesProyeccionTransferencia,
+    setMesesProyeccionCompra: store.setMesesProyeccionCompra,
     scrollSuperiorRef,
     scrollInferiorRef,
     anchoScroll,

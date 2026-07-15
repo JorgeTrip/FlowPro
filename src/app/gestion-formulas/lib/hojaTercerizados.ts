@@ -6,20 +6,29 @@ import { borderFino, aplicarBordesExternos, formatearHeaders } from './excelEsti
 /**
  * Agrega la hoja de "Productos Tercerizados" si existen registros.
  */
-export function agregarHojaTercerizados(wb: ExcelJS.Workbook, tercerizados: ResultadoTercerizadosMRP[]): void {
+export function agregarHojaTercerizados(
+  wb: ExcelJS.Workbook,
+  tercerizados: ResultadoTercerizadosMRP[],
+  mesesTransferencia: number = 2,
+  mesesCompra: number = 3
+): void {
   if (!tercerizados || tercerizados.length === 0) {
     return;
   }
 
   const wsT = wb.addWorksheet('Productos Tercerizados');
+
+  const descCompra = `DEMANDA ${mesesCompra} ${mesesCompra === 1 ? 'MES' : 'MESES'} (COMPRA)`;
+  const descTransf = `DEMANDA ${mesesTransferencia} ${mesesTransferencia === 1 ? 'MES' : 'MESES'} (TRANSF.)`;
+
   wsT.columns = [
     { header: 'CÓDIGO PT', key: 'codigoPT', width: 15 },
     { header: 'DESCRIPCIÓN PT', key: 'descripcionPT', width: 45 },
     { header: 'STOCK PT E.R.', key: 'stockPTEntreRios', width: 18 },
     { header: 'STOCK PT CABA', key: 'stockPTCABA', width: 14 },
     { header: 'ROTACIÓN', key: 'rotacion', width: 14 },
-    { header: 'COMPRAR', key: 'comprar', width: 12 },
-    { header: 'TRANSFERIR', key: 'transferir', width: 12 },
+    { header: descCompra, key: 'comprar', width: 28 },
+    { header: descTransf, key: 'transferir', width: 28 },
     { header: 'CRITICIDAD', key: 'criticidad', width: 14 },
   ];
   formatearHeaders(wsT, 8);

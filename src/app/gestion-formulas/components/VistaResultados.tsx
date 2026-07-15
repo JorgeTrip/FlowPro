@@ -3,26 +3,16 @@
 
 import { useVistaResultados } from '../hooks/useVistaResultados';
 import { exportarExcelMRP } from '../lib/exportarExcel';
-import { Tooltip, SkeletonTabla } from './ComponentesAuxiliares';
+import { SkeletonTabla } from './ComponentesAuxiliares';
 import DropdownFiltrosPedidos from './DropdownFiltrosPedidos';
-import SelectorMesesRotacion from './SelectorMesesRotacion';
-
-function BadgeCriticidad({ criticidad }: { criticidad: 'alta' | 'media' | 'baja' }) {
-  const classes = {
-    alta: 'bg-red-100 text-red-800 dark:bg-red-950/30 dark:text-red-400 border border-red-200/50 dark:border-red-900/30',
-    media: 'bg-amber-100 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/30',
-    baja: 'bg-green-100 text-green-800 dark:bg-green-950/30 dark:text-green-400 border border-green-200/50 dark:border-green-900/30',
-  };
-  return (
-    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${classes[criticidad]}`}>
-      {criticidad}
-    </span>
-  );
-}
+import * as Select from '@radix-ui/react-select';
+import { TablaProductosPropios } from './TablaProductosPropios';
+import { TablaProductosTercerizados } from './TablaProductosTercerizados';
 
 export default function VistaResultados() {
   const {
-    busqueda, setBusqueda, filtrosActivos, setFiltrosActivos, criticidades, setCriticidades, mesesRotacion, setMesesRotacion,
+    busqueda, setBusqueda, filtrosActivos, setFiltrosActivos, criticidades, setCriticidades,
+    mesesProyeccionTransferencia, mesesProyeccionCompra, setMesesProyeccionTransferencia, setMesesProyeccionCompra,
     scrollSuperiorRef, scrollInferiorRef, anchoScroll,
     resultadosFiltradosPropios, resultadosFiltradosTercerizados,
     cargandoCalculo, resultadosMRP, pestañaActiva, setPestañaActiva, setStep,
@@ -31,6 +21,40 @@ export default function VistaResultados() {
 
   const getIndP = (k: any) => (sortPropios && sortPropios.key === k) ? (sortPropios.direction === 'asc' ? ' ▲' : ' ▼') : '';
   const getIndT = (k: any) => (sortTercerizados && sortTercerizados.key === k) ? (sortTercerizados.direction === 'asc' ? ' ▲' : ' ▼') : '';
+
+  const renderSelectorMeses = (titulo: string, valor: number, setValor: (v: number) => void) => (
+    <div className="flex flex-col">
+      <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">
+        {titulo}
+      </span>
+      <Select.Root value={String(valor)} onValueChange={(val) => setValor(Number(val))}>
+        <Select.Trigger className="flex items-center justify-between h-9 w-36 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#2C2C2E] text-xs text-gray-700 dark:text-gray-300 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-sm hover:border-gray-400 transition-all">
+          <Select.Value />
+          <Select.Icon className="text-gray-400 text-[10px]">▼</Select.Icon>
+        </Select.Trigger>
+        <Select.Portal>
+          <Select.Content className="overflow-hidden bg-white dark:bg-[#2C2C2E] rounded-lg shadow-lg border border-gray-200 dark:border-gray-800 z-50">
+            <Select.Viewport className="p-1">
+              {[1, 2, 3, 4, 5, 6].map((mes) => (
+                <Select.Item
+                  key={mes}
+                  value={String(mes)}
+                  className="relative flex items-center h-8 pl-8 pr-4 text-xs text-gray-700 dark:text-gray-300 rounded-md select-none focus:bg-blue-600 focus:text-white dark:focus:bg-blue-500 cursor-pointer outline-none transition-colors"
+                >
+                  <span className="absolute left-2.5 flex items-center justify-center">
+                    <Select.ItemIndicator>✓</Select.ItemIndicator>
+                  </span>
+                  <Select.ItemText>
+                    {mes} {mes === 1 ? 'Mes' : 'Meses'}
+                  </Select.ItemText>
+                </Select.Item>
+              ))}
+            </Select.Viewport>
+          </Select.Content>
+        </Select.Portal>
+      </Select.Root>
+    </div>
+  );
 
   return (
     <div className="space-y-6 w-full">
@@ -56,11 +80,9 @@ export default function VistaResultados() {
               setCriticidades={setCriticidades}
             />
           </div>
-          <div className="flex flex-col">
-            <SelectorMesesRotacion 
-              mesesRotacion={mesesRotacion}
-              setMesesRotacion={setMesesRotacion}
-            />
+          <div className="flex items-center gap-2.5">
+            {renderSelectorMeses("Meses de Transferencia", mesesProyeccionTransferencia, setMesesProyeccionTransferencia)}
+            {renderSelectorMeses("Meses de Compra", mesesProyeccionCompra, setMesesProyeccionCompra)}
           </div>
         </div>
         <div className="flex space-x-2 w-full md:w-auto justify-end">
@@ -68,7 +90,7 @@ export default function VistaResultados() {
             Re-importar Excel
           </button>
           <button
-            onClick={() => resultadosMRP && exportarExcelMRP(resultadosMRP)}
+            onClick={() => resultadosMRP && exportarExcelMRP(resultadosMRP, mesesProyeccionTransferencia, mesesProyeccionCompra)}
             disabled={cargandoCalculo || !resultadosMRP}
             className="px-4 h-9 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-800 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
           >
@@ -103,163 +125,23 @@ export default function VistaResultados() {
 
           <div ref={scrollInferiorRef} className="overflow-x-auto max-h-[580px] overflow-y-auto rounded-b-xl md:rounded-t-none border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1C1C1E] shadow-sm">
             {pestañaActiva === 'propios' ? (
-              <table className="min-w-[1950px] divide-y divide-gray-200 dark:divide-gray-800 text-left text-[11px]">
-                <thead className="bg-gray-50 dark:bg-[#2C2C2E] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider select-none">
-                  <tr className="divide-x divide-gray-100 dark:divide-gray-800">
-                    <th onClick={() => solicitarOrdenPropios('codigoMP')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Código MP{getIndP('codigoMP')}</th>
-                    <th onClick={() => solicitarOrdenPropios('descripcionMP')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Descripción MP{getIndP('descripcionMP')}</th>
-                    <th onClick={() => solicitarOrdenPropios('unidadMedida')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">UM{getIndP('unidadMedida')}</th>
-                    <th onClick={() => solicitarOrdenPropios('stockMPEntreRios')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Stock MP E.R.{getIndP('stockMPEntreRios')}</th>
-                    <th onClick={() => solicitarOrdenPropios('stockMPCABA')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Stock MP CABA{getIndP('stockMPCABA')}</th>
-                    <th onClick={() => solicitarOrdenPropios('cantidadSugerida')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Cant. Sugerida{getIndP('cantidadSugerida')}</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Comprar MP</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Transferir MP</th>
-                    <th onClick={() => solicitarOrdenPropios('criticidad')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Criticidad{getIndP('criticidad')}</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800">Código</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800">Productos en los que se usa</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800">Línea</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800">Planta</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Stock PT E.R.</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Stock PT CABA</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Producir CABA</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Producir E.R.</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Transferir PT</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] pl-2.5 pr-8 py-2 text-right">Cant (rotación)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-[#1C1C1E] text-gray-900 dark:text-gray-300">
-                  {resultadosFiltradosPropios.map((fila, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-[#2C2C2E]/40 transition-colors divide-x divide-gray-100 dark:divide-gray-850 text-xs text-left">
-                      <td className="px-2.5 py-2 font-mono font-semibold">{fila.codigoMP}</td>
-                      <td className="px-2.5 py-2 group relative cursor-help">
-                        <div className="truncate max-w-[150px] text-ellipsis">{fila.descripcionMP}</div>
-                        <Tooltip texto={fila.descripcionMP} />
-                      </td>
-                      <td className="px-2.5 py-2">{fila.unidadMedida}</td>
-                      <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.stockMPEntreRios ?? 0).toFixed(1)}</td>
-                      <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.stockMPCABA ?? 0).toFixed(1)}</td>
-                      <td className="px-2.5 py-2 text-right font-semibold font-mono text-gray-900 dark:text-white">{(fila.cantidadSugerida ?? 0).toFixed(1)}</td>
-                      <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.movimientoSugerido.compra ?? 0).toFixed(1)}</td>
-                      <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.movimientoSugerido.transferencia ?? 0).toFixed(1)}</td>
-                      <td className="px-2.5 py-2 text-center"><BadgeCriticidad criticidad={fila.criticidad} /></td>
-                      <td className="px-2.5 py-2">
-                        <div className="space-y-0.5 text-left">
-                          {fila.productosUsados?.map((p, i) => (
-                            <div key={i} className="text-[10px] text-gray-600 dark:text-gray-400 truncate max-w-[100px]" title={p.codigoProducto}>
-                              {p.codigoProducto}
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-2.5 py-2">
-                        <div className="space-y-0.5 text-left">
-                          {fila.productosUsados?.map((p, i) => (
-                            <div key={i} className="text-[10px] text-gray-600 dark:text-gray-400 truncate max-w-[200px]" title={p.descripcion}>
-                              {p.descripcion}
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-2.5 py-2">
-                        <div className="space-y-0.5 text-left">
-                          {fila.productosUsados?.map((p, i) => (
-                            <div key={i} className="text-[10px] font-semibold text-gray-600 dark:text-gray-400 truncate max-w-[150px]" title={p.linea || '-'}>
-                              {p.linea || '-'}
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-2.5 py-2">
-                        <div className="space-y-1 text-center">
-                          {fila.productosUsados?.map((p, i) => (
-                            <div key={i} className="text-[9px] font-bold">
-                              {p.sitioFabricacion ? (
-                                <span className={`px-1.5 py-0.5 rounded-md ${
-                                  p.sitioFabricacion === 'CABA'
-                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-400'
-                                    : p.sitioFabricacion === 'ENTRE RIOS'
-                                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400'
-                                    : p.sitioFabricacion === 'TERC. CABA'
-                                    ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-400'
-                                    : p.sitioFabricacion === 'TERC. ENTRE RIOS'
-                                    ? 'bg-pink-100 text-pink-800 dark:bg-pink-950/40 dark:text-pink-400'
-                                    : p.sitioFabricacion === 'TERC. CON PROV. MP'
-                                    ? 'bg-teal-100 text-teal-800 dark:bg-teal-950/40 dark:text-teal-400'
-                                    : 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400'
-                                }`}>
-                                  {p.sitioFabricacion}
-                                </span>
-                              ) : '-'}
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">
-                        <div className="space-y-0.5">
-                          {fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px]">{(p.stockPTEntreRios ?? 0).toFixed(1)}</div>)}
-                        </div>
-                      </td>
-                      <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">
-                        <div className="space-y-0.5">
-                          {fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px]">{(p.stockPTCABA ?? 0).toFixed(1)}</div>)}
-                        </div>
-                      </td>
-                      <td className="px-2.5 py-2 text-right font-mono font-semibold text-gray-900 dark:text-white">
-                        <div className="space-y-0.5">
-                          {fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px]">{(p.cantidadFabricarCABA ?? 0).toFixed(1)}</div>)}
-                        </div>
-                      </td>
-                      <td className="px-2.5 py-2 text-right font-mono font-semibold text-gray-900 dark:text-white">
-                        <div className="space-y-0.5">
-                          {fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px]">{(p.cantidadFabricarER ?? 0).toFixed(1)}</div>)}
-                        </div>
-                      </td>
-                      <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">
-                        <div className="space-y-0.5">
-                          {fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px]">{(p.transferirPT ?? 0).toFixed(1)}</div>)}
-                        </div>
-                      </td>
-                      <td className="pl-2.5 pr-8 py-2 text-right font-mono text-gray-700 dark:text-gray-300">
-                        <div className="space-y-0.5">
-                          {fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px]">{(p.rotacion ?? 0).toFixed(1)}</div>)}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <TablaProductosPropios
+                resultadosFiltradosPropios={resultadosFiltradosPropios}
+                sortPropios={sortPropios}
+                solicitarOrdenPropios={solicitarOrdenPropios}
+                getIndP={getIndP}
+                mesesProyeccionTransferencia={mesesProyeccionTransferencia}
+                mesesProyeccionCompra={mesesProyeccionCompra}
+              />
             ) : (
-              <table className="min-w-[1000px] divide-y divide-gray-200 dark:divide-gray-800 text-left text-[11px]">
-                <thead className="bg-gray-50 dark:bg-[#2C2C2E] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider select-none">
-                  <tr className="divide-x divide-gray-100 dark:divide-gray-800">
-                    <th onClick={() => solicitarOrdenTercerizados('codigoPT')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Código PT{getIndT('codigoPT')}</th>
-                    <th onClick={() => solicitarOrdenTercerizados('descripcionPT')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Descripción PT{getIndT('descripcionPT')}</th>
-                    <th onClick={() => solicitarOrdenTercerizados('stockPTEntreRios')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Stock PT E.R.{getIndT('stockPTEntreRios')}</th>
-                    <th onClick={() => solicitarOrdenTercerizados('stockPTCABA')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Stock PT CABA{getIndT('stockPTCABA')}</th>
-                    <th onClick={() => solicitarOrdenTercerizados('rotacion')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Rotación{getIndT('rotacion')}</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Comprar</th>
-                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Transferir</th>
-                    <th onClick={() => solicitarOrdenTercerizados('criticidad')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] pl-2.5 pr-8 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Criticidad{getIndT('criticidad')}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-[#1C1C1E] text-gray-900 dark:text-gray-300">
-                  {resultadosFiltradosTercerizados.map((fila, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-[#2C2C2E]/40 transition-colors divide-x divide-gray-100 dark:divide-gray-850 text-xs">
-                      <td className="px-2.5 py-2 font-mono font-semibold">{fila.codigoPT}</td>
-                      <td className="px-2.5 py-2 group relative cursor-help">
-                        <div className="truncate max-w-[250px] text-ellipsis">{fila.descripcionPT}</div>
-                        <Tooltip texto={fila.descripcionPT} />
-                      </td>
-                      <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.stockPTEntreRios ?? 0).toFixed(1)}</td>
-                      <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.stockPTCABA ?? 0).toFixed(1)}</td>
-                      <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.rotacion ?? 0).toFixed(1)}</td>
-                      <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.movimientoSugerido.compra ?? 0).toFixed(1)}</td>
-                      <td className="px-2.5 py-2 text-right font-mono text-gray-700 dark:text-gray-300">{(fila.movimientoSugerido.transferencia ?? 0).toFixed(1)}</td>
-                      <td className="pl-2.5 pr-8 py-2 text-center"><BadgeCriticidad criticidad={fila.criticidad} /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <TablaProductosTercerizados
+                resultadosFiltradosTercerizados={resultadosFiltradosTercerizados}
+                sortTercerizados={sortTercerizados}
+                solicitarOrdenTercerizados={solicitarOrdenTercerizados}
+                getIndT={getIndT}
+                mesesProyeccionTransferencia={mesesProyeccionTransferencia}
+                mesesProyeccionCompra={mesesProyeccionCompra}
+              />
             )}
           </div>
         </div>

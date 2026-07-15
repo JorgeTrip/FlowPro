@@ -16,21 +16,25 @@ import { agregarHojaTercerizados } from './hojaTercerizados';
  * 3. "Relación MP - PT": Vista plana ideal para ordenamiento y tablas dinámicas cruzadas.
  * 4. "Productos Tercerizados": Lista de productos terminados comprados de forma directa.
  */
-export async function exportarExcelMRP(resultados: ResultadosMRPFinal): Promise<void> {
+export async function exportarExcelMRP(
+  resultados: ResultadosMRPFinal,
+  mesesTransferencia: number = 2,
+  mesesCompra: number = 3
+): Promise<void> {
   try {
     const wb = new ExcelJS.Workbook();
 
     // 1. Hoja de Productos Propios (Agrupados y alineados verticalmente arriba)
-    agregarHojaProductosPropios(wb, resultados.propios || []);
+    agregarHojaProductosPropios(wb, resultados.propios || [], mesesTransferencia, mesesCompra);
 
     // 2. Hoja de Materias Primas (Una fila única por MP para tablas dinámicas limpias)
-    agregarHojaMateriasPrimas(wb, resultados.propios || []);
+    agregarHojaMateriasPrimas(wb, resultados.propios || [], mesesTransferencia, mesesCompra);
 
     // 3. Hoja de Relación MP - PT (Desglose plano para ordenamientos)
     agregarHojaRelacionMPPT(wb, resultados.propios || []);
 
     // 4. Hoja de Productos Tercerizados
-    agregarHojaTercerizados(wb, resultados.tercerizados || []);
+    agregarHojaTercerizados(wb, resultados.tercerizados || [], mesesTransferencia, mesesCompra);
 
     // Guardar el libro de Excel en el cliente
     const buffer = await wb.xlsx.writeBuffer();

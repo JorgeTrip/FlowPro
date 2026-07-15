@@ -7,7 +7,7 @@ import {
   ReglaPrefijo
 } from './types';
 import {
-  calcularMovimientoSugerido,
+  calcularMovimientoSugeridoDoble,
   calcularCriticidad,
   obtenerReglaParaProducto,
   esDepositoCABA,
@@ -23,7 +23,8 @@ export function calcularMRPTercerizados(
   recetasActivasCodigos: Set<string>,
   stocks: StockPorDeposito[],
   consumos: ConsumoMensual[],
-  mesesRotacion: number,
+  mesesTransferencia: number,
+  mesesCompra: number,
   reglasPrefijos: ReglaPrefijo[] = []
 ): ResultadoTercerizadosMRP[] {
   const listaTercerizados = stockPT.filter((pt) => !recetasActivasCodigos.has(pt.codigo));
@@ -35,7 +36,9 @@ export function calcularMRPTercerizados(
       consumosPT.length > 0
         ? consumosPT.reduce((sum, c) => sum + c.cantidadConsumida, 0) / consumosPT.length
         : 0;
-    const rotacion = rotacionMensual * mesesRotacion;
+    
+    const rotacionTransferencia = rotacionMensual * mesesTransferencia;
+    const rotacionCompra = rotacionMensual * mesesCompra;
 
     const stocksPT = stocks.filter((s) => s.codigoProducto === pt.codigo);
     const stockCABA = stocksPT.find((s) => esDepositoCABA(s.deposito))?.stockFisico || 0;
@@ -44,34 +47,27 @@ export function calcularMRPTercerizados(
     const dispPTCABA = Math.max(0, stockCABA);
     const dispPTER = Math.max(0, stockER);
 
-    // Obtener regla para el producto tercerizado
     const regla = obtenerReglaParaProducto(pt.codigo, reglasPrefijos);
     const sitio = regla ? regla.sitioFabricacion : 'CABA + ENTRE RIOS';
 
     let movimiento: ResultadoTercerizadosMRP['movimientoSugerido'];
 
     if (sitio === 'TERC. ENTRE RIOS') {
-      // Abastecimiento con base en Entre Ríos: priorizar stock de ER, transferir de CABA, comprar en ER
-      if (dispPTER >= rotacion) {
-        movimiento = { tipo: 'sin_accion' };
-      } else {
-        const faltante = rotacion - dispPTER;
-        const transf = Math.min(faltante, dispPTCABA);
-        const compra = faltante - transf;
+      const transf = Math.min(Math.max(0, rotacionTransferencia - dispPTER), dispPTCABA);
+      const compra = Math.max(0, rotacionCompra - dispPTER - transf);
 
-        if (transf > 0 && compra > 0) {
-          movimiento = { tipo: 'combinado', transferencia: transf, compra };
-        } else {
-          movimiento =
-            transf > 0
-              ? { tipo: 'transferencia', transferencia: transf }
-              : { tipo: 'compra', compra };
-        }
-      }
+      let tipo: ResultadoTercerizadosMRP['movimientoSugerido']['tipo'] = 'sin_accion';
+      if (transf > 0 && compra > 0) tipo = 'combinado';
+      else if (transf > 0) tipo = 'transferencia';
+      else if (compra > 0) tipo = 'compra';
+
+      movimiento = {
+        tipo,
+        transferencia: transf > 0 ? transf : undefined,
+        compra: compra > 0 ? compra : undefined,
+      };
     } else {
-      // Comportamiento por defecto (sitio === 'TERC. CABA' o cualquier otro sitio / sin regla)
-      // Prioriza stock de CABA, transfiere de ER, compra en CABA
-      movimiento = calcularMovimientoSugerido(rotacion, stockCABA, stockER);
+      movimiento = calcularMovimientoSugeridoDoble(rotacionTransferencia, rotacionCompra, stockCABA, stockER);
     }
 
     resultadosTercerizados.push({
@@ -79,9 +75,9 @@ export function calcularMRPTercerizados(
       descripcionPT: pt.descripcionAdicional ? `${pt.descripcion} (${pt.descripcionAdicional})` : pt.descripcion,
       stockPTEntreRios: stockER,
       stockPTCABA: stockCABA,
-      rotacion,
+      rotacion: rotacionCompra,
       movimientoSugerido: movimiento,
-      criticidad: calcularCriticidad(dispPTCABA + dispPTER, rotacion)
+      criticidad: calcularCriticidad(dispPTCABA + dispPTER, rotacionCompra)
     });
   });
 

@@ -77,7 +77,7 @@ export interface GestionFormulasState {
   setError: (error: string | null) => void;
   setFormulasClasificadas: (clasificadas: any) => void;
 
-  ejecutarCalculoMRP: (mesesRotacion?: number) => Promise<void>;
+  ejecutarCalculoMRP: (mesesTransferencia?: number, mesesCompra?: number) => Promise<void>;
   guardarImportacionConfirmada: () => void;
   limpiarDatos: () => void;
   reset: () => void;
@@ -86,6 +86,11 @@ export interface GestionFormulasState {
   urlGoogleDriveStock: string | null;
   setUrlGoogleDriveFormulas: (url: string | null) => void;
   setUrlGoogleDriveStock: (url: string | null) => void;
+
+  mesesProyeccionTransferencia: number;
+  mesesProyeccionCompra: number;
+  setMesesProyeccionTransferencia: (meses: number) => void;
+  setMesesProyeccionCompra: (meses: number) => void;
 }
 
 const estadoInicial = {
@@ -99,6 +104,8 @@ const estadoInicial = {
   isLoading: false, error: null, formulasClasificadas: null,
   resultadosMRP: null, cargandoCalculo: false,
   urlGoogleDriveFormulas: null, urlGoogleDriveStock: null,
+  mesesProyeccionTransferencia: 2,
+  mesesProyeccionCompra: 3,
 };
 
 export const useGestionFormulasStore = create<GestionFormulasState>()(
@@ -128,11 +135,16 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
       setFormulasClasificadas: (formulasClasificadas) => set({ formulasClasificadas }),
       setUrlGoogleDriveFormulas: (urlGoogleDriveFormulas) => set({ urlGoogleDriveFormulas }),
       setUrlGoogleDriveStock: (urlGoogleDriveStock) => set({ urlGoogleDriveStock }),
+      setMesesProyeccionTransferencia: (mesesProyeccionTransferencia) => set({ mesesProyeccionTransferencia }),
+      setMesesProyeccionCompra: (mesesProyeccionCompra) => set({ mesesProyeccionCompra }),
 
-      ejecutarCalculoMRP: async (mesesRotacion = 1) => {
+      ejecutarCalculoMRP: async (mesesTransferencia, mesesCompra) => {
         set({ cargandoCalculo: true, error: null });
         try {
-          const { productos, formulas, stocks, consumos, stockPT } = get();
+          const { productos, formulas, stocks, consumos, stockPT, mesesProyeccionTransferencia, mesesProyeccionCompra } = get();
+          const mT = mesesTransferencia !== undefined ? mesesTransferencia : mesesProyeccionTransferencia;
+          const mC = mesesCompra !== undefined ? mesesCompra : mesesProyeccionCompra;
+
           const { usePrefijosStore } = await import('@/app/stores/prefijosStore');
           const reglasPrefijos = usePrefijosStore.getState().reglas || [];
 
@@ -144,7 +156,8 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
             stocks,
             consumos,
             stockPT,
-            mesesRotacion,
+            mT,
+            mC,
             reglasPrefijos
           );
           set({ resultadosMRP: resultados, cargandoCalculo: false });
@@ -175,6 +188,8 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
         productos: s.productos,
         urlGoogleDriveFormulas: s.urlGoogleDriveFormulas,
         urlGoogleDriveStock: s.urlGoogleDriveStock,
+        mesesProyeccionTransferencia: s.mesesProyeccionTransferencia,
+        mesesProyeccionCompra: s.mesesProyeccionCompra,
       })),
       reset: () => set(estadoInicial),
     }),
@@ -192,6 +207,8 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
         resultadosMRP: state.resultadosMRP,
         urlGoogleDriveFormulas: state.urlGoogleDriveFormulas,
         urlGoogleDriveStock: state.urlGoogleDriveStock,
+        mesesProyeccionTransferencia: state.mesesProyeccionTransferencia,
+        mesesProyeccionCompra: state.mesesProyeccionCompra,
       }),
     }
   )

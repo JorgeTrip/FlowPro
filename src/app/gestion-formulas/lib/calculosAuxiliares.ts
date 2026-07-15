@@ -52,6 +52,29 @@ export function calcularMovimientoSugerido(
 }
 
 /**
+ * Calcula sugerencias con doble horizonte de demanda.
+ */
+export function calcularMovimientoSugeridoDoble(
+  demandaTransferencia: number, demandaCompra: number, stockCABA: number, stockER: number
+): ResultadoMRP['movimientoSugerido'] {
+  const dispCABA = Math.max(0, stockCABA);
+  const dispER = Math.max(0, stockER);
+  const transf = Math.min(Math.max(0, demandaTransferencia - dispCABA), dispER);
+  const compra = Math.max(0, demandaCompra - dispCABA - transf);
+
+  let tipo: ResultadoMRP['movimientoSugerido']['tipo'] = 'sin_accion';
+  if (transf > 0 && compra > 0) tipo = 'combinado';
+  else if (transf > 0) tipo = 'transferencia';
+  else if (compra > 0) tipo = 'compra';
+
+  return {
+    tipo,
+    transferencia: transf > 0 ? transf : undefined,
+    compra: compra > 0 ? compra : undefined,
+  };
+}
+
+/**
  * Determina el nivel de criticidad (alta, media, baja) según el stock total
  * disponible en comparación con el consumo o demanda calculada.
  * 

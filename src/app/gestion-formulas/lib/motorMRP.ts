@@ -29,7 +29,8 @@ export function calcularRequerimientosMRP(
   stocks: StockPorDeposito[],
   consumos: ConsumoMensual[],
   stockPT: ProductoTerminadoMaestro[] = [],
-  mesesRotacion: number = 1,
+  mesesTransferencia: number = 2,
+  mesesCompra: number = 3,
   reglasPrefijos: ReglaPrefijo[] = []
 ): ResultadosMRPFinal {
   const recetasActivas = formulas.filter((f) => f.estado === 'activa');
@@ -41,7 +42,8 @@ export function calcularRequerimientosMRP(
     stocks,
     consumos,
     stockPT,
-    mesesRotacion,
+    mesesTransferencia,
+    mesesCompra,
     reglasPrefijos
   );
 
@@ -50,7 +52,8 @@ export function calcularRequerimientosMRP(
     recetasActivasCodigos,
     stocks,
     consumos,
-    mesesRotacion,
+    mesesTransferencia,
+    mesesCompra,
     reglasPrefijos
   );
 

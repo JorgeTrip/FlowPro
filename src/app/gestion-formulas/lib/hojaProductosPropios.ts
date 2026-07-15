@@ -7,8 +7,16 @@ import { borderFino, aplicarBordesExternos, formatearHeaders } from './excelEsti
  * Agrega la hoja de "Productos Propios" consolidando MP y PT de forma no redundante.
  * Combina las celdas de la materia prima cuando está asociada a múltiples productos.
  */
-export function agregarHojaProductosPropios(wb: ExcelJS.Workbook, propios: ResultadoMRP[]): void {
+export function agregarHojaProductosPropios(
+  wb: ExcelJS.Workbook,
+  propios: ResultadoMRP[],
+  mesesTransferencia: number = 2,
+  mesesCompra: number = 3
+): void {
   const wsP = wb.addWorksheet('Productos Propios');
+
+  const descCompra = `DEMANDA ${mesesCompra} ${mesesCompra === 1 ? 'MES' : 'MESES'} (COMPRA)`;
+  const descTransf = `DEMANDA ${mesesTransferencia} ${mesesTransferencia === 1 ? 'MES' : 'MESES'} (TRANSF.)`;
 
   wsP.columns = [
     { header: 'CÓDIGO MP', key: 'codigoMP', width: 15 },
@@ -17,8 +25,8 @@ export function agregarHojaProductosPropios(wb: ExcelJS.Workbook, propios: Resul
     { header: 'STOCK MP E.R.', key: 'stockMPEntreRios', width: 18 },
     { header: 'STOCK MP CABA', key: 'stockMPCABA', width: 14 },
     { header: 'CANT. SUGERIDA', key: 'cantidadSugerida', width: 16 },
-    { header: 'COMPRAR MP', key: 'comprar', width: 14 },
-    { header: 'TRANSFERIR MP', key: 'transferir', width: 14 },
+    { header: descCompra, key: 'comprar', width: 28 },
+    { header: descTransf, key: 'transferir', width: 28 },
     { header: 'CRITICIDAD', key: 'criticidad', width: 14 },
     { header: 'CÓDIGO', key: 'codigoProducto', width: 12 },
     { header: 'PRODUCTOS EN LOS QUE SE USA', key: 'productosUsados', width: 40 },

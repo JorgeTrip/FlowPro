@@ -6,8 +6,16 @@ import { borderFino, aplicarBordesExternos, formatearHeaders } from './excelEsti
 /**
  * Agrega la hoja de "Materias Primas" consolidando los datos y cálculos de cada MP en una única fila.
  */
-export function agregarHojaMateriasPrimas(wb: ExcelJS.Workbook, propios: ResultadoMRP[]): void {
+export function agregarHojaMateriasPrimas(
+  wb: ExcelJS.Workbook,
+  propios: ResultadoMRP[],
+  mesesTransferencia: number = 2,
+  mesesCompra: number = 3
+): void {
   const wsM = wb.addWorksheet('Materias Primas');
+
+  const descCompra = `DEMANDA ${mesesCompra} ${mesesCompra === 1 ? 'MES' : 'MESES'} (COMPRA)`;
+  const descTransf = `DEMANDA ${mesesTransferencia} ${mesesTransferencia === 1 ? 'MES' : 'MESES'} (TRANSF.)`;
 
   wsM.columns = [
     { header: 'CÓDIGO MP', key: 'codigoMP', width: 15 },
@@ -16,8 +24,8 @@ export function agregarHojaMateriasPrimas(wb: ExcelJS.Workbook, propios: Resulta
     { header: 'STOCK MP E.R.', key: 'stockMPEntreRios', width: 18 },
     { header: 'STOCK MP CABA', key: 'stockMPCABA', width: 14 },
     { header: 'CANT. SUGERIDA', key: 'cantidadSugerida', width: 16 },
-    { header: 'COMPRAR MP', key: 'comprar', width: 14 },
-    { header: 'TRANSFERIR MP', key: 'transferir', width: 14 },
+    { header: descCompra, key: 'comprar', width: 28 },
+    { header: descTransf, key: 'transferir', width: 28 },
     { header: 'CRITICIDAD', key: 'criticidad', width: 14 },
   ];
   formatearHeaders(wsM, 9);

@@ -26,7 +26,8 @@ export function calcularMRPPropios(
   stocks: StockPorDeposito[],
   consumos: ConsumoMensual[],
   stockPT: ProductoTerminadoMaestro[],
-  mesesRotacion: number,
+  mesesTransferencia: number,
+  mesesCompra: number,
   reglasPrefijos: ReglaPrefijo[]
 ): ResultadoMRP[] {
   const recetasActivas = formulas.filter((f) => f.estado === 'activa');
@@ -59,7 +60,8 @@ export function calcularMRPPropios(
         : 0;
     if (rotacionMensual <= 0) return;
 
-    const rotacionTotal = rotacionMensual * mesesRotacion;
+    const rotacionTotalTransferencia = rotacionMensual * mesesTransferencia;
+    const rotacionTotalCompra = rotacionMensual * mesesCompra;
 
     const maestroPT = stockPTMap.get(receta.codigoProducto);
     const descPTConcat =
@@ -74,7 +76,6 @@ export function calcularMRPPropios(
     const dispPTCABA = Math.max(0, stockPTCABA);
     const dispPTER = Math.max(0, stockPTER);
 
-    // Obtener sitio de fabricación según el prefijo de código PT
     const regla = obtenerReglaParaProducto(receta.codigoProducto, reglasPrefijos);
     const sitio = regla ? regla.sitioFabricacion : 'CABA + ENTRE RIOS';
 
@@ -90,16 +91,10 @@ export function calcularMRPPropios(
       const maxER =
         stocksMP.length > 0 && componente.cantidad > 0 ? dispMPER / componente.cantidad : 99999999;
 
-      // Calcular asignaciones matemáticas de recursos y cortocircuitos
-      const {
-        cantidadFabricarCABA,
-        cantidadFabricarER,
-        transferirPT,
-        compraMP,
-        transfMP
-      } = calcularDecisionStock(
+      // Calcular decisiones para el horizonte de transferencia
+      const decisionTransf = calcularDecisionStock(
         sitio,
-        rotacionTotal,
+        rotacionTotalTransferencia,
         dispPTCABA,
         dispPTER,
         maxCABA,
@@ -107,6 +102,24 @@ export function calcularMRPPropios(
         dispMPER,
         componente.cantidad
       );
+
+      // Calcular decisiones para el horizonte de compra
+      const decisionCompra = calcularDecisionStock(
+        sitio,
+        rotacionTotalCompra,
+        dispPTCABA,
+        dispPTER,
+        maxCABA,
+        maxER,
+        dispMPER,
+        componente.cantidad
+      );
+
+      const cantidadFabricarCABA = decisionCompra.cantidadFabricarCABA;
+      const cantidadFabricarER = decisionCompra.cantidadFabricarER;
+      const transferirPT = decisionTransf.transferirPT;
+      const compraMP = decisionCompra.compraMP;
+      const transfMP = decisionTransf.transfMP;
 
       const cantidadRequerida = (cantidadFabricarCABA + cantidadFabricarER) * componente.cantidad;
 
@@ -117,7 +130,7 @@ export function calcularMRPPropios(
         existente.transfTotal += transfMP;
         const yaUsado = existente.productosUsados.find((p) => p.codigoProducto === receta.codigoProducto);
         if (yaUsado) {
-          yaUsado.rotacion += rotacionTotal;
+          yaUsado.rotacion += rotacionTotalCompra;
           yaUsado.stockPTEntreRios = stockPTER;
           yaUsado.stockPTCABA = stockPTCABA;
           yaUsado.cantidadFabricarCABA += cantidadFabricarCABA;
@@ -127,7 +140,7 @@ export function calcularMRPPropios(
           existente.productosUsados.push({
             codigoProducto: receta.codigoProducto,
             descripcion: descPTConcat,
-            rotacion: rotacionTotal,
+            rotacion: rotacionTotalCompra,
             stockPTEntreRios: stockPTER,
             stockPTCABA: stockPTCABA,
             cantidadFabricarCABA,
@@ -149,7 +162,7 @@ export function calcularMRPPropios(
             {
               codigoProducto: receta.codigoProducto,
               descripcion: descPTConcat,
-              rotacion: rotacionTotal,
+              rotacion: rotacionTotalCompra,
               stockPTEntreRios: stockPTER,
               stockPTCABA: stockPTCABA,
               cantidadFabricarCABA,
