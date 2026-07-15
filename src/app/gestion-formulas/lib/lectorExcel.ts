@@ -12,6 +12,8 @@ import {
   ProductoTerminadoMaestro,
 } from './types';
 
+import { procesarHojaEspecifica } from './excelReaderCore';
+
 // Re-exportación de las funciones de lectura física para no romper compatibilidades
 export { leerHojasExcel, procesarHojaEspecifica } from './excelReaderCore';
 
@@ -135,4 +137,42 @@ export function mapearStockPT(datos: any[], mapeo: MapeoStockPT): ProductoTermin
       return { codigo, descripcion, descripcionAdicional };
     })
     .filter((pt): pt is ProductoTerminadoMaestro => pt !== null);
+}
+
+export async function importarPrefijosDesdeHoja(file: File, hojaNombre: string): Promise<void> {
+  try {
+    const { usePrefijosStore } = await import('@/app/stores/prefijosStore');
+    const reglasExistentes = usePrefijosStore.getState().reglas || [];
+    const tieneReglasCargadas = reglasExistentes.length > 0 && !(reglasExistentes.length === 1 && reglasExistentes[0].id === 'semilla-1');
+    
+    if (tieneReglasCargadas) return;
+
+    const { data } = await procesarHojaEspecifica(file, hojaNombre);
+    const importadas: any[] = [];
+    data.forEach((row: any) => {
+      const keys = Object.keys(row);
+      const findVal = (keywords: string[]) => {
+        const key = keys.find(k => keywords.some(kw => k.toLowerCase().includes(kw)));
+        return key ? row[key] : null;
+      };
+      const prefijo = findVal(['prefijo']);
+      const linea = findVal(['linea']);
+      const sitioFabricacion = findVal(['sitio', 'fabricacion', 'planta']);
+      const descripcion = findVal(['descripcion', 'detalle']);
+      if (prefijo && linea && sitioFabricacion) {
+        importadas.push({
+          prefijo: String(prefijo).trim(),
+          linea: String(linea).trim(),
+          sitioFabricacion: String(sitioFabricacion).trim().toUpperCase(),
+          descripcion: descripcion ? String(descripcion).trim() : undefined
+        });
+      }
+    });
+
+    if (importadas.length > 0) {
+      usePrefijosStore.getState().importarReglas(importadas);
+    }
+  } catch (err) {
+    console.error('Error al importar prefijos desde hoja de excel:', err);
+  }
 }

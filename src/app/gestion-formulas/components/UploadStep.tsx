@@ -11,6 +11,8 @@ export default function UploadStep() {
   const store = useGestionFormulasStore();
   const [archivoConsolidadoLocal, setArchivoConsolidadoLocal] = useState<File | null>(null);
   
+  const [archivoPrefijosLocal, setArchivoPrefijosLocal] = useState<File | null>(null);
+
   const {
     hojasDisponibles,
     solapasSeleccionadas,
@@ -38,7 +40,7 @@ export default function UploadStep() {
             setArchivoConsolidadoLocal(file);
             store.setIsLoading(true); store.setError(null);
             try {
-              const { leerHojasExcel, procesarHojaEspecifica } = await import('../lib/lectorExcel');
+              const { leerHojasExcel, procesarHojaEspecifica, importarPrefijosDesdeHoja } = await import('../lib/lectorExcel');
               const hojas = await leerHojasExcel(file);
               const buscarSolapa = (keywords: string[]) => {
                 return hojas.find((h: string) =>
@@ -52,6 +54,7 @@ export default function UploadStep() {
               const solapaStock = buscarSolapa(['stock', 'saldo', 'inventario', 'existencia']);
               const solapaConsumo = buscarSolapa(['consumo', 'demanda', 'venta']);
               const solapaStockPT = buscarSolapa(['stock pt', 'maestro pt', 'productos terminados', 'pt']);
+              const solapaPrefijos = buscarSolapa(['prefijo de codigos - lineas pt', 'prefijo de codigos', 'lineas pt', 'prefijos']);
 
               if (solapaFormulas) {
                 const { data, columns, previewData } = await procesarHojaEspecifica(file, solapaFormulas);
@@ -68,6 +71,9 @@ export default function UploadStep() {
               if (solapaStockPT) {
                 const { data, columns, previewData } = await procesarHojaEspecifica(file, solapaStockPT);
                 store.setArchivoStockPT(file); store.setDatosCrudosStockPT(data, columns, previewData);
+              }
+              if (solapaPrefijos) {
+                await importarPrefijosDesdeHoja(file, solapaPrefijos);
               }
             } catch (err: any) {
               store.setError(`Error al leer las solapas: ${err.message || err}`);
@@ -142,6 +148,100 @@ export default function UploadStep() {
             <FileUpload title="2. Existencias de Stock *" file={store.archivoStock} onFileLoad={(f, d) => { store.setArchivoStock(f); store.setDatosCrudosStock(d.data, d.columns, d.previewData); }} />
             <FileUpload title="3. Consumo Mensual *" file={store.archivoConsumo} onFileLoad={(f, d) => { store.setArchivoConsumo(f); store.setDatosCrudosConsumo(d.data, d.columns, d.previewData); }} />
             <FileUpload title="4. Maestro PT (STOCK PT)" file={store.archivoStockPT} onFileLoad={(f, d) => { store.setArchivoStockPT(f); store.setDatosCrudosStockPT(d.data, d.columns, d.previewData); }} />
+            <FileUpload
+              title="5. Prefijos de Códigos PT (Opcional)"
+              file={archivoPrefijosLocal}
+              onFileLoad={async (file) => {
+                setArchivoPrefijosLocal(file);
+                store.setIsLoading(true); store.setError(null);
+                try {
+                  const nombreArchivo = file.name.toLowerCase();
+                  const { usePrefijosStore } = await import('@/app/stores/prefijosStore');
+                  let contenido: any[] = [];
+
+                  if (nombreArchivo.endsWith('.json')) {
+                    const text = await file.text();
+                    contenido = JSON.parse(text);
+                  } else if (nombreArchivo.endsWith('.xlsx')) {
+                    const { leerHojasExcel, procesarHojaEspecifica } = await import('../lib/lectorExcel');
+                    const hojas = await leerHojasExcel(file);
+                    const solapaPrefijos = hojas.find((h: string) =>
+                      ['prefijo de codigos - lineas pt', 'prefijo de codigos', 'lineas pt', 'prefijos'].some((k) =>
+                        h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(k)
+                      )
+                    ) || hojas[0];
+                    
+                    if (solapaPrefijos) {
+                      const { data } = await procesarHojaEspecifica(file, solapaPrefijos);
+                      data.forEach((row: any) => {
+                        const keys = Object.keys(row);
+                        const findVal = (keywords: string[]) => {
+                          const key = keys.find(k => keywords.some(kw => k.toLowerCase().includes(kw)));
+                          return key ? row[key] : null;
+                        };
+                        const prefijo = findVal(['prefijo']);
+                        const linea = findVal(['linea']);
+                        const sitioFabricacion = findVal(['sitio', 'fabricacion', 'planta']);
+                        const descripcion = findVal(['descripcion', 'detalle']);
+                        if (prefijo && linea && sitioFabricacion) {
+                          contenido.push({
+                            prefijo: String(prefijo).trim(),
+                            linea: String(linea).trim(),
+                            sitioFabricacion: String(sitioFabricacion).trim().toUpperCase(),
+                            descripcion: descripcion ? String(descripcion).trim() : undefined
+                          });
+                        }
+                      });
+                    }
+                  } else if (nombreArchivo.endsWith('.csv')) {
+                    const text = await file.text();
+                    const lineas = text.split(/\r?\n/);
+                    for (let i = 1; i < lineas.length; i++) {
+                      const lineaStr = lineas[i].trim();
+                      if (!lineaStr) continue;
+                      
+                      const celdas: string[] = [];
+                      let dentroDeComillas = false;
+                      let celdaActual = '';
+                      for (let j = 0; j < lineaStr.length; j++) {
+                        const char = lineaStr[j];
+                        if (char === '"') {
+                          dentroDeComillas = !dentroDeComillas;
+                        } else if (char === ',' && !dentroDeComillas) {
+                          celdas.push(celdaActual.trim());
+                          celdaActual = '';
+                        } else {
+                          celdaActual += char;
+                        }
+                      }
+                      celdas.push(celdaActual.trim());
+
+                      const [prefijo, linea, sitioFabricacion, descripcion] = celdas;
+                      if (prefijo && linea && sitioFabricacion) {
+                        contenido.push({
+                          prefijo: prefijo.replace(/^"(.*)"$/, '$1').trim(),
+                          linea: linea.replace(/^"(.*)"$/, '$1').trim(),
+                          sitioFabricacion: sitioFabricacion.replace(/^"(.*)"$/, '$1').trim().toUpperCase(),
+                          descripcion: descripcion ? descripcion.replace(/^"(.*)"$/, '$1').trim() : undefined
+                        });
+                      }
+                    }
+                  } else {
+                    store.setError('Formato no soportado para prefijos. Use .json, .csv o .xlsx');
+                    return;
+                  }
+
+                  const resultado = usePrefijosStore.getState().importarReglas(contenido);
+                  if (!resultado.exito) {
+                    store.setError(resultado.mensaje);
+                  }
+                } catch (err: any) {
+                  store.setError(`Error al importar prefijos: ${err.message || err}`);
+                } finally {
+                  store.setIsLoading(false);
+                }
+              }}
+            />
           </div>
         </div>
       )}

@@ -87,6 +87,17 @@ export function useGoogleDriveSync() {
       if (hojaStock) await procesarYGuardarHoja(archivo, hojaStock, 'stock');
       if (hojaRotacion) await procesarYGuardarHoja(archivo, hojaRotacion, 'consumo');
       if (hojaStockPT) await procesarYGuardarHoja(archivo, hojaStockPT, 'stockPT');
+
+      // Buscar e importar prefijos si no hay reglas cargadas
+      const hojaPrefijos = hojas.find((h) =>
+        ['prefijo de codigos - lineas pt', 'prefijo de codigos', 'lineas pt', 'prefijos'].some((k) =>
+          h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(k)
+        )
+      );
+      if (hojaPrefijos) {
+        const { importarPrefijosDesdeHoja } = await import('../lib/lectorExcel');
+        await importarPrefijosDesdeHoja(archivo, hojaPrefijos);
+      }
     } catch (err: any) {
       setErrorSincronizacion(err.message); store.setError(err.message);
     } finally {
