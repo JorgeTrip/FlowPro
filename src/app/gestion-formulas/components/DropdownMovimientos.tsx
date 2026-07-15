@@ -38,8 +38,9 @@ export default function DropdownMovimientos({
   }, [abierto]);
 
   const opciones = [
-    { id: 'transf_mp', etiqueta: 'Transferencia MP (ER -> CABA)' },
-    { id: 'transf_pt', etiqueta: 'Transferencia PT (ER -> CABA)' },
+    { id: 'transf_pt', etiqueta: 'Transferencia PT (E.R. → CABA)' },
+    { id: 'transf_mp', etiqueta: 'Transferencia MP (E.R. → CABA)' },
+    { id: 'transf_mp_caba_er', etiqueta: 'Transferencia MP (CABA → E.R.)' },
     { id: 'compra', etiqueta: 'Compra' },
   ];
 

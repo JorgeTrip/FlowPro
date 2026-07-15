@@ -53,8 +53,12 @@ export function calcularCriticidad(stockTotal: number, consumo: number): 'alta' 
  * Busca y retorna la regla de prefijo de código más larga y específica que coincida con el código de producto.
  */
 export function obtenerReglaParaProducto(codigo: string, reglas: ReglaPrefijo[]): ReglaPrefijo | undefined {
+  const codNormalizado = (codigo || '').trim().toUpperCase();
   const reglasOrdenadas = [...reglas].sort((a, b) => b.prefijo.length - a.prefijo.length);
-  return reglasOrdenadas.find((r) => codigo.startsWith(r.prefijo));
+  return reglasOrdenadas.find((r) => {
+    const prefNormalizado = (r.prefijo || '').trim().toUpperCase();
+    return codNormalizado.startsWith(prefNormalizado);
+  });
 }
 
 export interface ResultadoDecisionStock {
