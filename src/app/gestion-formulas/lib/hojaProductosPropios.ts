@@ -14,6 +14,7 @@ export function agregarHojaProductosPropios(
   mesesCompra: number = 3
 ): void {
   const wsP = wb.addWorksheet('Productos Propios');
+  wsP.views = [{ state: 'frozen', ySplit: 1 }];
 
   wsP.columns = [
     { header: 'CÓDIGO MP', key: 'codigoMP', width: 15 },
@@ -39,12 +40,40 @@ export function agregarHojaProductosPropios(
     { header: 'CANTIDAD NECESARIA MP', key: 'cantidadSugerida', width: 22 },
     { header: 'CRITICIDAD', key: 'criticidad', width: 14 },
   ];
-  formatearHeaders(wsP, 22);
+
+  // Formatear los headers con colores específicos trasladados de la app
+  const headerRow = wsP.getRow(1);
+  headerRow.height = 24;
+  for (let c = 1; c <= 22; c++) {
+    const cell = headerRow.getCell(c);
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.border = borderFino;
+
+    let fillBg = 'FFF8F9FA'; // Gris default
+    let fontColor = 'FF5F6368'; // Gris oscuro
+
+    const esVerde = [1, 2, 3, 4, 5, 10, 11].includes(c);
+    const esAmarillo = [15, 16, 17, 18, 19, 20].includes(c);
+    const esAzul = c === 21;
+
+    if (esVerde) {
+      fillBg = 'FFE6F4EA';
+      fontColor = 'FF137333';
+    } else if (esAmarillo) {
+      fillBg = 'FFFFF4E5';
+      fontColor = 'FFB06000';
+    } else if (esAzul) {
+      fillBg = 'FFE6F0FA';
+      fontColor = 'FF1A73E8';
+    }
+
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fillBg } };
+    cell.font = { bold: true, size: 9.5, name: 'Segoe UI', color: { argb: fontColor } };
+  }
 
   let filaActual = 2;
   (propios || []).forEach((r, idx) => {
     const N = Math.max(1, r.productosUsados?.length || 0);
-    const colorBg = idx % 2 === 0 ? 'FFF9F9F9' : 'FFFFFFFF';
     const filaInicio = filaActual;
 
     for (let i = 0; i < N; i++) {
@@ -106,11 +135,49 @@ export function agregarHojaProductosPropios(
 
       for (let c = 1; c <= 22; c++) {
         const cell = row.getCell(c);
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colorBg } };
+        
+        let cellBg = idx % 2 === 0 ? 'FFFFFFFF' : 'FFF9F9F9'; // Gris/Blanco normal default
+        let cellFontColor = 'FF000000';
+
+        const esVerde = [1, 2, 3, 4, 5, 10, 11].includes(c);
+        const esAmarillo = [15, 16, 17, 18, 19, 20].includes(c);
+        const esAzul = c === 21;
+        const esCriticidad = c === 22;
+
+        if (esVerde) {
+          cellBg = idx % 2 === 0 ? 'FFF4FAF6' : 'FFEBF7EE';
+          cellFontColor = 'FF137333';
+        } else if (esAmarillo) {
+          cellBg = idx % 2 === 0 ? 'FFFFFDF9' : 'FFFFF9F0';
+          cellFontColor = 'FFB06000';
+        } else if (esAzul) {
+          cellBg = idx % 2 === 0 ? 'FFF4F9FE' : 'FFEBF3FC';
+          cellFontColor = 'FF1A73E8';
+        }
+
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: cellBg } };
         cell.border = borderFino;
         cell.alignment = alignConfigs[c - 1];
-        cell.font = { name: 'Segoe UI', size: 9 };
-        
+        cell.font = { name: 'Segoe UI', size: 9, color: { argb: cellFontColor } };
+
+        if (esCriticidad) {
+          const criticidadVal = (r.criticidad || '').toLowerCase();
+          let fillCritColor = 'FFFFFFFF';
+          let fontCritColor = 'FF000000';
+          if (criticidadVal === 'alta') {
+            fillCritColor = 'FFFCE8E6';
+            fontCritColor = 'FFC5221F';
+          } else if (criticidadVal === 'media') {
+            fillCritColor = 'FEF7E0';
+            fontCritColor = 'FFB06000';
+          } else if (criticidadVal === 'baja') {
+            fillCritColor = 'FFE6F4EA';
+            fontCritColor = 'FF137333';
+          }
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fillCritColor } };
+          cell.font = { name: 'Segoe UI', size: 9, bold: true, color: { argb: fontCritColor } };
+        }
+
         const tieneValor = cell.value !== null && cell.value !== '';
         if (tieneValor && [4, 5, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21].includes(c)) {
           cell.numFmt = '#,##0.0';

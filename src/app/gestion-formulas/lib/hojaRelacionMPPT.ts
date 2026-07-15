@@ -8,6 +8,7 @@ import { borderFino, aplicarBordesExternos, formatearHeaders } from './excelEsti
  */
 export function agregarHojaRelacionMPPT(wb: ExcelJS.Workbook, propios: ResultadoMRP[]): void {
   const wsR = wb.addWorksheet('Relación MP - PT');
+  wsR.views = [{ state: 'frozen', ySplit: 1 }];
 
   wsR.columns = [
     { header: 'CÓDIGO MP', key: 'codigoMP', width: 15 },
