@@ -22,6 +22,8 @@ export function agregarHojaProductosPropios(wb: ExcelJS.Workbook, propios: Resul
     { header: 'CRITICIDAD', key: 'criticidad', width: 14 },
     { header: 'CÓDIGO', key: 'codigoProducto', width: 12 },
     { header: 'PRODUCTOS EN LOS QUE SE USA', key: 'productosUsados', width: 40 },
+    { header: 'LÍNEA DE PRODUCTO', key: 'linea', width: 22 },
+    { header: 'PLANTA FABRICACIÓN', key: 'sitioFabricacion', width: 22 },
     { header: 'STOCK PT E.R.', key: 'stockPTEntreRios', width: 12 },
     { header: 'STOCK PT CABA', key: 'stockPTCABA', width: 12 },
     { header: 'PRODUCIR CABA', key: 'cantidadFabricarCABA', width: 18 },
@@ -29,7 +31,7 @@ export function agregarHojaProductosPropios(wb: ExcelJS.Workbook, propios: Resul
     { header: 'TRANSFERIR PT', key: 'transferirPT', width: 12 },
     { header: 'CANT (ROTACIÓN)', key: 'rotacionProductos', width: 30 },
   ];
-  formatearHeaders(wsP, 17);
+  formatearHeaders(wsP, 19);
 
   let filaActual = 2;
   (propios || []).forEach((r, idx) => {
@@ -53,6 +55,8 @@ export function agregarHojaProductosPropios(wb: ExcelJS.Workbook, propios: Resul
         criticidad: esPrimeraFila ? r.criticidad.toUpperCase() : '',
         codigoProducto: pt?.codigoProducto || '',
         productosUsados: pt?.descripcion || '',
+        linea: pt?.linea || '',
+        sitioFabricacion: pt?.sitioFabricacion || '',
         stockPTEntreRios: pt?.stockPTEntreRios ?? 0,
         stockPTCABA: pt?.stockPTCABA ?? 0,
         cantidadFabricarCABA: pt?.cantidadFabricarCABA ?? 0,
@@ -76,6 +80,8 @@ export function agregarHojaProductosPropios(wb: ExcelJS.Workbook, propios: Resul
         { horizontal: 'center' as const, vertical: 'top' as const },
         { horizontal: 'center' as const, vertical: 'top' as const },
         { horizontal: 'left' as const, vertical: 'top' as const },
+        { horizontal: 'left' as const, vertical: 'top' as const },
+        { horizontal: 'center' as const, vertical: 'top' as const },
         { horizontal: 'right' as const, vertical: 'top' as const },
         { horizontal: 'right' as const, vertical: 'top' as const },
         { horizontal: 'right' as const, vertical: 'top' as const },
@@ -84,7 +90,7 @@ export function agregarHojaProductosPropios(wb: ExcelJS.Workbook, propios: Resul
         { horizontal: 'right' as const, vertical: 'top' as const }
       ];
 
-      for (let c = 1; c <= 17; c++) {
+      for (let c = 1; c <= 19; c++) {
         const cell = row.getCell(c);
         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colorBg } };
         cell.border = borderFino;
@@ -92,7 +98,7 @@ export function agregarHojaProductosPropios(wb: ExcelJS.Workbook, propios: Resul
         cell.font = { name: 'Segoe UI', size: 9 };
         
         const tieneValor = cell.value !== null && cell.value !== '';
-        if (tieneValor && (c === 4 || c === 5 || c === 6 || c === 7 || c === 8 || c === 12 || c === 13 || c === 14 || c === 15 || c === 16 || c === 17)) {
+        if (tieneValor && (c === 4 || c === 5 || c === 6 || c === 7 || c === 8 || c === 14 || c === 15 || c === 16 || c === 17 || c === 18 || c === 19)) {
           cell.numFmt = '#,##0.0';
         }
       }
@@ -109,6 +115,6 @@ export function agregarHojaProductosPropios(wb: ExcelJS.Workbook, propios: Resul
   });
 
   if (filaActual > 2) {
-    aplicarBordesExternos(wsP, filaActual - 1, 17);
+    aplicarBordesExternos(wsP, filaActual - 1, 19);
   }
 }

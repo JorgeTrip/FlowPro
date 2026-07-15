@@ -108,6 +108,19 @@ export const MODULOS_DISPONIBLES: Modulo[] = [
     }
   },
   {
+    id: 'prefijos-codigos-pt',
+    nombre: 'Prefijos de códigos PT',
+    ruta: '/prefijos-codigos-pt',
+    icono: '🔖',
+    descripcion: 'Gestión de prefijos, líneas de productos y plantas de fabricación',
+    activo: true,
+    categoria: 'inventario',
+    tooltip: {
+      descripcion: 'Asocia prefijos de códigos de productos terminados con sus líneas de producción y sitios de fabricación.',
+      inputRequerido: 'No requiere archivos externos. Permite exportar e importar la configuración en formato JSON.'
+    }
+  },
+  {
     id: 'recursos-humanos',
     nombre: 'RRHH',
     ruta: '/recursos-humanos',

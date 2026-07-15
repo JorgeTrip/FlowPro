@@ -103,7 +103,7 @@ export default function VistaResultados() {
 
           <div ref={scrollInferiorRef} className="overflow-x-auto max-h-[580px] overflow-y-auto rounded-b-xl md:rounded-t-none border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1C1C1E] shadow-sm">
             {pestañaActiva === 'propios' ? (
-              <table className="min-w-[1650px] divide-y divide-gray-200 dark:divide-gray-800 text-left text-[11px]">
+              <table className="min-w-[1950px] divide-y divide-gray-200 dark:divide-gray-800 text-left text-[11px]">
                 <thead className="bg-gray-50 dark:bg-[#2C2C2E] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider select-none">
                   <tr className="divide-x divide-gray-100 dark:divide-gray-800">
                     <th onClick={() => solicitarOrdenPropios('codigoMP')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Código MP{getIndP('codigoMP')}</th>
@@ -117,6 +117,8 @@ export default function VistaResultados() {
                     <th onClick={() => solicitarOrdenPropios('criticidad')} className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-[#3A3A3C]">Criticidad{getIndP('criticidad')}</th>
                     <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800">Código</th>
                     <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800">Productos en los que se usa</th>
+                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800">Línea</th>
+                    <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 border-r border-gray-150 dark:border-gray-800">Planta</th>
                     <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Stock PT E.R.</th>
                     <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Stock PT CABA</th>
                     <th className="sticky top-0 z-10 bg-gray-50 dark:bg-[#2C2C2E] px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800">Producir CABA</th>
@@ -154,6 +156,40 @@ export default function VistaResultados() {
                           {fila.productosUsados?.map((p, i) => (
                             <div key={i} className="text-[10px] text-gray-600 dark:text-gray-400 truncate max-w-[200px]" title={p.descripcion}>
                               {p.descripcion}
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-2.5 py-2">
+                        <div className="space-y-0.5 text-left">
+                          {fila.productosUsados?.map((p, i) => (
+                            <div key={i} className="text-[10px] font-semibold text-gray-600 dark:text-gray-400 truncate max-w-[150px]" title={p.linea || '-'}>
+                              {p.linea || '-'}
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-2.5 py-2">
+                        <div className="space-y-1 text-center">
+                          {fila.productosUsados?.map((p, i) => (
+                            <div key={i} className="text-[9px] font-bold">
+                              {p.sitioFabricacion ? (
+                                <span className={`px-1.5 py-0.5 rounded-md ${
+                                  p.sitioFabricacion === 'CABA'
+                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-400'
+                                    : p.sitioFabricacion === 'ENTRE RIOS'
+                                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400'
+                                    : p.sitioFabricacion === 'TERC. CABA'
+                                    ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-400'
+                                    : p.sitioFabricacion === 'TERC. ENTRE RIOS'
+                                    ? 'bg-pink-100 text-pink-800 dark:bg-pink-950/40 dark:text-pink-400'
+                                    : p.sitioFabricacion === 'TERC. CON PROV. MP'
+                                    ? 'bg-teal-100 text-teal-800 dark:bg-teal-950/40 dark:text-teal-400'
+                                    : 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400'
+                                }`}>
+                                  {p.sitioFabricacion}
+                                </span>
+                              ) : '-'}
                             </div>
                           ))}
                         </div>

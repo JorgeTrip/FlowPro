@@ -133,9 +133,20 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
         set({ cargandoCalculo: true, error: null });
         try {
           const { productos, formulas, stocks, consumos, stockPT } = get();
+          const { usePrefijosStore } = await import('@/app/stores/prefijosStore');
+          const reglasPrefijos = usePrefijosStore.getState().reglas || [];
+
           await new Promise((resolve) => setTimeout(resolve, 850));
           const { calcularRequerimientosMRP } = await import('@/app/gestion-formulas/lib/motorMRP');
-          const resultados = calcularRequerimientosMRP(productos, formulas, stocks, consumos, stockPT, mesesRotacion);
+          const resultados = calcularRequerimientosMRP(
+            productos,
+            formulas,
+            stocks,
+            consumos,
+            stockPT,
+            mesesRotacion,
+            reglasPrefijos
+          );
           set({ resultadosMRP: resultados, cargandoCalculo: false });
         } catch (err: any) {
           set({ error: err.message || 'Error al calcular MRP.', cargandoCalculo: false });

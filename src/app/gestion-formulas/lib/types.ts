@@ -188,6 +188,8 @@ export interface DesgloseProducto {
   cantidadFabricarCABA: number;
   cantidadFabricarER: number;
   transferirPT: number;
+  linea?: string;
+  sitioFabricacion?: 'CABA' | 'ENTRE RIOS' | 'CABA + ENTRE RIOS' | 'TERC. CABA' | 'TERC. ENTRE RIOS' | 'TERC. CON PROV. MP';
 }
 
 /**
@@ -233,4 +235,16 @@ export interface ResultadosMRPFinal {
   propios: ResultadoMRP[];
   tercerizados: ResultadoTercerizadosMRP[];
 }
+
+/**
+ * Representa una regla de asociación para prefijos de códigos de productos terminados.
+ */
+export interface ReglaPrefijo {
+  id: string;
+  prefijo: string;
+  linea: string;
+  sitioFabricacion: 'CABA' | 'ENTRE RIOS' | 'CABA + ENTRE RIOS' | 'TERC. CABA' | 'TERC. ENTRE RIOS' | 'TERC. CON PROV. MP';
+  descripcion?: string;
+}
+
 
