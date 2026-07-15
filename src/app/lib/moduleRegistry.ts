@@ -51,19 +51,6 @@ export const MODULOS_DISPONIBLES: Modulo[] = [
     }
   },
   {
-    id: 'redistribucion-stock',
-    nombre: 'Redistribución Stock',
-    ruta: '/redistribucion-stock',
-    icono: '🚚',
-    descripcion: 'Redistribución entre depósitos según rotación',
-    activo: true,
-    categoria: 'inventario',
-    tooltip: {
-      descripcion: 'Optimiza la distribución de stock entre CABA y Entre Ríos basado en rotación mensual. Identifica productos que necesitan transferencia.',
-      inputRequerido: 'De Google Drive usar "Planilla integral de stock", solapa "Info hierbas para compra" columnas A-H (ID producto, descripción, stock CABA MP+PT, stock Entre Ríos MP+PT, rotación mensual)'
-    }
-  },
-  {
     id: 'gestion-formulas',
     nombre: 'Pedido MP/PT',
     ruta: '/gestion-formulas',
