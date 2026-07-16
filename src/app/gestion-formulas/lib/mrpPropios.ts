@@ -28,9 +28,13 @@ export function calcularMRPPropios(
   stockPT: ProductoTerminadoMaestro[],
   mesesTransferencia: number,
   mesesCompra: number,
-  reglasPrefijos: ReglaPrefijo[]
+  reglasPrefijos: ReglaPrefijo[],
+  modoMacro: boolean = false
 ): ResultadoMRP[] {
-  const recetasActivas = formulas.filter((f) => f.estado === 'activa');
+  let recetasActivas = formulas.filter((f) => f.estado === 'activa');
+  if (modoMacro) {
+    recetasActivas = recetasActivas.filter((f) => f.codigoProducto.toLowerCase().endsWith('k'));
+  }
   const productosMap = new Map(productos.map((p) => [p.codigo, p]));
   const stockPTMap = new Map(stockPT.map((s) => [s.codigo, s]));
   const requerimientosMP = new Map<string, any>();
@@ -54,13 +58,15 @@ export function calcularMRPPropios(
       const stocksMP = stocks.filter((s) => s.codigoProducto === componente.codigoComponente);
       const dispMPCABA = Math.max(0, stocksMP.find((s) => esDepositoCABA(s.deposito))?.stockFisico || 0);
       const dispMPER = Math.max(0, stocksMP.find((s) => esDepositoEntreRios(s.deposito))?.stockFisico || 0);
-      const maxCABA = componente.cantidad > 0 ? dispMPCABA / componente.cantidad : 99999999;
-      const maxER = componente.cantidad > 0 ? dispMPER / componente.cantidad : 99999999;
+      
+      const cantidadComponente = modoMacro ? 1 : componente.cantidad;
+      const maxCABA = cantidadComponente > 0 ? dispMPCABA / cantidadComponente : 99999999;
+      const maxER = cantidadComponente > 0 ? dispMPER / cantidadComponente : 99999999;
 
-      const dTransf = calcularDecisionStock(sitio, rotacionMensual * mesesTransferencia, dispPTCABA, dispPTER, maxCABA, maxER, dispMPER, componente.cantidad);
-      const dCompra = calcularDecisionStock(sitio, rotacionMensual * mesesCompra, dispPTCABA, dispPTER, maxCABA, maxER, dispMPER, componente.cantidad);
+      const dTransf = calcularDecisionStock(sitio, rotacionMensual * mesesTransferencia, dispPTCABA, dispPTER, maxCABA, maxER, dispMPER, cantidadComponente, modoMacro);
+      const dCompra = calcularDecisionStock(sitio, rotacionMensual * mesesCompra, dispPTCABA, dispPTER, maxCABA, maxER, dispMPER, cantidadComponente, modoMacro);
 
-      const deduccion = componente.cantidad > 0 ? dCompra.compraMP / componente.cantidad : 0;
+      const deduccion = cantidadComponente > 0 ? dCompra.compraMP / cantidadComponente : 0;
       const prodCABA = sitio === 'ENTRE RIOS' ? dCompra.cantidadFabricarCABA : Math.max(0, dCompra.cantidadFabricarCABA - deduccion);
       const prodER = sitio === 'ENTRE RIOS' ? Math.max(0, dCompra.cantidadFabricarER - deduccion) : dCompra.cantidadFabricarER;
 
@@ -71,7 +77,7 @@ export function calcularMRPPropios(
       };
 
       const req = requerimientosMP.get(componente.codigoComponente) || { cantidadTotal: 0, compraTotal: 0, transfTotal: 0, transfCabaErTotal: 0, productosUsados: [] };
-      req.cantidadTotal += (dCompra.cantidadFabricarCABA + dCompra.cantidadFabricarER) * componente.cantidad;
+      req.cantidadTotal += (dCompra.cantidadFabricarCABA + dCompra.cantidadFabricarER) * cantidadComponente;
       req.compraTotal += dCompra.compraMP; req.transfTotal += dTransf.transfMP; req.transfCabaErTotal += dTransf.transfMPCabaEr || 0;
       const yaUsado = req.productosUsados.find((p: DesgloseProducto) => p.codigoProducto === receta.codigoProducto);
       if (yaUsado) {

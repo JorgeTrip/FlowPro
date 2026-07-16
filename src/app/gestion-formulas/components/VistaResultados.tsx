@@ -3,7 +3,7 @@
 
 import { useVistaResultados } from '../hooks/useVistaResultados';
 import { exportarExcelMRP } from '../lib/exportarExcel';
-import { SkeletonTabla } from './ComponentesAuxiliares';
+import { SkeletonTabla, ReferenciaColores, Tooltip } from './ComponentesAuxiliares';
 import DropdownFiltrosPedidos from './DropdownFiltrosPedidos';
 import DropdownCriticidad from './DropdownCriticidad';
 import DropdownMovimientos from './DropdownMovimientos';
@@ -16,14 +16,11 @@ import { TablaProductosTercerizados } from './TablaProductosTercerizados';
 export default function VistaResultados() {
   const {
     busqueda, setBusqueda, filtrosActivos, setFiltrosActivos, criticidades, setCriticidades,
-    movimientosFiltrados, setMovimientosFiltrados,
-    lineasFiltradas, setLineasFiltradas, lineasDisponibles,
+    movimientosFiltrados, setMovimientosFiltrados, lineasFiltradas, setLineasFiltradas, lineasDisponibles,
     mesesProyeccionTransferencia, mesesProyeccionCompra, setMesesProyeccionTransferencia, setMesesProyeccionCompra,
-    scrollSuperiorRef, scrollInferiorRef, anchoScroll,
-    resultadosFiltradosPropios, resultadosFiltradosTercerizados,
-    cargandoCalculo, resultadosMRP, pestañaActiva, setPestañaActiva, setStep,
-    sortPropios, solicitarOrdenPropios, sortTercerizados, solicitarOrdenTercerizados,
-    analisisHierbas, setAnalisisHierbas,
+    scrollSuperiorRef, scrollInferiorRef, anchoScroll, resultadosFiltradosPropios, resultadosFiltradosTercerizados,
+    cargandoCalculo, resultadosMRP, pestañaActiva, setPestañaActiva, setStep, sortPropios, solicitarOrdenPropios,
+    sortTercerizados, solicitarOrdenTercerizados, analisisHierbas, setAnalisisHierbas, modoMacro, toggleModoMacro
   } = useVistaResultados();
 
   const getIndP = (k: any) => (sortPropios && sortPropios.key === k) ? (sortPropios.direction === 'asc' ? ' ▲' : ' ▼') : '';
@@ -31,9 +28,7 @@ export default function VistaResultados() {
 
   const renderSelectorMeses = (titulo: string, valor: number, setValor: (v: number) => void) => (
     <div className="flex flex-col">
-      <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">
-        {titulo}
-      </span>
+      <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">{titulo}</span>
       <Select.Root value={String(valor)} onValueChange={(val) => setValor(Number(val))}>
         <Select.Trigger className="flex items-center justify-between h-9 w-36 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#2C2C2E] text-xs text-gray-700 dark:text-gray-300 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-sm hover:border-gray-400 transition-all">
           <Select.Value />
@@ -44,16 +39,11 @@ export default function VistaResultados() {
             <Select.Viewport className="p-1">
               {[1, 2, 3, 4, 5, 6].map((mes) => (
                 <Select.Item
-                  key={mes}
-                  value={String(mes)}
+                  key={mes} value={String(mes)}
                   className="relative flex items-center h-8 pl-8 pr-4 text-xs text-gray-700 dark:text-gray-300 rounded-md select-none focus:bg-blue-600 focus:text-white dark:focus:bg-blue-500 cursor-pointer outline-none transition-colors"
                 >
-                  <span className="absolute left-2.5 flex items-center justify-center">
-                    <Select.ItemIndicator>✓</Select.ItemIndicator>
-                  </span>
-                  <Select.ItemText>
-                    {mes} {mes === 1 ? 'Mes' : 'Meses'}
-                  </Select.ItemText>
+                  <span className="absolute left-2.5 flex items-center justify-center"><Select.ItemIndicator>✓</Select.ItemIndicator></span>
+                  <Select.ItemText>{mes} {mes === 1 ? 'Mes' : 'Meses'}</Select.ItemText>
                 </Select.Item>
               ))}
             </Select.Viewport>
@@ -67,32 +57,24 @@ export default function VistaResultados() {
     <div className="space-y-6 w-full">
       {/* Barra de Controles */}
       <div className="flex flex-col gap-3 p-4 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-gray-800 shadow-sm">
-
         {/* Fila 1: Buscador + Botones de Acción */}
         <div className="flex items-center gap-3">
           <div className="relative flex-1 max-w-xs">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">🔍</span>
             <input
-              type="text"
-              placeholder="Código o descripción..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              type="text" placeholder="Código o descripción..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
               className="w-full pl-9 pr-3 h-9 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#2C2C2E] dark:text-white text-xs placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all shadow-sm"
             />
           </div>
           <div className="flex-1" />
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setStep(1)}
-              className="px-4 h-9 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-bold hover:bg-gray-50 dark:hover:bg-[#2C2C2E]/50 text-gray-700 dark:text-gray-300 transition-all cursor-pointer shadow-sm whitespace-nowrap"
-            >
+            <button onClick={() => setStep(1)} className="px-4 h-9 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-bold hover:bg-gray-50 dark:hover:bg-[#2C2C2E]/50 text-gray-700 dark:text-gray-300 transition-all cursor-pointer shadow-sm whitespace-nowrap">
               Re-importar Excel
             </button>
             <button
               onClick={() => exportarExcelMRP(
                 { propios: resultadosFiltradosPropios, tercerizados: resultadosFiltradosTercerizados },
-                mesesProyeccionTransferencia,
-                mesesProyeccionCompra
+                mesesProyeccionTransferencia, mesesProyeccionCompra, modoMacro
               )}
               disabled={cargandoCalculo || !resultadosMRP}
               className="px-4 h-9 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-800 text-white text-xs font-bold transition-all shadow-md cursor-pointer whitespace-nowrap"
@@ -126,10 +108,25 @@ export default function VistaResultados() {
             </>
           )}
 
-          {/* Grupo 3: Proyección de meses */}
-          <div className="flex items-end gap-2">
+          {/* Grupo 3: Proyección de meses + Switch Modo Mayorista */}
+          <div className="flex items-end gap-3.5">
             {renderSelectorMeses("Meses de Transferencia", mesesProyeccionTransferencia, setMesesProyeccionTransferencia)}
             {renderSelectorMeses("Meses de Compra", mesesProyeccionCompra, setMesesProyeccionCompra)}
+
+            <div className="flex flex-col relative group select-none">
+              <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Modo Mayorista (Kilos)</span>
+              <div className="flex items-center h-9">
+                <button
+                  onClick={toggleModoMacro} type="button"
+                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    modoMacro ? 'bg-blue-600 dark:bg-blue-500' : 'bg-gray-200 dark:bg-gray-700'
+                  }`}
+                >
+                  <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${modoMacro ? 'translate-x-4' : 'translate-x-0'}`} />
+                </button>
+              </div>
+              <Tooltip texto="Filtra productos que no terminen en 'K' y asume una relación de producción simplificada 1:1 (1 kg MP = 1 kg PT)." />
+            </div>
           </div>
         </div>
       </div>
@@ -154,29 +151,7 @@ export default function VistaResultados() {
         <SkeletonTabla />
       ) : resultadosMRP ? (
         <div className="space-y-3">
-          {/* Referencia de Colores */}
-          <div className="flex flex-wrap items-center gap-5 px-3 py-2 bg-gray-50/50 dark:bg-[#2C2C2E]/20 border border-gray-150 dark:border-gray-800/30 rounded-lg text-[10px] font-bold text-gray-500 dark:text-gray-400 select-none">
-            <span className="flex items-center space-x-1.5">
-              <span className="w-3.5 h-3.5 rounded bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700" />
-              <span>Gris: Datos extraídos (planillas)</span>
-            </span>
-            <span className="flex items-center space-x-1.5">
-              <span className="w-3.5 h-3.5 rounded bg-[#E6F4EA] dark:bg-[#193220] border border-emerald-200/50 dark:border-emerald-900/30" />
-              <span>Verde: Stock Entre Ríos (E.R.)</span>
-            </span>
-            <span className="flex items-center space-x-1.5">
-              <span className="w-3.5 h-3.5 rounded bg-[#F3E8FF] dark:bg-[#2D1A40] border border-purple-200/50 dark:border-purple-900/30" />
-              <span>Violeta: Stock CABA</span>
-            </span>
-            <span className="flex items-center space-x-1.5">
-              <span className="w-3.5 h-3.5 rounded bg-[#E6F0FA] dark:bg-[#192B40] border border-blue-200/50 dark:border-blue-900/30" />
-              <span>Azul: Cantidades necesarias (cálculo)</span>
-            </span>
-            <span className="flex items-center space-x-1.5">
-              <span className="w-3.5 h-3.5 rounded bg-[#FFF4E5] dark:bg-[#332211] border border-amber-200/50 dark:border-amber-900/30" />
-              <span>Amarillo: Acciones sugeridas (traslado/compra)</span>
-            </span>
-          </div>
+          <ReferenciaColores />
 
           <div ref={scrollSuperiorRef} className="overflow-x-auto w-full border border-gray-200 dark:border-gray-800 rounded-t-xl bg-white dark:bg-[#1C1C1E] md:block hidden h-3 overflow-y-hidden">
             <div style={{ width: `${anchoScroll}px`, height: '1px' }} />
@@ -185,19 +160,13 @@ export default function VistaResultados() {
           <div ref={scrollInferiorRef} className="overflow-x-auto max-h-[580px] overflow-y-auto rounded-b-xl md:rounded-t-none border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1C1C1E] shadow-sm">
             {pestañaActiva === 'propios' ? (
               <TablaProductosPropios
-                resultadosFiltradosPropios={resultadosFiltradosPropios}
-                solicitarOrdenPropios={solicitarOrdenPropios}
-                getIndP={getIndP}
-                mesesProyeccionTransferencia={mesesProyeccionTransferencia}
-                mesesProyeccionCompra={mesesProyeccionCompra}
+                resultadosFiltradosPropios={resultadosFiltradosPropios} solicitarOrdenPropios={solicitarOrdenPropios} getIndP={getIndP}
+                mesesProyeccionTransferencia={mesesProyeccionTransferencia} mesesProyeccionCompra={mesesProyeccionCompra}
               />
             ) : (
               <TablaProductosTercerizados
-                resultadosFiltradosTercerizados={resultadosFiltradosTercerizados}
-                solicitarOrdenTercerizados={solicitarOrdenTercerizados}
-                getIndT={getIndT}
-                mesesProyeccionTransferencia={mesesProyeccionTransferencia}
-                mesesProyeccionCompra={mesesProyeccionCompra}
+                resultadosFiltradosTercerizados={resultadosFiltradosTercerizados} solicitarOrdenTercerizados={solicitarOrdenTercerizados} getIndT={getIndT}
+                mesesProyeccionTransferencia={mesesProyeccionTransferencia} mesesProyeccionCompra={mesesProyeccionCompra}
               />
             )}
           </div>

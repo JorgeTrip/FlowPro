@@ -31,7 +31,8 @@ export function calcularRequerimientosMRP(
   stockPT: ProductoTerminadoMaestro[] = [],
   mesesTransferencia: number = 2,
   mesesCompra: number = 3,
-  reglasPrefijos: ReglaPrefijo[] = []
+  reglasPrefijos: ReglaPrefijo[] = [],
+  modoMacro: boolean = false
 ): ResultadosMRPFinal {
   const recetasActivas = formulas.filter((f) => f.estado === 'activa');
   const recetasActivasCodigos = new Set(recetasActivas.map((f) => f.codigoProducto));
@@ -44,7 +45,8 @@ export function calcularRequerimientosMRP(
     stockPT,
     mesesTransferencia,
     mesesCompra,
-    reglasPrefijos
+    reglasPrefijos,
+    modoMacro
   );
 
   const tercerizados = calcularMRPTercerizados(
@@ -54,7 +56,8 @@ export function calcularRequerimientosMRP(
     consumos,
     mesesTransferencia,
     mesesCompra,
-    reglasPrefijos
+    reglasPrefijos,
+    modoMacro
   );
 
   return { propios, tercerizados };

@@ -25,9 +25,13 @@ export function calcularMRPTercerizados(
   consumos: ConsumoMensual[],
   mesesTransferencia: number,
   mesesCompra: number,
-  reglasPrefijos: ReglaPrefijo[] = []
+  reglasPrefijos: ReglaPrefijo[] = [],
+  modoMacro: boolean = false
 ): ResultadoTercerizadosMRP[] {
-  const listaTercerizados = stockPT.filter((pt) => !recetasActivasCodigos.has(pt.codigo));
+  let listaTercerizados = stockPT.filter((pt) => !recetasActivasCodigos.has(pt.codigo));
+  if (modoMacro) {
+    listaTercerizados = listaTercerizados.filter((pt) => pt.codigo.toLowerCase().endsWith('k'));
+  }
 
   const resultadosTercerizados: ResultadoTercerizadosMRP[] = [];
   listaTercerizados.forEach((pt) => {

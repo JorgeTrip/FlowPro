@@ -9,88 +9,25 @@ import {
   ConsumoMensual,
   ConfiguracionMapeoFormulas,
   ProductoTerminadoMaestro,
+  ResultadosMRPFinal
 } from '@/app/gestion-formulas/lib/types';
-import { ResultadosMRPFinal } from '@/app/gestion-formulas/lib/types';
 
 export interface GestionFormulasState {
-  productos: Producto[];
-  formulas: Formula[];
-  stocks: StockPorDeposito[];
-  consumos: ConsumoMensual[];
-  stockPT: ProductoTerminadoMaestro[];
-
-  archivoProductos: File | null;
-  archivoFormulas: File | null;
-  archivoStock: File | null;
-  archivoConsumo: File | null;
-  archivoStockPT: File | null;
-
-  datosCrudosProductos: any[];
-  datosCrudosFormulas: any[];
-  datosCrudosStock: any[];
-  datosCrudosConsumo: any[];
-  datosCrudosStockPT: any[];
-
-  columnasProductos: string[];
-  columnasFormulas: string[];
-  columnasStock: string[];
-  columnasConsumo: string[];
-  columnasStockPT: string[];
-
-  previewProductos: any[];
-  previewFormulas: any[];
-  previewStock: any[];
-  previewConsumo: any[];
-  previewStockPT: any[];
-
-  step: number;
-  pestañaActiva: 'propios' | 'tercerizados';
-  configuracionMapeo: ConfiguracionMapeoFormulas;
-  isLoading: boolean;
-  error: string | null;
+  productos: Producto[]; formulas: Formula[]; stocks: StockPorDeposito[]; consumos: ConsumoMensual[]; stockPT: ProductoTerminadoMaestro[];
+  archivoProductos: File | null; archivoFormulas: File | null; archivoStock: File | null; archivoConsumo: File | null; archivoStockPT: File | null;
+  datosCrudosProductos: any[]; datosCrudosFormulas: any[]; datosCrudosStock: any[]; datosCrudosConsumo: any[]; datosCrudosStockPT: any[];
+  columnasProductos: string[]; columnasFormulas: string[]; columnasStock: string[]; columnasConsumo: string[]; columnasStockPT: string[];
+  previewProductos: any[]; previewFormulas: any[]; previewStock: any[]; previewConsumo: any[]; previewStockPT: any[];
+  step: number; pestañaActiva: 'propios' | 'tercerizados'; configuracionMapeo: ConfiguracionMapeoFormulas; isLoading: boolean; error: string | null;
   formulasClasificadas: { nueva: Formula[]; modificada: Formula[]; sin_cambios: Formula[] } | null;
-
-  resultadosMRP: ResultadosMRPFinal | null;
-  cargandoCalculo: boolean;
-
-  setArchivoProductos: (file: File | null) => void;
-  setArchivoFormulas: (file: File | null) => void;
-  setArchivoStock: (file: File | null) => void;
-  setArchivoConsumo: (file: File | null) => void;
-  setArchivoStockPT: (file: File | null) => void;
-
-  setDatosCrudosProductos: (data: any[], cols: string[], preview: any[]) => void;
-  setDatosCrudosFormulas: (data: any[], cols: string[], preview: any[]) => void;
-  setDatosCrudosStock: (data: any[], cols: string[], preview: any[]) => void;
-  setDatosCrudosConsumo: (data: any[], cols: string[], preview: any[]) => void;
-  setDatosCrudosStockPT: (data: any[], cols: string[], preview: any[]) => void;
-
-  setStep: (step: number) => void;
-  setPestañaActiva: (pest: 'propios' | 'tercerizados') => void;
-  setProductos: (productos: Producto[]) => void;
-  setFormulas: (formulas: Formula[]) => void;
-  setStocks: (stocks: StockPorDeposito[]) => void;
-  setConsumos: (consumos: ConsumoMensual[]) => void;
-  setStockPT: (stockPT: ProductoTerminadoMaestro[]) => void;
-  setConfiguracionMapeo: (mapeo: Partial<ConfiguracionMapeoFormulas>) => void;
-  setIsLoading: (isLoading: boolean) => void;
-  setError: (error: string | null) => void;
-  setFormulasClasificadas: (clasificadas: any) => void;
-
-  ejecutarCalculoMRP: (mesesTransferencia?: number, mesesCompra?: number) => Promise<void>;
-  guardarImportacionConfirmada: () => void;
-  limpiarDatos: () => void;
-  reset: () => void;
-
-  urlGoogleDriveFormulas: string | null;
-  urlGoogleDriveStock: string | null;
-  setUrlGoogleDriveFormulas: (url: string | null) => void;
-  setUrlGoogleDriveStock: (url: string | null) => void;
-
-  mesesProyeccionTransferencia: number;
-  mesesProyeccionCompra: number;
-  setMesesProyeccionTransferencia: (meses: number) => void;
-  setMesesProyeccionCompra: (meses: number) => void;
+  resultadosMRP: ResultadosMRPFinal | null; cargandoCalculo: boolean;
+  setArchivoProductos: (file: File | null) => void; setArchivoFormulas: (file: File | null) => void; setArchivoStock: (file: File | null) => void; setArchivoConsumo: (file: File | null) => void; setArchivoStockPT: (file: File | null) => void;
+  setDatosCrudosProductos: (data: any[], cols: string[], preview: any[]) => void; setDatosCrudosFormulas: (data: any[], cols: string[], preview: any[]) => void; setDatosCrudosStock: (data: any[], cols: string[], preview: any[]) => void; setDatosCrudosConsumo: (data: any[], cols: string[], preview: any[]) => void; setDatosCrudosStockPT: (data: any[], cols: string[], preview: any[]) => void;
+  setStep: (step: number) => void; setPestañaActiva: (pest: 'propios' | 'tercerizados') => void; setProductos: (productos: Producto[]) => void; setFormulas: (formulas: Formula[]) => void; setStocks: (stocks: StockPorDeposito[]) => void; setConsumos: (consumos: ConsumoMensual[]) => void; setStockPT: (stockPT: ProductoTerminadoMaestro[]) => void; setConfiguracionMapeo: (mapeo: Partial<ConfiguracionMapeoFormulas>) => void; setIsLoading: (isLoading: boolean) => void; setError: (error: string | null) => void; setFormulasClasificadas: (clasificadas: any) => void;
+  ejecutarCalculoMRP: (mesesTransferencia?: number, mesesCompra?: number) => Promise<void>; guardarImportacionConfirmada: () => void; limpiarDatos: () => void; reset: () => void;
+  urlGoogleDriveFormulas: string | null; urlGoogleDriveStock: string | null; setUrlGoogleDriveFormulas: (url: string | null) => void; setUrlGoogleDriveStock: (url: string | null) => void;
+  mesesProyeccionTransferencia: number; mesesProyeccionCompra: number; setMesesProyeccionTransferencia: (meses: number) => void; setMesesProyeccionCompra: (meses: number) => void;
+  modoMacro: boolean; toggleModoMacro: () => void;
 }
 
 const estadoInicial = {
@@ -101,11 +38,9 @@ const estadoInicial = {
   previewProductos: [], previewFormulas: [], previewStock: [], previewConsumo: [], previewStockPT: [],
   step: 1, pestañaActiva: 'propios' as const,
   configuracionMapeo: { productos: null, formulas: null, stock: null, consumo: null, stockPT: null },
-  isLoading: false, error: null, formulasClasificadas: null,
-  resultadosMRP: null, cargandoCalculo: false,
-  urlGoogleDriveFormulas: null, urlGoogleDriveStock: null,
-  mesesProyeccionTransferencia: 2,
-  mesesProyeccionCompra: 3,
+  isLoading: false, error: null, formulasClasificadas: null, resultadosMRP: null, cargandoCalculo: false,
+  urlGoogleDriveFormulas: null, urlGoogleDriveStock: null, mesesProyeccionTransferencia: 2, mesesProyeccionCompra: 3,
+  modoMacro: false,
 };
 
 export const useGestionFormulasStore = create<GestionFormulasState>()(
@@ -137,11 +72,12 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
       setUrlGoogleDriveStock: (urlGoogleDriveStock) => set({ urlGoogleDriveStock }),
       setMesesProyeccionTransferencia: (mesesProyeccionTransferencia) => set({ mesesProyeccionTransferencia }),
       setMesesProyeccionCompra: (mesesProyeccionCompra) => set({ mesesProyeccionCompra }),
+      toggleModoMacro: () => set((state) => ({ modoMacro: !state.modoMacro })),
 
       ejecutarCalculoMRP: async (mesesTransferencia, mesesCompra) => {
         set({ cargandoCalculo: true, error: null });
         try {
-          const { productos, formulas, stocks, consumos, stockPT, mesesProyeccionTransferencia, mesesProyeccionCompra } = get();
+          const { productos, formulas, stocks, consumos, stockPT, mesesProyeccionTransferencia, mesesProyeccionCompra, modoMacro } = get();
           const mT = mesesTransferencia !== undefined ? mesesTransferencia : mesesProyeccionTransferencia;
           const mC = mesesCompra !== undefined ? mesesCompra : mesesProyeccionCompra;
 
@@ -158,7 +94,8 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
             stockPT,
             mT,
             mC,
-            reglasPrefijos
+            reglasPrefijos,
+            modoMacro
           );
           set({ resultadosMRP: resultados, cargandoCalculo: false });
         } catch (err: any) {
@@ -190,6 +127,7 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
         urlGoogleDriveStock: s.urlGoogleDriveStock,
         mesesProyeccionTransferencia: s.mesesProyeccionTransferencia,
         mesesProyeccionCompra: s.mesesProyeccionCompra,
+        modoMacro: s.modoMacro,
       })),
       reset: () => set(estadoInicial),
     }),
@@ -209,6 +147,7 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
         urlGoogleDriveStock: state.urlGoogleDriveStock,
         mesesProyeccionTransferencia: state.mesesProyeccionTransferencia,
         mesesProyeccionCompra: state.mesesProyeccionCompra,
+        modoMacro: state.modoMacro,
       }),
     }
   )

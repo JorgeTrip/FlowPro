@@ -82,7 +82,8 @@ export function calcularDecisionStock(
   maxCABA: number,
   maxER: number,
   dispMPER: number,
-  cantidadComponente: number
+  cantidadComponente: number,
+  modoMacro: boolean = false
 ): ResultadoDecisionStock {
   let cantidadFabricarCABA = 0;
   let cantidadFabricarER = 0;
@@ -92,6 +93,7 @@ export function calcularDecisionStock(
   let transfMPCabaEr = 0;
 
   const R = Math.max(0, rotacionTotal - dispPTCABA);
+  const cantComp = modoMacro ? 1 : cantidadComponente;
 
   if (R > 0) {
     if (sitio === 'ENTRE RIOS') {
@@ -104,11 +106,11 @@ export function calcularDecisionStock(
           transferirPT = R;
         } else {
           // No alcanza con la MP local de ER. Se intenta transferir MP de CABA.
-          const dispMPCABA = maxCABA === 99999999 ? 0 : maxCABA * cantidadComponente;
+          const dispMPCABA = maxCABA === 99999999 ? 0 : maxCABA * cantComp;
           const R_restante = R - (dispPTER + PT_pot);
           
           if (maxCABA >= R_restante) {
-            transfMPCabaEr = R_restante * cantidadComponente;
+            transfMPCabaEr = R_restante * cantComp;
             cantidadFabricarER = R - dispPTER;
             transferirPT = R;
           } else {
@@ -118,7 +120,7 @@ export function calcularDecisionStock(
             const R_falta = R_restante - maxCABA;
             cantidadFabricarER += R_falta;
             transferirPT += R_falta;
-            compraMP = R_falta * cantidadComponente;
+            compraMP = R_falta * cantComp;
           }
         }
       }
@@ -129,19 +131,19 @@ export function calcularDecisionStock(
         const PT_ER = maxER;
         if (maxCABA + PT_ER >= R) {
           cantidadFabricarCABA = R;
-          transfMP = (R - maxCABA) * cantidadComponente;
+          transfMP = (R - maxCABA) * cantComp;
         } else {
           transfMP = dispMPER;
           cantidadFabricarCABA = maxCABA + PT_ER;
           const R_falta = R - (maxCABA + PT_ER);
           cantidadFabricarCABA += R_falta;
-          compraMP = R_falta * cantidadComponente;
+          compraMP = R_falta * cantComp;
         }
       }
     } else if (sitio === 'TERC. CON PROV. MP') {
       cantidadFabricarCABA = R;
-      const dispMPCABA_real = maxCABA === 99999999 ? 0 : maxCABA * cantidadComponente;
-      const MP_Req = R * cantidadComponente;
+      const dispMPCABA_real = maxCABA === 99999999 ? 0 : maxCABA * cantComp;
+      const MP_Req = R * cantComp;
 
       if (dispMPCABA_real >= MP_Req) {
         transfMP = 0;
@@ -171,7 +173,7 @@ export function calcularDecisionStock(
             transferirPT += PT_ER;
             const R_final = falta_PT - PT_ER;
             cantidadFabricarCABA += R_final;
-            compraMP = R_final * cantidadComponente;
+            compraMP = R_final * cantComp;
           }
         }
       }

@@ -33,3 +33,29 @@ export const BadgeCriticidad = ({ criticidad }: { criticidad: string }) => {
     </span>
   );
 };
+
+/** Referencia de colores en la tabla */
+export const ReferenciaColores = () => (
+  <div className="flex flex-wrap items-center gap-5 px-3 py-2 bg-gray-50/50 dark:bg-[#2C2C2E]/20 border border-gray-150 dark:border-gray-800/30 rounded-lg text-[10px] font-bold text-gray-500 dark:text-gray-400 select-none">
+    <span className="flex items-center space-x-1.5">
+      <span className="w-3.5 h-3.5 rounded bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700" />
+      <span>Gris: Datos extraídos (planillas)</span>
+    </span>
+    <span className="flex items-center space-x-1.5">
+      <span className="w-3.5 h-3.5 rounded bg-[#E6F4EA] dark:bg-[#193220] border border-emerald-200/50 dark:border-emerald-900/30" />
+      <span>Verde: Stock Entre Ríos (E.R.)</span>
+    </span>
+    <span className="flex items-center space-x-1.5">
+      <span className="w-3.5 h-3.5 rounded bg-[#F3E8FF] dark:bg-[#2D1A40] border border-purple-200/50 dark:border-purple-900/30" />
+      <span>Violeta: Stock CABA</span>
+    </span>
+    <span className="flex items-center space-x-1.5">
+      <span className="w-3.5 h-3.5 rounded bg-[#E6F0FA] dark:bg-[#192B40] border border-blue-200/50 dark:border-blue-900/30" />
+      <span>Azul: Cantidades necesarias (cálculo)</span>
+    </span>
+    <span className="flex items-center space-x-1.5">
+      <span className="w-3.5 h-3.5 rounded bg-[#FFF4E5] dark:bg-[#332211] border border-amber-200/50 dark:border-amber-900/30" />
+      <span>Amarillo: Acciones sugeridas (traslado/compra)</span>
+    </span>
+  </div>
+);

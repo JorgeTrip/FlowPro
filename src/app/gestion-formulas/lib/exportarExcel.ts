@@ -20,22 +20,35 @@ import { autoAjustarColumnas } from './excelEstilos';
 export async function exportarExcelMRP(
   resultados: ResultadosMRPFinal,
   mesesTransferencia: number = 2,
-  mesesCompra: number = 3
+  mesesCompra: number = 3,
+  modoMacro: boolean = false
 ): Promise<void> {
   try {
     const wb = new ExcelJS.Workbook();
 
+    let propios = resultados.propios || [];
+    let tercerizados = resultados.tercerizados || [];
+
+    if (modoMacro) {
+      propios = propios.map((p) => ({
+        ...p,
+        productosUsados: p.productosUsados?.filter((pt) => pt.codigoProducto.toLowerCase().endsWith('k')) || []
+      })).filter((p) => p.productosUsados.length > 0);
+
+      tercerizados = tercerizados.filter((pt) => pt.codigoPT.toLowerCase().endsWith('k'));
+    }
+
     // 1. Hoja de Productos Propios (Agrupados y alineados verticalmente arriba)
-    agregarHojaProductosPropios(wb, resultados.propios || [], mesesTransferencia, mesesCompra);
+    agregarHojaProductosPropios(wb, propios, mesesTransferencia, mesesCompra);
 
     // 2. Hoja de Materias Primas (Una fila única por MP para tablas dinámicas limpias)
-    agregarHojaMateriasPrimas(wb, resultados.propios || [], mesesTransferencia, mesesCompra);
+    agregarHojaMateriasPrimas(wb, propios, mesesTransferencia, mesesCompra);
 
     // 3. Hoja de Relación MP - PT (Desglose plano para ordenamientos)
-    agregarHojaRelacionMPPT(wb, resultados.propios || []);
+    agregarHojaRelacionMPPT(wb, propios);
 
     // 4. Hoja de Productos Tercerizados
-    agregarHojaTercerizados(wb, resultados.tercerizados || [], mesesTransferencia, mesesCompra);
+    agregarHojaTercerizados(wb, tercerizados, mesesTransferencia, mesesCompra);
 
     // Auto-ajustar el ancho de columnas en todas las hojas creadas
     wb.worksheets.forEach((ws) => {

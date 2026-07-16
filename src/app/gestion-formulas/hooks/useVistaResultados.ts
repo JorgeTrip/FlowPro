@@ -157,7 +157,7 @@ export function useVistaResultados() {
   useEffect(() => {
     store.ejecutarCalculoMRP(store.mesesProyeccionTransferencia, store.mesesProyeccionCompra);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store.mesesProyeccionTransferencia, store.mesesProyeccionCompra]);
+  }, [store.mesesProyeccionTransferencia, store.mesesProyeccionCompra, store.modoMacro]);
 
   const activeListLength = store.pestañaActiva === 'propios' ? resultadosFiltradosPropios.length : resultadosFiltradosTercerizados.length;
 
@@ -205,5 +205,6 @@ export function useVistaResultados() {
     cargandoCalculo: store.cargandoCalculo, resultadosMRP: store.resultadosMRP, pestañaActiva: store.pestañaActiva,
     setPestañaActiva: store.setPestañaActiva, setStep: store.setStep, sortPropios, solicitarOrdenPropios, sortTercerizados, solicitarOrdenTercerizados,
     analisisHierbas, setAnalisisHierbas,
+    modoMacro: store.modoMacro, toggleModoMacro: store.toggleModoMacro,
   };
 }
