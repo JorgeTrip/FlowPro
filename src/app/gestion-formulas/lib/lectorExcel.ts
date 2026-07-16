@@ -165,9 +165,8 @@ export async function importarPrefijosDesdeHoja(file: File, hojaNombre: string):
       }
     });
 
-    if (importadas.length > 0) {
-      usePrefijosStore.getState().importarReglas(importadas);
-    }
+    // Se importa siempre para limpiar las reglas previas y quedarse con el contenido de la hoja
+    usePrefijosStore.getState().importarReglas(importadas);
   } catch (err) {
     console.error('Error al importar prefijos desde hoja de excel:', err);
   }

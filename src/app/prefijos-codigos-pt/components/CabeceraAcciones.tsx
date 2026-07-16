@@ -12,6 +12,7 @@ interface CabeceraAccionesProps {
     exportarAExcel: () => void;
     exportarACSV: () => void;
     importarDesdeArchivo: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    confirmarBorrarTodo: () => void;
     procesando: boolean;
   };
 }
@@ -127,6 +128,16 @@ export function CabeceraAcciones({ ui }: CabeceraAccionesProps) {
             </div>
           )}
         </div>
+
+        <button
+          onClick={ui.confirmarBorrarTodo}
+          disabled={ui.procesando}
+          className="flex items-center space-x-1 px-3 h-9 rounded-lg border border-red-200 dark:border-red-950/40 hover:bg-red-50 dark:hover:bg-red-950/20 text-red-600 dark:text-red-400 text-xs font-bold transition-all cursor-pointer shadow-sm disabled:opacity-50"
+          title="Borrar todas las reglas de prefijos cargadas"
+        >
+          <span>🗑️</span>
+          <span>Borrar todo</span>
+        </button>
 
         <button
           onClick={ui.abrirModalCrear}

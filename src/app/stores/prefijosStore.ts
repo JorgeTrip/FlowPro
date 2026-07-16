@@ -10,6 +10,7 @@ interface PrefijosState {
   eliminarRegla: (id: string) => void;
   modificarRegla: (id: string, updates: Partial<ReglaPrefijo>) => void;
   importarReglas: (reglas: ReglaPrefijo[]) => { exito: boolean; mensaje: string };
+  limpiarReglas: () => void;
   reset: () => void;
 }
 
@@ -76,7 +77,8 @@ export const usePrefijosStore = create<PrefijosState>()(
         return { exito: true, mensaje: `Se importaron ${reglasValidadas.length} reglas correctamente.` };
       },
 
-      reset: () => set({ reglas: reglasSemilla })
+      reset: () => set({ reglas: reglasSemilla }),
+      limpiarReglas: () => set({ reglas: [] })
     }),
     {
       name: 'flowpro-prefijos-store',

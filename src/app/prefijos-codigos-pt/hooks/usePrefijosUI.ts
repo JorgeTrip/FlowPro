@@ -6,7 +6,7 @@ import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 
 export function usePrefijosUI() {
-  const { reglas, agregarRegla, eliminarRegla, modificarRegla, importarReglas } = usePrefijosStore();
+  const { reglas, agregarRegla, eliminarRegla, modificarRegla, importarReglas, limpiarReglas } = usePrefijosStore();
   const [busqueda, setBusqueda] = useState('');
   const [modalAbierto, setModalAbierto] = useState(false);
   const [reglaEnEdicion, setReglaEnEdicion] = useState<ReglaPrefijo | null>(null);
@@ -259,6 +259,20 @@ export function usePrefijosUI() {
     }
   };
 
+  const confirmarBorrarTodo = async () => {
+    if (!window.confirm('¿Está seguro de que desea borrar TODAS las reglas de prefijos? Esta acción no se puede deshacer.')) return;
+    setProcesando(true);
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    try {
+      limpiarReglas();
+      mostrarMensaje('exito', 'Se borraron todas las reglas de prefijos correctamente.');
+    } catch {
+      mostrarMensaje('error', 'Error al borrar las reglas.');
+    } finally {
+      setProcesando(false);
+    }
+  };
+
   return {
     busqueda,
     setBusqueda,
@@ -272,6 +286,7 @@ export function usePrefijosUI() {
     cerrarModal,
     guardarRegla,
     confirmarEliminar,
+    confirmarBorrarTodo,
     exportarAJSON,
     exportarAExcel,
     exportarAHTMLCSV: exportarACSV, // alias para retrocompatibilidad
