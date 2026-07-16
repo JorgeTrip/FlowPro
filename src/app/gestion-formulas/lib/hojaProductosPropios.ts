@@ -43,7 +43,7 @@ export function agregarHojaProductosPropios(
 
   // Formatear los headers con colores específicos trasladados de la app
   const headerRow = wsP.getRow(1);
-  headerRow.height = 24;
+  headerRow.height = 40;
   for (let c = 1; c <= 22; c++) {
     const cell = headerRow.getCell(c);
     cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };

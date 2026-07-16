@@ -6,6 +6,7 @@ import { agregarHojaProductosPropios } from './hojaProductosPropios';
 import { agregarHojaMateriasPrimas } from './hojaMateriasPrimas';
 import { agregarHojaRelacionMPPT } from './hojaRelacionMPPT';
 import { agregarHojaTercerizados } from './hojaTercerizados';
+import { autoAjustarColumnas } from './excelEstilos';
 
 /**
  * Exporta los resultados del MRP a un libro de Excel (.xlsx) estructurado en 4 hojas.
@@ -35,6 +36,11 @@ export async function exportarExcelMRP(
 
     // 4. Hoja de Productos Tercerizados
     agregarHojaTercerizados(wb, resultados.tercerizados || [], mesesTransferencia, mesesCompra);
+
+    // Auto-ajustar el ancho de columnas en todas las hojas creadas
+    wb.worksheets.forEach((ws) => {
+      autoAjustarColumnas(ws);
+    });
 
     // Guardar el libro de Excel en el cliente
     const buffer = await wb.xlsx.writeBuffer();

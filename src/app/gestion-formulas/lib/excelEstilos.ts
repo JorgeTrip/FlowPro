@@ -37,12 +37,70 @@ export function aplicarBordesExternos(ws: ExcelJS.Worksheet, totalFilas: number,
   */
 export function formatearHeaders(ws: ExcelJS.Worksheet, colsCount: number) {
   const headerRow = ws.getRow(1);
-  headerRow.height = 24;
+  headerRow.height = 40;
   for (let c = 1; c <= colsCount; c++) {
     const cell = headerRow.getCell(c);
     cell.font = { bold: true, size: 10, name: 'Segoe UI' };
     cell.fill = rellenoHeader;
     cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
     cell.border = borderFino;
+  }
+}
+
+/**
+  * Extrae de forma robusta la representación en texto del valor de una celda de ExcelJS,
+  * resolviendo richText, resultados de fórmulas u objetos complejos para evitar "[object Object]".
+  */
+function obtenerTextoCelda(val: any): string {
+  if (val === undefined || val === null) return '';
+  if (typeof val === 'object') {
+    if ('result' in val) {
+      return obtenerTextoCelda(val.result);
+    }
+    if ('text' in val) {
+      return obtenerTextoCelda(val.text);
+    }
+    if (Array.isArray(val)) {
+      return val.map(v => obtenerTextoCelda(v)).join('');
+    }
+    if ('richText' in val && Array.isArray(val.richText)) {
+      return val.richText.map((v: any) => obtenerTextoCelda(v)).join('');
+    }
+    return '';
+  }
+  return String(val);
+}
+
+/**
+  * Ajusta dinámicamente el ancho de todas las columnas según el contenido de sus celdas de datos,
+  * ignorando el largo de la cabecera.
+  */
+export function autoAjustarColumnas(ws: ExcelJS.Worksheet) {
+  const colCount = ws.columnCount;
+  const rowCount = ws.rowCount;
+
+  for (let c = 1; c <= colCount; c++) {
+    let maxLen = 0;
+
+    for (let r = 2; r <= rowCount; r++) {
+      const cell = ws.getRow(r).getCell(c);
+      if (cell && cell.value !== undefined && cell.value !== null) {
+        const strVal = obtenerTextoCelda(cell.value);
+        const len = strVal.length;
+        if (len > maxLen) {
+          maxLen = len;
+        }
+      }
+    }
+
+    // Ancho mínimo de 8 y máximo de 45, basado estrictamente en los datos (no en la cabecera)
+    let calculatedWidth = Math.min(Math.max(maxLen + 4, 8), 45);
+    
+    // Evitamos el bug de serialización de ExcelJS donde un ancho exacto de 9 no se guarda en el XML final
+    if (calculatedWidth === 9) {
+      calculatedWidth = 9.05;
+    }
+
+    ws.getColumn(c).width = calculatedWidth;
   }
 }
