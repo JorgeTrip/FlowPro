@@ -51,21 +51,19 @@ export function useVistaResultados() {
     if (filtrosActivos.includes('con_datos')) items = items.filter((r) => r.cantidadSugerida > 0);
     if (filtrosActivos.includes('eliminar_sin_accion')) items = items.filter((r) => r.movimientoSugerido.tipo !== 'sin_accion');
     
-    // Filtro: Sólo con stock en E.R. (tiene stock en E.R. de MP y/o PT, pero nada en CABA)
+    // Filtro: Sólo con stock en E.R. (tiene stock en E.R. de MP y/o PT)
     if (filtrosActivos.includes('solo_stock_er')) {
       items = items.filter((r) => {
         const tieneStockER = (r.stockMPEntreRios ?? 0) > 0 || r.productosUsados.some((p) => (p.stockPTEntreRios ?? 0) > 0);
-        const tieneStockCABA = (r.stockMPCABA ?? 0) > 0 || r.productosUsados.some((p) => (p.stockPTCABA ?? 0) > 0);
-        return tieneStockER && !tieneStockCABA;
+        return tieneStockER;
       });
     }
 
-    // Filtro: Sólo con stock en CABA (tiene stock en CABA de MP y/o PT, pero nada en E.R.)
+    // Filtro: Sólo con stock en CABA (tiene stock en CABA de MP y/o PT)
     if (filtrosActivos.includes('solo_stock_caba')) {
       items = items.filter((r) => {
-        const tieneStockER = (r.stockMPEntreRios ?? 0) > 0 || r.productosUsados.some((p) => (p.stockPTEntreRios ?? 0) > 0);
         const tieneStockCABA = (r.stockMPCABA ?? 0) > 0 || r.productosUsados.some((p) => (p.stockPTCABA ?? 0) > 0);
-        return tieneStockCABA && !tieneStockER;
+        return tieneStockCABA;
       });
     }
 
@@ -102,21 +100,19 @@ export function useVistaResultados() {
     if (filtrosActivos.includes('con_datos')) items = items.filter((r) => r.rotacion > 0);
     if (filtrosActivos.includes('eliminar_sin_accion')) items = items.filter((r) => r.movimientoSugerido.tipo !== 'sin_accion');
     
-    // Filtro: Sólo con stock en E.R. (tiene stock en E.R. de PT, pero nada en CABA)
+    // Filtro: Sólo con stock en E.R. (tiene stock en E.R. de PT)
     if (filtrosActivos.includes('solo_stock_er')) {
       items = items.filter((r) => {
         const tieneStockER = (r.stockPTEntreRios ?? 0) > 0;
-        const tieneStockCABA = (r.stockPTCABA ?? 0) > 0;
-        return tieneStockER && !tieneStockCABA;
+        return tieneStockER;
       });
     }
 
-    // Filtro: Sólo con stock en CABA (tiene stock en CABA de PT, pero nada en E.R.)
+    // Filtro: Sólo con stock en CABA (tiene stock en CABA de PT)
     if (filtrosActivos.includes('solo_stock_caba')) {
       items = items.filter((r) => {
-        const tieneStockER = (r.stockPTEntreRios ?? 0) > 0;
         const tieneStockCABA = (r.stockPTCABA ?? 0) > 0;
-        return tieneStockCABA && !tieneStockER;
+        return tieneStockCABA;
       });
     }
 
