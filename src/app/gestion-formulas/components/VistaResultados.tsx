@@ -118,18 +118,27 @@ export default function VistaResultados() {
               <div className="flex items-center h-9">
                 <button
                   onClick={toggleModoMacro} type="button"
-                  className={`relative inline-flex h-8 w-16 shrink-0 cursor-pointer rounded-full border border-gray-300 dark:border-gray-700 transition-colors duration-300 ease-in-out focus:outline-none select-none items-center ${
-                    modoMacro ? 'bg-blue-600 border-blue-600 dark:bg-blue-500 dark:border-blue-500' : 'bg-gray-150 dark:bg-[#2C2C2E]'
+                  className={`relative flex h-8 w-20 shrink-0 cursor-pointer rounded-full transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-1 ${
+                    modoMacro
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-500 dark:from-blue-500 dark:to-blue-400'
+                      : 'bg-gray-200 dark:bg-[#3A3A3C]'
                   }`}
                 >
-                  <span className="absolute left-2.5 text-[10px] select-none pointer-events-none opacity-70">⚖️</span>
-                  <span className="absolute right-2.5 text-[10px] select-none pointer-events-none opacity-70">🛍️</span>
-                  <span
-                    className={`pointer-events-none flex items-center justify-center h-6 w-6 transform rounded-full bg-white shadow-md transition-all duration-300 ease-in-out ${
-                      modoMacro ? 'translate-x-9' : 'translate-x-1'
-                    }`}
-                  >
-                    <span className="text-[10px] select-none">{modoMacro ? '⚖️' : '🛍️'}</span>
+                  {/* Etiqueta KG — visible con max opacidad cuando activo */}
+                  <span className={`absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-black tracking-wider transition-all duration-250 pointer-events-none ${
+                    modoMacro ? 'text-white opacity-90' : 'text-gray-400 dark:text-gray-500 opacity-40'
+                  }`}>KG</span>
+                  {/* Etiqueta UN — visible con max opacidad cuando inactivo */}
+                  <span className={`absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black tracking-wider transition-all duration-250 pointer-events-none ${
+                    modoMacro ? 'text-white opacity-20' : 'text-gray-500 dark:text-gray-400 opacity-80'
+                  }`}>UN</span>
+                  {/* Thumb deslizante con letra activa de alto contraste */}
+                  <span className={`absolute top-1 flex items-center justify-center h-6 w-6 rounded-full bg-white shadow-md transition-all duration-300 ease-in-out ${
+                    modoMacro ? 'left-[calc(100%-28px)]' : 'left-1'
+                  }`}>
+                    <span className={`text-[11px] font-black leading-none select-none transition-colors duration-200 ${
+                      modoMacro ? 'text-blue-600 dark:text-blue-500' : 'text-gray-400 dark:text-gray-500'
+                    }`}>{modoMacro ? 'K' : 'U'}</span>
                   </span>
                 </button>
               </div>
