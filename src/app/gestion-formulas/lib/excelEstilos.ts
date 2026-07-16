@@ -76,7 +76,12 @@ function obtenerTextoCelda(val: any): string {
   * ignorando el largo de la cabecera.
   */
 export function autoAjustarColumnas(ws: ExcelJS.Worksheet) {
-  const colCount = ws.columnCount;
+  let colCount = Math.max(ws.columnCount, ws.columns ? ws.columns.length : 0);
+  
+  ws.eachRow?.({ includeEmpty: true }, (row) => {
+    colCount = Math.max(colCount, row.cellCount);
+  });
+
   const rowCount = ws.rowCount;
 
   for (let c = 1; c <= colCount; c++) {

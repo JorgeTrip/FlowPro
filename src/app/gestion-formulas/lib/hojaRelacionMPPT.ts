@@ -11,16 +11,16 @@ export function agregarHojaRelacionMPPT(wb: ExcelJS.Workbook, propios: Resultado
   wsR.views = [{ state: 'frozen', ySplit: 1 }];
 
   wsR.columns = [
-    { header: 'CÓDIGO MP', key: 'codigoMP', width: 15 },
-    { header: 'DESCRIPCIÓN MP', key: 'descripcionMP', width: 35 },
-    { header: 'CÓDIGO PT', key: 'codigoProducto', width: 12 },
-    { header: 'PRODUCTO TERMINADO', key: 'productosUsados', width: 40 },
-    { header: 'STOCK PT E.R.', key: 'stockPTEntreRios', width: 15 },
-    { header: 'STOCK PT CABA', key: 'stockPTCABA', width: 15 },
-    { header: 'PRODUCIR PT CABA', key: 'cantidadFabricarCABA', width: 18 },
-    { header: 'PRODUCIR PT E.R.', key: 'cantidadFabricarER', width: 18 },
-    { header: 'TRANSFERIR PT (E.R.→CABA)', key: 'transferirPT', width: 22 },
-    { header: 'CANT (ROTACIÓN)', key: 'rotacionProductos', width: 30 },
+    { header: 'CÓDIGO MP', key: 'codigoMP' },
+    { header: 'DESCRIPCIÓN MP', key: 'descripcionMP' },
+    { header: 'CÓDIGO PT', key: 'codigoProducto' },
+    { header: 'PRODUCTO TERMINADO', key: 'productosUsados' },
+    { header: 'STOCK PT E.R.', key: 'stockPTEntreRios' },
+    { header: 'STOCK PT CABA', key: 'stockPTCABA' },
+    { header: 'PRODUCIR PT CABA', key: 'cantidadFabricarCABA' },
+    { header: 'PRODUCIR PT E.R.', key: 'cantidadFabricarER' },
+    { header: 'TRANSFERIR PT (E.R.→CABA)', key: 'transferirPT' },
+    { header: 'CANT (ROTACIÓN)', key: 'rotacionProductos' },
   ];
   formatearHeaders(wsR, 10);
 

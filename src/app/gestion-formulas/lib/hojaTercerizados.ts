@@ -22,14 +22,14 @@ export function agregarHojaTercerizados(
   const descTransf = `DEMANDA ${mesesTransferencia} ${mesesTransferencia === 1 ? 'MES' : 'MESES'} (TRANSF.)`;
 
   wsT.columns = [
-    { header: 'CÓDIGO PT', key: 'codigoPT', width: 15 },
-    { header: 'DESCRIPCIÓN PT', key: 'descripcionPT', width: 45 },
-    { header: 'STOCK PT E.R.', key: 'stockPTEntreRios', width: 18 },
-    { header: 'STOCK PT CABA', key: 'stockPTCABA', width: 14 },
-    { header: 'ROTACIÓN', key: 'rotacion', width: 14 },
-    { header: descCompra, key: 'comprar', width: 28 },
-    { header: descTransf, key: 'transferir', width: 28 },
-    { header: 'CRITICIDAD', key: 'criticidad', width: 14 },
+    { header: 'CÓDIGO PT', key: 'codigoPT' },
+    { header: 'DESCRIPCIÓN PT', key: 'descripcionPT' },
+    { header: 'STOCK PT E.R.', key: 'stockPTEntreRios' },
+    { header: 'STOCK PT CABA', key: 'stockPTCABA' },
+    { header: 'ROTACIÓN', key: 'rotacion' },
+    { header: descCompra, key: 'comprar' },
+    { header: descTransf, key: 'transferir' },
+    { header: 'CRITICIDAD', key: 'criticidad' },
   ];
   formatearHeaders(wsT, 8);
 

@@ -18,15 +18,15 @@ export function agregarHojaMateriasPrimas(
   const descTransf = `DEMANDA ${mesesTransferencia} ${mesesTransferencia === 1 ? 'MES' : 'MESES'} (TRANSF.)`;
 
   wsM.columns = [
-    { header: 'CÓDIGO MP', key: 'codigoMP', width: 15 },
-    { header: 'DESCRIPCIÓN MP', key: 'descripcionMP', width: 35 },
-    { header: 'UM', key: 'unidadMedida', width: 8 },
-    { header: 'STOCK MP E.R.', key: 'stockMPEntreRios', width: 18 },
-    { header: 'STOCK MP CABA', key: 'stockMPCABA', width: 14 },
-    { header: 'CANT. SUGERIDA', key: 'cantidadSugerida', width: 16 },
-    { header: descCompra, key: 'comprar', width: 28 },
-    { header: descTransf, key: 'transferir', width: 28 },
-    { header: 'CRITICIDAD', key: 'criticidad', width: 14 },
+    { header: 'CÓDIGO MP', key: 'codigoMP' },
+    { header: 'DESCRIPCIÓN MP', key: 'descripcionMP' },
+    { header: 'UM', key: 'unidadMedida' },
+    { header: 'STOCK MP E.R.', key: 'stockMPEntreRios' },
+    { header: 'STOCK MP CABA', key: 'stockMPCABA' },
+    { header: 'CANT. SUGERIDA', key: 'cantidadSugerida' },
+    { header: descCompra, key: 'comprar' },
+    { header: descTransf, key: 'transferir' },
+    { header: 'CRITICIDAD', key: 'criticidad' },
   ];
   formatearHeaders(wsM, 9);
 
