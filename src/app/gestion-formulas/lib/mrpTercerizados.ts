@@ -78,7 +78,7 @@ export function calcularMRPTercerizados(
       rotacion: rotacionCompra,
       rotacionMensual,
       movimientoSugerido: movimiento,
-      criticidad: calcularCriticidad(dispPTCABA + dispPTER, rotacionCompra),
+      criticidad: calcularCriticidad(dispPTCABA, rotacionCompra),
       linea: regla?.linea
     });
   });

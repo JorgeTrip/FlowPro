@@ -92,7 +92,7 @@ export function calcularMRPPropios(
     const sMP = stocks.filter((s) => s.codigoProducto === codigoMP);
     const sC = Math.max(0, sMP.find((s) => esDepositoCABA(s.deposito))?.stockFisico || 0);
     const sE = Math.max(0, sMP.find((s) => esDepositoEntreRios(s.deposito))?.stockFisico || 0);
-    res.push({
+     res.push({
       codigoMP, descripcionMP: req.descripcion, unidadMedida: req.unidadMedida, stockMPEntreRios: sE, stockMPCABA: sC,
       cantidadSugerida: req.compraTotal + req.transfTotal + req.transfCabaErTotal,
       movimientoSugerido: {
@@ -101,7 +101,7 @@ export function calcularMRPPropios(
         transferencia: req.transfTotal || undefined,
         transferenciaCabaEr: req.transfCabaErTotal || undefined
       },
-      criticidad: calcularCriticidad(sC + sE, req.cantidadTotal), productosUsados: req.productosUsados
+      criticidad: calcularCriticidad(sC, req.cantidadTotal), productosUsados: req.productosUsados
     });
   });
   return res.sort((a, b) => b.cantidadSugerida - a.cantidadSugerida);
