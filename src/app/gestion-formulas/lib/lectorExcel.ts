@@ -142,10 +142,6 @@ export function mapearStockPT(datos: any[], mapeo: MapeoStockPT): ProductoTermin
 export async function importarPrefijosDesdeHoja(file: File, hojaNombre: string): Promise<void> {
   try {
     const { usePrefijosStore } = await import('@/app/stores/prefijosStore');
-    const reglasExistentes = usePrefijosStore.getState().reglas || [];
-    const tieneReglasCargadas = reglasExistentes.length > 0 && !(reglasExistentes.length === 1 && reglasExistentes[0].id === 'semilla-1');
-    
-    if (tieneReglasCargadas) return;
 
     const { data } = await procesarHojaEspecifica(file, hojaNombre);
     const importadas: any[] = [];

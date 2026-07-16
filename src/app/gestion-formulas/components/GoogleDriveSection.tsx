@@ -5,6 +5,8 @@ import { useGestionFormulasStore } from '@/app/stores/gestionFormulasStore';
 import { useGoogleDriveSync } from '../hooks/useGoogleDriveSync';
 import { VinculadorFuente } from './VinculadorFuente';
 
+import { usePrefijosStore } from '@/app/stores/prefijosStore';
+
 /**
  * Sección de sincronización con Google Drive.
  * Permite vincular 2 fuentes distintas: Fórmulas y Stock/Rotación.
@@ -20,6 +22,10 @@ export function GoogleDriveSection() {
     sincronizarTodo,
     limpiarEstado,
   } = useGoogleDriveSync();
+
+  const reglasPrefijos = usePrefijosStore((state) => state.reglas) || [];
+  const tienePrefijos = reglasPrefijos.length > 0 && !(reglasPrefijos.length === 1 && reglasPrefijos[0].id === 'semilla-1');
+  const prefijosCargados = tienePrefijos ? reglasPrefijos.length : 0;
 
   const todoSincronizado =
     store.datosCrudosFormulas.length > 0 &&
@@ -40,7 +46,7 @@ export function GoogleDriveSection() {
   const consumoCargado = store.datosCrudosConsumo.length;
   const stockPTCargado = store.datosCrudosStockPT.length;
   
-  const statusStock = (stockCargado > 0 || consumoCargado > 0 || stockPTCargado > 0) ? (
+  const statusStock = (stockCargado > 0 || consumoCargado > 0 || stockPTCargado > 0 || prefijosCargados > 0) ? (
     <div className="space-y-1.5 p-2.5 rounded-lg bg-green-500/10 border border-green-500/20 shadow-sm text-xs font-semibold">
       {stockCargado > 0 && (
         <div className="flex items-center space-x-2 text-green-700 dark:text-green-400">
@@ -58,6 +64,12 @@ export function GoogleDriveSection() {
         <div className="flex items-center space-x-2 text-green-700 dark:text-green-400">
           <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
           <span>Maestro PT (STOCK PT): {stockPTCargado.toLocaleString()} filas</span>
+        </div>
+      )}
+      {prefijosCargados > 0 && (
+        <div className="flex items-center space-x-2 text-green-700 dark:text-green-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+          <span>Prefijos PT: {prefijosCargados.toLocaleString()} reglas cargadas</span>
         </div>
       )}
     </div>

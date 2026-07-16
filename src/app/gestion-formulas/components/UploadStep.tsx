@@ -162,7 +162,7 @@ export default function UploadStep() {
             <FileUpload title="4. Maestro PT (STOCK PT)" file={store.archivoStockPT} onFileLoad={(f, d) => { store.setArchivoStockPT(f); store.setDatosCrudosStockPT(d.data, d.columns, d.previewData); }} />
             <FileUpload
               title="5. Prefijos de Códigos PT (Opcional)"
-              file={archivoPrefijosLocal}
+              file={archivoPrefijosLocal || (tienePrefijos ? new File([], 'Prefijos cargados en el sistema') : null)}
               onFileLoad={async (file) => {
                 setArchivoPrefijosLocal(file);
                 store.setIsLoading(true); store.setError(null);
