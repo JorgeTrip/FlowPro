@@ -34,7 +34,7 @@ export function TablaProductosPropios({
   mesesProyeccionCompra,
 }: TablaProductosPropiosProps) {
   
-  const clsExcelHeader = "sticky top-0 z-10 bg-gray-100 dark:bg-[#2C2C2E]/60 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#3A3A3C] transition-colors";
+  const clsExcelHeader = "sticky top-0 z-10 bg-gray-100 dark:bg-[#2C2C2E] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#3A3A3C] transition-colors";
   const clsExcelCell = "bg-white dark:bg-[#1C1C1E] text-gray-900 dark:text-gray-300";
   const clsVerdeHeader = "sticky top-0 z-10 bg-[#E6F4EA] dark:bg-[#193220] text-emerald-900 dark:text-emerald-300 hover:bg-[#D4EDDA] dark:hover:bg-[#204029] transition-colors";
   const clsVerdeCell = "bg-emerald-50/30 dark:bg-emerald-950/15 text-emerald-950 dark:text-emerald-300";
