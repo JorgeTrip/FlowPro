@@ -65,68 +65,72 @@ export default function VistaResultados() {
 
   return (
     <div className="space-y-6 w-full">
-      {/* Buscador, Filtros y Acciones */}
-      <div className="flex flex-col md:flex-row items-end justify-between p-4 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-gray-800 gap-4 shadow-sm">
-        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-          <div className="flex flex-col w-full sm:w-auto">
-            <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Buscar MP o PT</span>
-            <div className="relative">
-              <input
-                type="text" placeholder="Código o descripción..." value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                className="pl-8 pr-3 h-9 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#2C2C2E] dark:text-white text-xs placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 w-full sm:w-60 transition-all shadow-sm"
-              />
-              <span className="absolute left-2.5 top-2.5 text-gray-400 text-xs">🔍</span>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2.5 items-end">
-            <DropdownFiltrosPedidos 
-              filtrosActivos={filtrosActivos} 
-              setFiltrosActivos={setFiltrosActivos}
-            />
-            <DropdownCriticidad 
-              criticidades={criticidades}
-              setCriticidades={setCriticidades}
-            />
-            <DropdownMovimientos 
-              movimientosFiltrados={movimientosFiltrados}
-              setMovimientosFiltrados={setMovimientosFiltrados}
-            />
-            {pestañaActiva === 'propios' && (
-              <DropdownAnalisisHierbas 
-                analisisHierbas={analisisHierbas}
-                setAnalisisHierbas={setAnalisisHierbas}
-              />
-            )}
-            <DropdownLinea 
-              lineasFiltradas={lineasFiltradas}
-              setLineasFiltradas={setLineasFiltradas}
-              lineasDisponibles={lineasDisponibles}
+      {/* Barra de Controles */}
+      <div className="flex flex-col gap-3 p-4 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-gray-800 shadow-sm">
+
+        {/* Fila 1: Buscador + Botones de Acción */}
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 max-w-xs">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">🔍</span>
+            <input
+              type="text"
+              placeholder="Código o descripción..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="w-full pl-9 pr-3 h-9 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-[#2C2C2E] dark:text-white text-xs placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all shadow-sm"
             />
           </div>
-          <div className="flex items-center gap-2.5">
+          <div className="flex-1" />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setStep(1)}
+              className="px-4 h-9 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-bold hover:bg-gray-50 dark:hover:bg-[#2C2C2E]/50 text-gray-700 dark:text-gray-300 transition-all cursor-pointer shadow-sm whitespace-nowrap"
+            >
+              Re-importar Excel
+            </button>
+            <button
+              onClick={() => exportarExcelMRP(
+                { propios: resultadosFiltradosPropios, tercerizados: resultadosFiltradosTercerizados },
+                mesesProyeccionTransferencia,
+                mesesProyeccionCompra
+              )}
+              disabled={cargandoCalculo || !resultadosMRP}
+              className="px-4 h-9 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-800 text-white text-xs font-bold transition-all shadow-md cursor-pointer whitespace-nowrap"
+            >
+              Exportar Resultados 📥
+            </button>
+          </div>
+        </div>
+
+        {/* Divisor sutil */}
+        <div className="h-px bg-gray-100 dark:bg-gray-800" />
+
+        {/* Fila 2: Filtros agrupados con separadores */}
+        <div className="flex flex-wrap items-end gap-x-1 gap-y-2">
+          {/* Grupo 1: Filtros principales */}
+          <div className="flex items-center gap-1.5">
+            <DropdownFiltrosPedidos filtrosActivos={filtrosActivos} setFiltrosActivos={setFiltrosActivos} />
+            <DropdownCriticidad criticidades={criticidades} setCriticidades={setCriticidades} />
+            <DropdownMovimientos movimientosFiltrados={movimientosFiltrados} setMovimientosFiltrados={setMovimientosFiltrados} />
+            <DropdownLinea lineasFiltradas={lineasFiltradas} setLineasFiltradas={setLineasFiltradas} lineasDisponibles={lineasDisponibles} />
+          </div>
+
+          {/* Separador */}
+          <div className="self-end h-9 w-px bg-gray-200 dark:bg-gray-700 mx-1.5" />
+
+          {/* Grupo 2: Análisis de Hierbas (solo en pestaña Propios) */}
+          {pestañaActiva === 'propios' && (
+            <>
+              <DropdownAnalisisHierbas analisisHierbas={analisisHierbas} setAnalisisHierbas={setAnalisisHierbas} />
+              <div className="self-end h-9 w-px bg-gray-200 dark:bg-gray-700 mx-1.5" />
+            </>
+          )}
+
+          {/* Grupo 3: Proyección de meses */}
+          <div className="flex items-end gap-2">
             {renderSelectorMeses("Meses de Transferencia", mesesProyeccionTransferencia, setMesesProyeccionTransferencia)}
             {renderSelectorMeses("Meses de Compra", mesesProyeccionCompra, setMesesProyeccionCompra)}
           </div>
-        </div>
-        <div className="flex space-x-2 w-full md:w-auto justify-end">
-          <button onClick={() => setStep(1)} className="px-4 h-9 rounded-lg border border-gray-300 dark:border-gray-700 text-xs font-bold hover:bg-gray-50 dark:hover:bg-[#2C2C2E]/50 text-gray-700 dark:text-gray-300 transition-all cursor-pointer shadow-sm">
-            Re-importar Excel
-          </button>
-          <button
-            onClick={() => exportarExcelMRP(
-              {
-                propios: resultadosFiltradosPropios,
-                tercerizados: resultadosFiltradosTercerizados
-              },
-              mesesProyeccionTransferencia,
-              mesesProyeccionCompra
-            )}
-            disabled={cargandoCalculo || !resultadosMRP}
-            className="px-4 h-9 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-800 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
-          >
-            Exportar Resultados 📥
-          </button>
         </div>
       </div>
 
