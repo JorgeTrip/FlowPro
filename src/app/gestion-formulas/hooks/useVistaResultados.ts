@@ -93,7 +93,8 @@ export function useVistaResultados() {
 
         // 2. Filtrar por tipo de Materia Prima
         if (analisisHierbas === 'hierbas') {
-          return r.codigoMP.startsWith('00INSHI');
+          // Todo lo que no sea insumo de empaque (bolsa o etiqueta) se considera ingrediente/hierba
+          return !r.codigoMP.startsWith('00INSBO') && !r.codigoMP.startsWith('00INSET');
         } else if (analisisHierbas === 'insumos') {
           return r.codigoMP.startsWith('00INSBO') || r.codigoMP.startsWith('00INSET');
         }
