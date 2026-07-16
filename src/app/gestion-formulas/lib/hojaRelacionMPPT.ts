@@ -15,12 +15,12 @@ export function agregarHojaRelacionMPPT(wb: ExcelJS.Workbook, propios: Resultado
     { header: 'DESCRIPCIÓN MP', key: 'descripcionMP' },
     { header: 'CÓDIGO PT', key: 'codigoProducto' },
     { header: 'PRODUCTO TERMINADO', key: 'productosUsados' },
-    { header: 'STOCK PT E.R.', key: 'stockPTEntreRios' },
-    { header: 'STOCK PT CABA', key: 'stockPTCABA' },
-    { header: 'PRODUCIR PT CABA', key: 'cantidadFabricarCABA' },
-    { header: 'PRODUCIR PT E.R.', key: 'cantidadFabricarER' },
-    { header: 'TRANSFERIR PT (E.R.→CABA)', key: 'transferirPT' },
-    { header: 'CANT (ROTACIÓN)', key: 'rotacionProductos' },
+    { header: 'STOCK PT\nE.R.', key: 'stockPTEntreRios' },
+    { header: 'STOCK PT\nCABA', key: 'stockPTCABA' },
+    { header: 'PRODUCIR PT\nCABA', key: 'cantidadFabricarCABA' },
+    { header: 'PRODUCIR PT\nE.R.', key: 'cantidadFabricarER' },
+    { header: 'TRANSFERIR PT\n(E.R.→CABA)', key: 'transferirPT' },
+    { header: 'CANTIDAD\n(ROTACIÓN)', key: 'rotacionProductos' },
   ];
   formatearHeaders(wsR, 10);
 

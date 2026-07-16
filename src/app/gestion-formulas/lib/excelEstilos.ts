@@ -53,6 +53,14 @@ export function formatearHeaders(ws: ExcelJS.Worksheet, colsCount: number) {
   */
 function obtenerTextoCelda(val: any): string {
   if (val === undefined || val === null) return '';
+  if (typeof val === 'number') {
+    // Si es un número decimal de coma flotante (ej. 232.50000000000003),
+    // lo convertimos a string con máximo 1 decimal para que mida de acuerdo al formato visual.
+    if (Number.isInteger(val)) {
+      return String(val);
+    }
+    return val.toFixed(1);
+  }
   if (typeof val === 'object') {
     if ('result' in val) {
       return obtenerTextoCelda(val.result);
@@ -90,16 +98,25 @@ export function autoAjustarColumnas(ws: ExcelJS.Worksheet) {
     for (let r = 2; r <= rowCount; r++) {
       const cell = ws.getRow(r).getCell(c);
       if (cell && cell.value !== undefined && cell.value !== null) {
+        // Ignoramos si la celda es secundaria (esclava) de una combinación de celdas
+        if (cell.isMerged && cell.master && cell.master.address !== cell.address) {
+          continue;
+        }
+
         const strVal = obtenerTextoCelda(cell.value);
-        const len = strVal.length;
-        if (len > maxLen) {
-          maxLen = len;
+        
+        // Si contiene saltos de línea (\n), medimos el renglón más largo individual
+        const lineas = strVal.split('\n');
+        const maxLenCelda = Math.max(...lineas.map((l) => l.length));
+
+        if (maxLenCelda > maxLen) {
+          maxLen = maxLenCelda;
         }
       }
     }
 
-    // Ancho mínimo de 8 y máximo de 45, basado estrictamente en los datos (no en la cabecera)
-    let calculatedWidth = Math.min(Math.max(maxLen + 4, 8), 45);
+    // Ancho mínimo de 8 y máximo de 35, basado estrictamente en los datos (no en la cabecera)
+    let calculatedWidth = Math.min(Math.max(maxLen + 4, 8), 35);
     
     // Evitamos el bug de serialización de ExcelJS donde un ancho exacto de 9 no se guarda en el XML final
     if (calculatedWidth === 9) {

@@ -14,16 +14,16 @@ export function agregarHojaMateriasPrimas(
 ): void {
   const wsM = wb.addWorksheet('Materias Primas');
 
-  const descCompra = `DEMANDA ${mesesCompra} ${mesesCompra === 1 ? 'MES' : 'MESES'} (COMPRA)`;
-  const descTransf = `DEMANDA ${mesesTransferencia} ${mesesTransferencia === 1 ? 'MES' : 'MESES'} (TRANSF.)`;
+  const descCompra = `DEMANDA ${mesesCompra}M\n(COMPRA)`;
+  const descTransf = `DEMANDA ${mesesTransferencia}M\n(TRANSF.)`;
 
   wsM.columns = [
     { header: 'CÓDIGO MP', key: 'codigoMP' },
     { header: 'DESCRIPCIÓN MP', key: 'descripcionMP' },
     { header: 'UM', key: 'unidadMedida' },
-    { header: 'STOCK MP E.R.', key: 'stockMPEntreRios' },
-    { header: 'STOCK MP CABA', key: 'stockMPCABA' },
-    { header: 'CANT. SUGERIDA', key: 'cantidadSugerida' },
+    { header: 'STOCK MP\nE.R.', key: 'stockMPEntreRios' },
+    { header: 'STOCK MP\nCABA', key: 'stockMPCABA' },
+    { header: 'CANTIDAD\nSUGERIDA', key: 'cantidadSugerida' },
     { header: descCompra, key: 'comprar' },
     { header: descTransf, key: 'transferir' },
     { header: 'CRITICIDAD', key: 'criticidad' },

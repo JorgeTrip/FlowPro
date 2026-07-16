@@ -18,14 +18,14 @@ export function agregarHojaTercerizados(
 
   const wsT = wb.addWorksheet('Productos Tercerizados');
 
-  const descCompra = `DEMANDA ${mesesCompra} ${mesesCompra === 1 ? 'MES' : 'MESES'} (COMPRA)`;
-  const descTransf = `DEMANDA ${mesesTransferencia} ${mesesTransferencia === 1 ? 'MES' : 'MESES'} (TRANSF.)`;
+  const descCompra = `DEMANDA ${mesesCompra}M\n(COMPRA)`;
+  const descTransf = `DEMANDA ${mesesTransferencia}M\n(TRANSF.)`;
 
   wsT.columns = [
     { header: 'CÓDIGO PT', key: 'codigoPT' },
     { header: 'DESCRIPCIÓN PT', key: 'descripcionPT' },
-    { header: 'STOCK PT E.R.', key: 'stockPTEntreRios' },
-    { header: 'STOCK PT CABA', key: 'stockPTCABA' },
+    { header: 'STOCK PT\nE.R.', key: 'stockPTEntreRios' },
+    { header: 'STOCK PT\nCABA', key: 'stockPTCABA' },
     { header: 'ROTACIÓN', key: 'rotacion' },
     { header: descCompra, key: 'comprar' },
     { header: descTransf, key: 'transferir' },
