@@ -30,7 +30,9 @@ export function GoogleDriveSection() {
   const todoSincronizado =
     store.datosCrudosFormulas.length > 0 &&
     store.datosCrudosStock.length > 0 &&
-    store.datosCrudosConsumo.length > 0;
+    store.datosCrudosConsumo.length > 0 &&
+    store.datosCrudosStockPT.length > 0 &&
+    tienePrefijos;
 
   // Indicadores de carga en tiempo real para Fórmulas
   const formulasCargadas = store.datosCrudosFormulas.length;
@@ -46,7 +48,7 @@ export function GoogleDriveSection() {
   const consumoCargado = store.datosCrudosConsumo.length;
   const stockPTCargado = store.datosCrudosStockPT.length;
   
-  const statusStock = (stockCargado > 0 || consumoCargado > 0 || stockPTCargado > 0 || prefijosCargados > 0) ? (
+  const statusStock = (stockCargado > 0 || consumoCargado > 0 || stockPTCargado > 0) ? (
     <div className="space-y-1.5 p-2.5 rounded-lg bg-green-500/10 border border-green-500/20 shadow-sm text-xs font-semibold">
       {stockCargado > 0 && (
         <div className="flex items-center space-x-2 text-green-700 dark:text-green-400">

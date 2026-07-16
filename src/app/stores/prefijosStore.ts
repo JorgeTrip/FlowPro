@@ -59,7 +59,19 @@ export const usePrefijosStore = create<PrefijosState>()(
           if (!item.prefijo || !item.linea || !item.sitioFabricacion) {
             return { exito: false, mensaje: 'Una o más reglas no contienen los campos obligatorios (prefijo, linea, sitioFabricacion).' };
           }
-          const sitioValido = ['CABA', 'ENTRE RIOS', 'CABA + ENTRE RIOS', 'TERC. CABA', 'TERC. ENTRE RIOS', 'TERC. CON PROV. MP'].includes(item.sitioFabricacion);
+
+          let sitio = String(item.sitioFabricacion).trim().toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          if (sitio === 'E.R.' || sitio === 'ER' || sitio === 'ENTRE RIOS' || sitio === 'ENTRE RÍOS') {
+            sitio = 'ENTRE RIOS';
+          } else if (sitio === 'CABA + E.R.' || sitio === 'CABA + ER' || sitio === 'CABA + ENTRE RIOS' || sitio === 'CABA + ENTRE RIOS') {
+            sitio = 'CABA + ENTRE RIOS';
+          } else if (sitio === 'TERC. E.R.' || sitio === 'TERC. ER' || sitio === 'TERC. ENTRE RIOS' || sitio === 'TERCERIZADOS ENTRE RIOS') {
+            sitio = 'TERC. ENTRE RIOS';
+          } else if (sitio === 'TERC. CABA' || sitio === 'TERCERIZADOS CABA') {
+            sitio = 'TERC. CABA';
+          }
+
+          const sitioValido = ['CABA', 'ENTRE RIOS', 'CABA + ENTRE RIOS', 'TERC. CABA', 'TERC. ENTRE RIOS', 'TERC. CON PROV. MP'].includes(sitio);
           if (!sitioValido) {
             return { exito: false, mensaje: `Sitio de fabricación inválido: "${item.sitioFabricacion}". Valores válidos: CABA, ENTRE RIOS, CABA + ENTRE RIOS, TERC. CABA, TERC. ENTRE RIOS, TERC. CON PROV. MP.` };
           }
@@ -68,7 +80,7 @@ export const usePrefijosStore = create<PrefijosState>()(
             id: item.id || `prefijo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             prefijo: String(item.prefijo).trim(),
             linea: String(item.linea).trim(),
-            sitioFabricacion: item.sitioFabricacion,
+            sitioFabricacion: sitio as any,
             descripcion: item.descripcion ? String(item.descripcion).trim() : undefined
           });
         }

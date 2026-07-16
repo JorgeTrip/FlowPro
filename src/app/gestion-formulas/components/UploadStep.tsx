@@ -26,7 +26,9 @@ export default function UploadStep() {
   const listoParaContinuar =
     store.datosCrudosFormulas.length > 0 &&
     store.datosCrudosStock.length > 0 &&
-    store.datosCrudosConsumo.length > 0;
+    store.datosCrudosConsumo.length > 0 &&
+    store.datosCrudosStockPT.length > 0 &&
+    tienePrefijos;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -184,22 +186,71 @@ export default function UploadStep() {
                     ) || hojas[0];
                     
                     if (solapaPrefijos) {
-                      const { data } = await procesarHojaEspecifica(file, solapaPrefijos);
+                      const { data, columns } = await procesarHojaEspecifica(file, solapaPrefijos);
+                      const keys = columns || [];
+
+                      // Si la fila de cabecera elegida es en realidad un registro de datos de regla válido, la agregamos al inicio
+                      const cabeceraEsReglaValida = (k: string[]) => {
+                        if (k.length < 3) return false;
+                        const sitio = k[2].trim().toUpperCase();
+                        return ['CABA', 'ENTRE RIOS', 'E.R.', 'ER', 'CABA + ENTRE RIOS', 'CABA + E.R.', 'TERC. CABA', 'TERC. ENTRE RIOS', 'TERC. E.R.'].includes(sitio);
+                      };
+
+                      if (cabeceraEsReglaValida(keys)) {
+                        let sitioStr = keys[2].trim().toUpperCase();
+                        if (sitioStr === 'E.R.' || sitioStr === 'ENTRE RIOS' || sitioStr === 'ENTRE RÍOS' || sitioStr === 'ER') {
+                          sitioStr = 'ENTRE RIOS';
+                        } else if (sitioStr === 'CABA + E.R.' || sitioStr === 'CABA + ER' || sitioStr === 'CABA + ENTRE RIOS') {
+                          sitioStr = 'CABA + ENTRE RIOS';
+                        } else if (sitioStr === 'TERC. E.R.' || sitioStr === 'TERC. ER' || sitioStr === 'TERC. ENTRE RIOS' || sitioStr === 'TERCERIZADOS ENTRE RIOS') {
+                          sitioStr = 'TERC. ENTRE RIOS';
+                        } else if (sitioStr === 'TERC. CABA' || sitioStr === 'TERCERIZADOS CABA') {
+                          sitioStr = 'TERC. CABA';
+                        }
+                        contenido.push({
+                          prefijo: keys[0].trim(),
+                          linea: keys[1].trim(),
+                          sitioFabricacion: sitioStr,
+                          descripcion: keys[3] ? keys[3].trim() : undefined
+                        });
+                      }
+
                       data.forEach((row: any) => {
-                        const keys = Object.keys(row);
+                        const rowKeys = Object.keys(row);
                         const findVal = (keywords: string[]) => {
-                          const key = keys.find(k => keywords.some(kw => k.toLowerCase().includes(kw)));
+                          const key = rowKeys.find(k => {
+                            const kNormalizada = k.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                            return keywords.some(kw => {
+                              const kwNormalizada = kw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                              return kNormalizada.includes(kwNormalizada);
+                            });
+                          });
                           return key ? row[key] : null;
                         };
-                        const prefijo = findVal(['prefijo']);
-                        const linea = findVal(['linea']);
-                        const sitioFabricacion = findVal(['sitio', 'fabricacion', 'planta']);
-                        const descripcion = findVal(['descripcion', 'detalle']);
+                        const prefijo = findVal(['prefijo']) || row[rowKeys[0]];
+                        const linea = findVal(['linea']) || row[rowKeys[1]];
+                        let sitioFabricacion = findVal(['sitio', 'fabricacion', 'planta']) || row[rowKeys[2]];
+                        const descripcion = findVal(['descripcion', 'detalle']) || (rowKeys[3] ? row[rowKeys[3]] : undefined);
+
+                        if (sitioFabricacion) {
+                          let sitioStr = String(sitioFabricacion).trim().toUpperCase();
+                          if (sitioStr === 'E.R.' || sitioStr === 'ENTRE RIOS' || sitioStr === 'ENTRE RÍOS' || sitioStr === 'ER') {
+                            sitioStr = 'ENTRE RIOS';
+                          } else if (sitioStr === 'CABA + E.R.' || sitioStr === 'CABA + ER' || sitioStr === 'CABA + ENTRE RIOS') {
+                            sitioStr = 'CABA + ENTRE RIOS';
+                          } else if (sitioStr === 'TERC. E.R.' || sitioStr === 'TERC. ER' || sitioStr === 'TERC. ENTRE RIOS' || sitioStr === 'TERCERIZADOS ENTRE RIOS') {
+                            sitioStr = 'TERC. ENTRE RIOS';
+                          } else if (sitioStr === 'TERC. CABA' || sitioStr === 'TERCERIZADOS CABA') {
+                            sitioStr = 'TERC. CABA';
+                          }
+                          sitioFabricacion = sitioStr;
+                        }
+
                         if (prefijo && linea && sitioFabricacion) {
                           contenido.push({
                             prefijo: String(prefijo).trim(),
                             linea: String(linea).trim(),
-                            sitioFabricacion: String(sitioFabricacion).trim().toUpperCase(),
+                            sitioFabricacion: String(sitioFabricacion).trim(),
                             descripcion: descripcion ? String(descripcion).trim() : undefined
                           });
                         }
@@ -230,10 +281,20 @@ export default function UploadStep() {
 
                       const [prefijo, linea, sitioFabricacion, descripcion] = celdas;
                       if (prefijo && linea && sitioFabricacion) {
+                        let sitioStr = sitioFabricacion.replace(/^"(.*)"$/, '$1').trim().toUpperCase();
+                        if (sitioStr === 'E.R.' || sitioStr === 'ENTRE RIOS' || sitioStr === 'ENTRE RÍOS' || sitioStr === 'ER') {
+                          sitioStr = 'ENTRE RIOS';
+                        } else if (sitioStr === 'CABA + E.R.' || sitioStr === 'CABA + ER' || sitioStr === 'CABA + ENTRE RIOS') {
+                          sitioStr = 'CABA + ENTRE RIOS';
+                        } else if (sitioStr === 'TERC. E.R.' || sitioStr === 'TERC. ER' || sitioStr === 'TERC. ENTRE RIOS' || sitioStr === 'TERCERIZADOS ENTRE RIOS') {
+                          sitioStr = 'TERC. ENTRE RIOS';
+                        } else if (sitioStr === 'TERC. CABA' || sitioStr === 'TERCERIZADOS CABA') {
+                          sitioStr = 'TERC. CABA';
+                        }
                         contenido.push({
                           prefijo: prefijo.replace(/^"(.*)"$/, '$1').trim(),
                           linea: linea.replace(/^"(.*)"$/, '$1').trim(),
-                          sitioFabricacion: sitioFabricacion.replace(/^"(.*)"$/, '$1').trim().toUpperCase(),
+                          sitioFabricacion: sitioStr,
                           descripcion: descripcion ? descripcion.replace(/^"(.*)"$/, '$1').trim() : undefined
                         });
                       }

@@ -57,6 +57,7 @@ export function useGoogleDriveSync() {
       const hoja = hojas.find((h) => h.toUpperCase() === 'BASE DE DATOS FORMULAS');
       if (!hoja) throw new Error('No se encontró la hoja "BASE DE DATOS FORMULAS"');
       await procesarYGuardarHoja(archivo, hoja, 'formulas');
+
     } catch (err: any) {
       setErrorSincronizacion(err.message); store.setError(err.message);
     } finally {
@@ -91,13 +92,22 @@ export function useGoogleDriveSync() {
       if (hojaRotacion) await procesarYGuardarHoja(archivo, hojaRotacion, 'consumo');
       if (hojaStockPT) await procesarYGuardarHoja(archivo, hojaStockPT, 'stockPT');
 
-      // Buscar e importar prefijos si no hay reglas cargadas
-      const hojaPrefijos = hojas.find((h) =>
-        ['prefijo de codigos - lineas pt', 'prefijo de codigos', 'lineas pt', 'prefijos'].some((k) =>
-          h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(k)
-        )
-      );
+      // Buscar e importar prefijos si existe la solapa en la planilla de Stock
+      const hojaPrefijos = hojas.find((h) => {
+        const hNorm = h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return [
+          'prefijo de codigo',
+          'prefijos de codigo',
+          'prefijo',
+          'prefijos',
+          'linea pt',
+          'lineas pt',
+          'linea',
+          'lineas'
+        ].some((k) => hNorm.includes(k));
+      });
       if (hojaPrefijos) {
+        console.log(`[useGoogleDriveSync] Se encontró solapa de prefijos '${hojaPrefijos}' en el libro de Stock.`);
         const { importarPrefijosDesdeHoja } = await import('../lib/lectorExcel');
         await importarPrefijosDesdeHoja(archivo, hojaPrefijos);
       }
