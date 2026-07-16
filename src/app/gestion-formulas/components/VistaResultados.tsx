@@ -7,8 +7,8 @@ import { SkeletonTabla } from './ComponentesAuxiliares';
 import DropdownFiltrosPedidos from './DropdownFiltrosPedidos';
 import DropdownCriticidad from './DropdownCriticidad';
 import DropdownMovimientos from './DropdownMovimientos';
-import DropdownPlanta from './DropdownPlanta';
 import DropdownLinea from './DropdownLinea';
+import DropdownAnalisisHierbas from './DropdownAnalisisHierbas';
 import * as Select from '@radix-ui/react-select';
 import { TablaProductosPropios } from './TablaProductosPropios';
 import { TablaProductosTercerizados } from './TablaProductosTercerizados';
@@ -16,13 +16,14 @@ import { TablaProductosTercerizados } from './TablaProductosTercerizados';
 export default function VistaResultados() {
   const {
     busqueda, setBusqueda, filtrosActivos, setFiltrosActivos, criticidades, setCriticidades,
-    movimientosFiltrados, setMovimientosFiltrados, plantasFiltradas, setPlantasFiltradas,
+    movimientosFiltrados, setMovimientosFiltrados,
     lineasFiltradas, setLineasFiltradas, lineasDisponibles,
     mesesProyeccionTransferencia, mesesProyeccionCompra, setMesesProyeccionTransferencia, setMesesProyeccionCompra,
     scrollSuperiorRef, scrollInferiorRef, anchoScroll,
     resultadosFiltradosPropios, resultadosFiltradosTercerizados,
     cargandoCalculo, resultadosMRP, pestañaActiva, setPestañaActiva, setStep,
     sortPropios, solicitarOrdenPropios, sortTercerizados, solicitarOrdenTercerizados,
+    analisisHierbas, setAnalisisHierbas,
   } = useVistaResultados();
 
   const getIndP = (k: any) => (sortPropios && sortPropios.key === k) ? (sortPropios.direction === 'asc' ? ' ▲' : ' ▼') : '';
@@ -92,9 +93,9 @@ export default function VistaResultados() {
               setMovimientosFiltrados={setMovimientosFiltrados}
             />
             {pestañaActiva === 'propios' && (
-              <DropdownPlanta 
-                plantasFiltradas={plantasFiltradas}
-                setPlantasFiltradas={setPlantasFiltradas}
+              <DropdownAnalisisHierbas 
+                analisisHierbas={analisisHierbas}
+                setAnalisisHierbas={setAnalisisHierbas}
               />
             )}
             <DropdownLinea 

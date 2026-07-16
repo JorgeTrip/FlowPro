@@ -21,14 +21,16 @@ function ordenarItems<T>(items: T[], config: { key: keyof T; direction: 'asc' | 
   });
 }
 
+export type TipoAnalisisHierbas = 'todos' | 'hierbas' | 'insumos';
+
 export function useVistaResultados() {
   const store = useGestionFormulasStore();
   const [busqueda, setBusqueda] = useState('');
   const [filtrosActivos, setFiltrosActivos] = useState<string[]>([]);
   const [criticidades, setCriticidades] = useState<string[]>(['alta', 'media', 'baja']);
   const [movimientosFiltrados, setMovimientosFiltrados] = useState<string[]>([]);
-  const [plantasFiltradas, setPlantasFiltradas] = useState<string[]>([]);
   const [lineasFiltradas, setLineasFiltradas] = useState<string[]>([]);
+  const [analisisHierbas, setAnalisisHierbas] = useState<TipoAnalisisHierbas>('todos');
 
   const [sortPropios, setSortPropios] = useState<{ key: keyof ResultadoMRP; direction: 'asc' | 'desc' } | null>(null);
   const [sortTercerizados, setSortTercerizados] = useState<{ key: keyof ResultadoTercerizadosMRP; direction: 'asc' | 'desc' } | null>(null);
@@ -79,11 +81,24 @@ export function useVistaResultados() {
       });
     }
 
-    if (plantasFiltradas.length > 0) {
-      items = items.filter((r) => r.productosUsados.some((p) => p.sitioFabricacion && plantasFiltradas.includes(p.sitioFabricacion)));
-    }
     if (lineasFiltradas.length > 0) {
       items = items.filter((r) => r.productosUsados.some((p) => p.linea && lineasFiltradas.includes(p.linea)));
+    }
+
+    if (analisisHierbas !== 'todos') {
+      items = items.filter((r) => {
+        // 1. Debe usarse en al menos un PT de Hierbas (inicia con 07HIE)
+        const seUsaEnHierbasPT = r.productosUsados?.some((pt) => pt.codigoProducto.startsWith('07HIE'));
+        if (!seUsaEnHierbasPT) return false;
+
+        // 2. Filtrar por tipo de Materia Prima
+        if (analisisHierbas === 'hierbas') {
+          return r.codigoMP.startsWith('00INSHI');
+        } else if (analisisHierbas === 'insumos') {
+          return r.codigoMP.startsWith('00INSBO') || r.codigoMP.startsWith('00INSET');
+        }
+        return true;
+      });
     }
 
     if (busqueda.trim()) {
@@ -92,7 +107,7 @@ export function useVistaResultados() {
     }
 
     return ordenarItems(items, sortPropios);
-  }, [store.resultadosMRP?.propios, busqueda, filtrosActivos, sortPropios, criticidades, movimientosFiltrados, plantasFiltradas, lineasFiltradas]);
+  }, [store.resultadosMRP?.propios, busqueda, filtrosActivos, sortPropios, criticidades, movimientosFiltrados, lineasFiltradas, analisisHierbas]);
 
   const resultadosFiltradosTercerizados = useMemo(() => {
     let items = store.resultadosMRP?.tercerizados || [];
@@ -152,7 +167,7 @@ export function useVistaResultados() {
       }, 50);
       return () => clearTimeout(timer);
     }
-  }, [activeListLength, store.cargandoCalculo, store.pestañaActiva, criticidades, filtrosActivos, movimientosFiltrados, plantasFiltradas, lineasFiltradas, store.mesesProyeccionTransferencia, store.mesesProyeccionCompra]);
+  }, [activeListLength, store.cargandoCalculo, store.pestañaActiva, criticidades, filtrosActivos, movimientosFiltrados, lineasFiltradas, store.mesesProyeccionTransferencia, store.mesesProyeccionCompra]);
 
   useEffect(() => {
     const sup = scrollSuperiorRef.current;
@@ -182,11 +197,12 @@ export function useVistaResultados() {
 
   return {
     busqueda, setBusqueda, filtrosActivos, setFiltrosActivos, criticidades, setCriticidades, movimientosFiltrados, setMovimientosFiltrados,
-    plantasFiltradas, setPlantasFiltradas, lineasFiltradas, setLineasFiltradas, lineasDisponibles,
+    lineasFiltradas, setLineasFiltradas, lineasDisponibles,
     mesesProyeccionTransferencia: store.mesesProyeccionTransferencia, mesesProyeccionCompra: store.mesesProyeccionCompra,
     setMesesProyeccionTransferencia: store.setMesesProyeccionTransferencia, setMesesProyeccionCompra: store.setMesesProyeccionCompra,
     scrollSuperiorRef, scrollInferiorRef, anchoScroll, resultadosFiltradosPropios, resultadosFiltradosTercerizados,
     cargandoCalculo: store.cargandoCalculo, resultadosMRP: store.resultadosMRP, pestañaActiva: store.pestañaActiva,
     setPestañaActiva: store.setPestañaActiva, setStep: store.setStep, sortPropios, solicitarOrdenPropios, sortTercerizados, solicitarOrdenTercerizados,
+    analisisHierbas, setAnalisisHierbas,
   };
 }

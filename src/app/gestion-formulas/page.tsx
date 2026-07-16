@@ -66,6 +66,9 @@ export default function PaginaGestionFormulas() {
 
   useEffect(() => {
     setMounted(true);
+    if (typeof window !== 'undefined') {
+      (window as any).useGestionFormulasStore = useGestionFormulasStore;
+    }
   }, []);
 
   if (!mounted) {
