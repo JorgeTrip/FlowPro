@@ -52,13 +52,21 @@ export function agregarHojaProductosPropios(
     let fillBg = 'FFF8F9FA'; // Gris default
     let fontColor = 'FF5F6368'; // Gris oscuro
 
-    const esVerde = [1, 2, 3, 4, 5, 10, 11].includes(c);
+    const esGrisExcel = [1, 2, 3, 6, 7].includes(c);
+    const esVerdeER = [4, 10].includes(c);
+    const esVioletaCABA = [5, 11].includes(c);
     const esAmarillo = [15, 16, 17, 18, 19, 20].includes(c);
     const esAzul = c === 21;
 
-    if (esVerde) {
+    if (esGrisExcel) {
+      fillBg = 'FFF1F3F4';
+      fontColor = 'FF5F6368';
+    } else if (esVerdeER) {
       fillBg = 'FFE6F4EA';
       fontColor = 'FF137333';
+    } else if (esVioletaCABA) {
+      fillBg = 'FFF3E8FF';
+      fontColor = 'FF6B21A8';
     } else if (esAmarillo) {
       fillBg = 'FFFFF4E5';
       fontColor = 'FFB06000';
@@ -139,14 +147,22 @@ export function agregarHojaProductosPropios(
         let cellBg = idx % 2 === 0 ? 'FFFFFFFF' : 'FFF9F9F9'; // Gris/Blanco normal default
         let cellFontColor = 'FF000000';
 
-        const esVerde = [1, 2, 3, 4, 5, 10, 11].includes(c);
+        const esGrisExcel = [1, 2, 3, 6, 7].includes(c);
+        const esVerdeER = [4, 10].includes(c);
+        const esVioletaCABA = [5, 11].includes(c);
         const esAmarillo = [15, 16, 17, 18, 19, 20].includes(c);
         const esAzul = c === 21;
         const esCriticidad = c === 22;
 
-        if (esVerde) {
+        if (esGrisExcel) {
+          cellBg = idx % 2 === 0 ? 'FFFFFFFF' : 'FFF9F9F9';
+          cellFontColor = 'FF333333';
+        } else if (esVerdeER) {
           cellBg = idx % 2 === 0 ? 'FFF4FAF6' : 'FFEBF7EE';
           cellFontColor = 'FF137333';
+        } else if (esVioletaCABA) {
+          cellBg = idx % 2 === 0 ? 'FFF9F5FF' : 'FFF5EBFF';
+          cellFontColor = 'FF6B21A8';
         } else if (esAmarillo) {
           cellBg = idx % 2 === 0 ? 'FFFFFDF9' : 'FFFFF9F0';
           cellFontColor = 'FFB06000';

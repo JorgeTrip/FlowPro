@@ -34,8 +34,12 @@ export function TablaProductosPropios({
   mesesProyeccionCompra,
 }: TablaProductosPropiosProps) {
   
-  const clsSincronizadoHeader = "sticky top-0 z-10 bg-[#E6F4EA] dark:bg-[#193220] text-emerald-900 dark:text-emerald-300 hover:bg-[#D4EDDA] dark:hover:bg-[#204029] transition-colors";
-  const clsSincronizadoCell = "bg-emerald-50/30 dark:bg-emerald-950/15 text-emerald-950 dark:text-emerald-300";
+  const clsExcelHeader = "sticky top-0 z-10 bg-gray-100 dark:bg-[#2C2C2E]/60 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#3A3A3C] transition-colors";
+  const clsExcelCell = "bg-white dark:bg-[#1C1C1E] text-gray-900 dark:text-gray-300";
+  const clsVerdeHeader = "sticky top-0 z-10 bg-[#E6F4EA] dark:bg-[#193220] text-emerald-900 dark:text-emerald-300 hover:bg-[#D4EDDA] dark:hover:bg-[#204029] transition-colors";
+  const clsVerdeCell = "bg-emerald-50/30 dark:bg-emerald-950/15 text-emerald-950 dark:text-emerald-300";
+  const clsVioletaHeader = "sticky top-0 z-10 bg-[#F3E8FF] dark:bg-[#2D1A40] text-purple-900 dark:text-purple-300 hover:bg-[#E9D5FF] dark:hover:bg-[#3A2252] transition-colors";
+  const clsVioletaCell = "bg-purple-50/30 dark:bg-purple-950/15 text-purple-950 dark:text-purple-300";
   const clsAccionHeader = "sticky top-0 z-10 bg-[#FFF4E5] dark:bg-[#332211] text-amber-900 dark:text-amber-300 hover:bg-[#FFECCF] dark:hover:bg-[#442E16] transition-colors";
   const clsAccionCell = "bg-amber-50/30 dark:bg-amber-950/15 text-amber-950 dark:text-amber-300";
   const clsBlueHeader = "sticky top-0 z-10 bg-[#E6F0FA] dark:bg-[#192B40] text-blue-900 dark:text-blue-300 hover:bg-[#D4E6FA] dark:hover:bg-[#203752] transition-colors";
@@ -46,17 +50,17 @@ export function TablaProductosPropios({
     <table className="min-w-[2350px] divide-y divide-gray-200 dark:divide-gray-800 text-left text-[11px]">
       <thead className="bg-gray-50 dark:bg-[#2C2C2E] text-gray-500 dark:text-gray-400 uppercase font-bold tracking-wider select-none">
         <tr className="divide-x divide-gray-100 dark:divide-gray-800">
-          <th onClick={() => solicitarOrdenPropios('codigoMP')} className={`${clsSincronizadoHeader} px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer`}>Código MP{getIndP('codigoMP')}</th>
-          <th onClick={() => solicitarOrdenPropios('descripcionMP')} className={`${clsSincronizadoHeader} px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer`}>Descripción MP{getIndP('descripcionMP')}</th>
-          <th onClick={() => solicitarOrdenPropios('unidadMedida')} className={`${clsSincronizadoHeader} px-2.5 py-2 border-r border-gray-150 dark:border-gray-800`}>UM{getIndP('unidadMedida')}</th>
-          <th onClick={() => solicitarOrdenPropios('stockMPEntreRios')} className={`${clsSincronizadoHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer`}>Stock MP E.R.{getIndP('stockMPEntreRios')}</th>
-          <th onClick={() => solicitarOrdenPropios('stockMPCABA')} className={`${clsSincronizadoHeader} px-2.5 py-2 text-right border-r-2 border-gray-300 dark:border-gray-700 cursor-pointer`}>Stock MP CABA{getIndP('stockMPCABA')}</th>
-          <th className={`${clsSincronizadoHeader} px-2.5 py-2 border-r border-gray-150 dark:border-gray-800`}>Código PT</th>
-          <th className={`${clsSincronizadoHeader} px-2.5 py-2 border-r border-gray-150 dark:border-gray-800`}>Descripción PT</th>
+          <th onClick={() => solicitarOrdenPropios('codigoMP')} className={`${clsExcelHeader} px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer`}>Código MP{getIndP('codigoMP')}</th>
+          <th onClick={() => solicitarOrdenPropios('descripcionMP')} className={`${clsExcelHeader} px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer`}>Descripción MP{getIndP('descripcionMP')}</th>
+          <th onClick={() => solicitarOrdenPropios('unidadMedida')} className={`${clsExcelHeader} px-2.5 py-2 border-r border-gray-150 dark:border-gray-800`}>UM{getIndP('unidadMedida')}</th>
+          <th onClick={() => solicitarOrdenPropios('stockMPEntreRios')} className={`${clsVerdeHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer`}>Stock MP E.R.{getIndP('stockMPEntreRios')}</th>
+          <th onClick={() => solicitarOrdenPropios('stockMPCABA')} className={`${clsVioletaHeader} px-2.5 py-2 text-right border-r-2 border-gray-300 dark:border-gray-700 cursor-pointer`}>Stock MP CABA{getIndP('stockMPCABA')}</th>
+          <th className={`${clsExcelHeader} px-2.5 py-2 border-r border-gray-150 dark:border-gray-800`}>Código PT</th>
+          <th className={`${clsExcelHeader} px-2.5 py-2 border-r border-gray-150 dark:border-gray-800`}>Descripción PT</th>
           <th className={`${clsNormalHeader} px-2.5 py-2 border-r border-gray-150 dark:border-gray-800`}>Línea</th>
           <th className={`${clsNormalHeader} px-2.5 py-2 border-r border-gray-150 dark:border-gray-800`}>Planta</th>
-          <th className={`${clsSincronizadoHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>Stock PT E.R.</th>
-          <th className={`${clsSincronizadoHeader} px-2.5 py-2 text-right border-r-2 border-gray-300 dark:border-gray-700`}>Stock PT CABA</th>
+          <th className={`${clsVerdeHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>Stock PT E.R.</th>
+          <th className={`${clsVioletaHeader} px-2.5 py-2 text-right border-r-2 border-gray-300 dark:border-gray-700`}>Stock PT CABA</th>
           <th className={`${clsNormalHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>Rot. Mensual PT</th>
           <th className={`${clsNormalHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>Rot. {mesesProyeccionTransferencia}M PT (Transf.)</th>
           <th className={`${clsNormalHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>Rot. {mesesProyeccionCompra}M PT (Compra)</th>
@@ -73,17 +77,17 @@ export function TablaProductosPropios({
       <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-[#1C1C1E] text-gray-900 dark:text-gray-300">
         {resultadosFiltradosPropios.map((fila, idx) => (
           <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-[#2C2C2E]/40 transition-colors divide-x divide-gray-100 dark:divide-gray-850 text-xs text-left align-top">
-            <td className={`${clsSincronizadoCell} px-2.5 py-2 font-mono font-semibold`}>{fila.codigoMP}</td>
-            <td className={`${clsSincronizadoCell} px-2.5 py-2 group relative cursor-help`}><div className="truncate max-w-[150px] text-ellipsis">{fila.descripcionMP}</div><Tooltip texto={fila.descripcionMP} /></td>
-            <td className={`${clsSincronizadoCell} px-2.5 py-2`}>{fila.unidadMedida}</td>
-            <td className={`${clsSincronizadoCell} px-2.5 py-2 text-right font-mono`}>{(fila.stockMPEntreRios ?? 0).toFixed(1)}</td>
-            <td className={`${clsSincronizadoCell} px-2.5 py-2 text-right font-mono border-r-2 border-gray-300 dark:border-gray-700`}>{(fila.stockMPCABA ?? 0).toFixed(1)}</td>
-            <td className={`${clsSincronizadoCell} px-2.5 py-2`}>{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{p.codigoProducto}</div>)}</td>
-            <td className={`${clsSincronizadoCell} px-2.5 py-2`}>{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{p.descripcion}</div>)}</td>
+            <td className={`${clsExcelCell} px-2.5 py-2 font-mono font-semibold`}>{fila.codigoMP}</td>
+            <td className={`${clsExcelCell} px-2.5 py-2 group relative cursor-help`}><div className="truncate max-w-[150px] text-ellipsis">{fila.descripcionMP}</div><Tooltip texto={fila.descripcionMP} /></td>
+            <td className={`${clsExcelCell} px-2.5 py-2`}>{fila.unidadMedida}</td>
+            <td className={`${clsVerdeCell} px-2.5 py-2 text-right font-mono`}>{(fila.stockMPEntreRios ?? 0).toFixed(1)}</td>
+            <td className={`${clsVioletaCell} px-2.5 py-2 text-right font-mono border-r-2 border-gray-300 dark:border-gray-700`}>{(fila.stockMPCABA ?? 0).toFixed(1)}</td>
+            <td className={`${clsExcelCell} px-2.5 py-2`}>{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{p.codigoProducto}</div>)}</td>
+            <td className={`${clsExcelCell} px-2.5 py-2`}>{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{p.descripcion}</div>)}</td>
             <td className="px-2.5 py-2">{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{p.linea || '-'}</div>)}</td>
             <td className="px-2.5 py-2 text-center">{fila.productosUsados?.map((p, i) => <div key={i} className="text-[9px] h-[15px] font-bold">{p.sitioFabricacion || '-'}</div>)}</td>
-            <td className={`${clsSincronizadoCell} px-2.5 py-2 text-right font-mono`}>{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{(p.stockPTEntreRios ?? 0).toFixed(1)}</div>)}</td>
-            <td className={`${clsSincronizadoCell} px-2.5 py-2 text-right font-mono border-r-2 border-gray-300 dark:border-gray-700`}>{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{(p.stockPTCABA ?? 0).toFixed(1)}</div>)}</td>
+            <td className={`${clsVerdeCell} px-2.5 py-2 text-right font-mono`}>{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{(p.stockPTEntreRios ?? 0).toFixed(1)}</div>)}</td>
+            <td className={`${clsVioletaCell} px-2.5 py-2 text-right font-mono border-r-2 border-gray-300 dark:border-gray-700`}>{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{(p.stockPTCABA ?? 0).toFixed(1)}</div>)}</td>
             <td className="px-2.5 py-2 text-right font-mono">{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{(p.rotacionMensual ?? 0).toFixed(1)}</div>)}</td>
             <td className="px-2.5 py-2 text-right font-mono">{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{((p.rotacionMensual ?? 0) * mesesProyeccionTransferencia).toFixed(1)}</div>)}</td>
             <td className="px-2.5 py-2 text-right font-mono">{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{((p.rotacionMensual ?? 0) * mesesProyeccionCompra).toFixed(1)}</div>)}</td>

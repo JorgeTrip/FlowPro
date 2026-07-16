@@ -22,13 +22,46 @@ export function agregarHojaRelacionMPPT(wb: ExcelJS.Workbook, propios: Resultado
     { header: 'TRANSFERIR PT\n(E.R.→CABA)', key: 'transferirPT' },
     { header: 'CANTIDAD\n(ROTACIÓN)', key: 'rotacionProductos' },
   ];
-  formatearHeaders(wsR, 10);
+  // Formatear los headers con los colores correspondientes de la app
+  const headerRow = wsR.getRow(1);
+  headerRow.height = 40;
+  for (let c = 1; c <= 10; c++) {
+    const cell = headerRow.getCell(c);
+    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    cell.border = borderFino;
+
+    let fillBg = 'FFF8F9FA'; // Gris default
+    let fontColor = 'FF5F6368'; // Gris oscuro
+
+    const esGrisExcel = [1, 2, 3, 4, 10].includes(c);
+    const esVerdeER = c === 5;
+    const esVioletaCABA = c === 6;
+    const esAmarillo = [7, 8, 9].includes(c);
+
+    if (esGrisExcel) {
+      fillBg = 'FFF1F3F4';
+      fontColor = 'FF5F6368';
+    } else if (esVerdeER) {
+      fillBg = 'FFE6F4EA';
+      fontColor = 'FF137333';
+    } else if (esVioletaCABA) {
+      fillBg = 'FFF3E8FF';
+      fontColor = 'FF6B21A8';
+    } else if (esAmarillo) {
+      fillBg = 'FFFFF4E5';
+      fontColor = 'FFB06000';
+    }
+
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: fillBg } };
+    cell.font = { bold: true, size: 9.5, name: 'Segoe UI', color: { argb: fontColor } };
+  }
 
   let filaActual = 2;
   let alternarColor = 0; // Para cambiar color de fondo por cada grupo de materia prima
 
   (propios || []).forEach((r) => {
-    const colorBg = alternarColor % 2 === 0 ? 'FFF9F9F9' : 'FFFFFFFF';
+    const esPar = alternarColor % 2 === 0;
+    const colorBgGris = esPar ? 'FFFFFFFF' : 'FFF9F9F9';
     alternarColor++;
 
     const desgloses = r.productosUsados || [];
@@ -52,9 +85,28 @@ export function agregarHojaRelacionMPPT(wb: ExcelJS.Workbook, propios: Resultado
 
       for (let c = 1; c <= 10; c++) {
         const cell = row.getCell(c);
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colorBg } };
+        
+        let cellBg = colorBgGris;
+        let cellFontColor = 'FF000000';
+
+        const esVerdeER = c === 5;
+        const esVioletaCABA = c === 6;
+        const esAmarillo = [7, 8, 9].includes(c);
+
+        if (esVerdeER) {
+          cellBg = esPar ? 'FFF4FAF6' : 'FFEBF7EE';
+          cellFontColor = 'FF137333';
+        } else if (esVioletaCABA) {
+          cellBg = esPar ? 'FFF9F5FF' : 'FFF5EBFF';
+          cellFontColor = 'FF6B21A8';
+        } else if (esAmarillo) {
+          cellBg = esPar ? 'FFFFFDF9' : 'FFFFF9F0';
+          cellFontColor = 'FFB06000';
+        }
+
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: cellBg } };
         cell.border = borderFino;
-        cell.font = { name: 'Segoe UI', size: 9 };
+        cell.font = { name: 'Segoe UI', size: 9, color: { argb: cellFontColor } };
         if (c === 1 || c === 3) {
           cell.alignment = { horizontal: 'center' as const, vertical: 'middle' as const };
         } else {
@@ -95,10 +147,29 @@ export function agregarHojaRelacionMPPT(wb: ExcelJS.Workbook, propios: Resultado
 
         for (let c = 1; c <= 10; c++) {
           const cell = row.getCell(c);
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colorBg } };
+          
+          let cellBg = colorBgGris;
+          let cellFontColor = 'FF000000';
+
+          const esVerdeER = c === 5;
+          const esVioletaCABA = c === 6;
+          const esAmarillo = [7, 8, 9].includes(c);
+
+          if (esVerdeER) {
+            cellBg = esPar ? 'FFF4FAF6' : 'FFEBF7EE';
+            cellFontColor = 'FF137333';
+          } else if (esVioletaCABA) {
+            cellBg = esPar ? 'FFF9F5FF' : 'FFF5EBFF';
+            cellFontColor = 'FF6B21A8';
+          } else if (esAmarillo) {
+            cellBg = esPar ? 'FFFFFDF9' : 'FFFFF9F0';
+            cellFontColor = 'FFB06000';
+          }
+
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: cellBg } };
           cell.border = borderFino;
           cell.alignment = alignConfigs[c - 1];
-          cell.font = { name: 'Segoe UI', size: 9 };
+          cell.font = { name: 'Segoe UI', size: 9, color: { argb: cellFontColor } };
           if (c === 5 || c === 6 || c === 7 || c === 8 || c === 9 || c === 10) {
             cell.numFmt = '#,##0.0';
           }
