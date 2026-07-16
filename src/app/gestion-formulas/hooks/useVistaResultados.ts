@@ -11,12 +11,8 @@ function ordenarItems<T>(items: T[], config: { key: keyof T; direction: 'asc' | 
     const valB = config.key === 'movimientoSugerido' ? (b as any).movimientoSugerido.tipo : b[config.key];
     if (valA === undefined) return 1;
     if (valB === undefined) return -1;
-    if (typeof valA === 'string' && typeof valB === 'string') {
-      return config.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-    }
-    if (typeof valA === 'number' && typeof valB === 'number') {
-      return config.direction === 'asc' ? valA - valB : valB - valA;
-    }
+    if (typeof valA === 'string' && typeof valB === 'string') return config.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+    if (typeof valA === 'number' && typeof valB === 'number') return config.direction === 'asc' ? valA - valB : valB - valA;
     return 0;
   });
 }
@@ -52,21 +48,11 @@ export function useVistaResultados() {
 
     if (filtrosActivos.includes('con_datos')) items = items.filter((r) => r.cantidadSugerida > 0);
     if (filtrosActivos.includes('eliminar_sin_accion')) items = items.filter((r) => r.movimientoSugerido.tipo !== 'sin_accion');
-    
-    // Filtro: Sólo con stock en E.R. (tiene stock en E.R. de MP y/o PT)
     if (filtrosActivos.includes('solo_stock_er')) {
-      items = items.filter((r) => {
-        const tieneStockER = (r.stockMPEntreRios ?? 0) > 0 || r.productosUsados.some((p) => (p.stockPTEntreRios ?? 0) > 0);
-        return tieneStockER;
-      });
+      items = items.filter((r) => (r.stockMPEntreRios ?? 0) > 0 || r.productosUsados.some((p) => (p.stockPTEntreRios ?? 0) > 0));
     }
-
-    // Filtro: Sólo con stock en CABA (tiene stock en CABA de MP y/o PT)
     if (filtrosActivos.includes('solo_stock_caba')) {
-      items = items.filter((r) => {
-        const tieneStockCABA = (r.stockMPCABA ?? 0) > 0 || r.productosUsados.some((p) => (p.stockPTCABA ?? 0) > 0);
-        return tieneStockCABA;
-      });
+      items = items.filter((r) => (r.stockMPCABA ?? 0) > 0 || r.productosUsados.some((p) => (p.stockPTCABA ?? 0) > 0));
     }
 
     items = items.filter((r) => criticidades.includes(r.criticidad));
@@ -87,17 +73,9 @@ export function useVistaResultados() {
 
     if (analisisHierbas !== 'todos') {
       items = items.filter((r) => {
-        // 1. Debe usarse en al menos un PT de Hierbas (inicia con 07HIE)
-        const seUsaEnHierbasPT = r.productosUsados?.some((pt) => pt.codigoProducto.startsWith('07HIE'));
-        if (!seUsaEnHierbasPT) return false;
-
-        // 2. Filtrar por tipo de Materia Prima
-        if (analisisHierbas === 'hierbas') {
-          // Todo lo que no sea insumo de empaque (bolsa o etiqueta) se considera ingrediente/hierba
-          return !r.codigoMP.startsWith('00INSBO') && !r.codigoMP.startsWith('00INSET');
-        } else if (analisisHierbas === 'insumos') {
-          return r.codigoMP.startsWith('00INSBO') || r.codigoMP.startsWith('00INSET');
-        }
+        if (!r.productosUsados?.some((pt) => pt.codigoProducto.startsWith('07HIE'))) return false;
+        if (analisisHierbas === 'hierbas') return !r.codigoMP.startsWith('00INSBO') && !r.codigoMP.startsWith('00INSET');
+        if (analisisHierbas === 'insumos') return r.codigoMP.startsWith('00INSBO') || r.codigoMP.startsWith('00INSET');
         return true;
       });
     }
@@ -115,22 +93,8 @@ export function useVistaResultados() {
 
     if (filtrosActivos.includes('con_datos')) items = items.filter((r) => r.rotacion > 0);
     if (filtrosActivos.includes('eliminar_sin_accion')) items = items.filter((r) => r.movimientoSugerido.tipo !== 'sin_accion');
-    
-    // Filtro: Sólo con stock en E.R. (tiene stock en E.R. de PT)
-    if (filtrosActivos.includes('solo_stock_er')) {
-      items = items.filter((r) => {
-        const tieneStockER = (r.stockPTEntreRios ?? 0) > 0;
-        return tieneStockER;
-      });
-    }
-
-    // Filtro: Sólo con stock en CABA (tiene stock en CABA de PT)
-    if (filtrosActivos.includes('solo_stock_caba')) {
-      items = items.filter((r) => {
-        const tieneStockCABA = (r.stockPTCABA ?? 0) > 0;
-        return tieneStockCABA;
-      });
-    }
+    if (filtrosActivos.includes('solo_stock_er')) items = items.filter((r) => (r.stockPTEntreRios ?? 0) > 0);
+    if (filtrosActivos.includes('solo_stock_caba')) items = items.filter((r) => (r.stockPTCABA ?? 0) > 0);
 
     items = items.filter((r) => criticidades.includes(r.criticidad));
 
@@ -176,14 +140,8 @@ export function useVistaResultados() {
     if (!sup || !inf) return;
     let emisor: 'sup' | 'inf' | null = null;
 
-    const alHacerScrollSuperior = () => {
-      if (emisor === 'inf') { emisor = null; return; }
-      emisor = 'sup'; inf.scrollLeft = sup.scrollLeft;
-    };
-    const alHacerScrollInferior = () => {
-      if (emisor === 'sup') { emisor = null; return; }
-      emisor = 'inf'; sup.scrollLeft = inf.scrollLeft;
-    };
+    const alHacerScrollSuperior = () => { if (emisor === 'inf') { emisor = null; } else { emisor = 'sup'; inf.scrollLeft = sup.scrollLeft; } };
+    const alHacerScrollInferior = () => { if (emisor === 'sup') { emisor = null; } else { emisor = 'inf'; sup.scrollLeft = inf.scrollLeft; } };
 
     sup.addEventListener('scroll', alHacerScrollSuperior);
     inf.addEventListener('scroll', alHacerScrollInferior);

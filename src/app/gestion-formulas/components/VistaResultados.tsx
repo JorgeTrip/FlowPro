@@ -118,11 +118,19 @@ export default function VistaResultados() {
               <div className="flex items-center h-9">
                 <button
                   onClick={toggleModoMacro} type="button"
-                  className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    modoMacro ? 'bg-blue-600 dark:bg-blue-500' : 'bg-gray-200 dark:bg-gray-700'
+                  className={`relative inline-flex h-8 w-16 shrink-0 cursor-pointer rounded-full border border-gray-300 dark:border-gray-700 transition-colors duration-300 ease-in-out focus:outline-none select-none items-center ${
+                    modoMacro ? 'bg-blue-600 border-blue-600 dark:bg-blue-500 dark:border-blue-500' : 'bg-gray-150 dark:bg-[#2C2C2E]'
                   }`}
                 >
-                  <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition duration-200 ease-in-out ${modoMacro ? 'translate-x-4' : 'translate-x-0'}`} />
+                  <span className="absolute left-2.5 text-[10px] select-none pointer-events-none opacity-70">⚖️</span>
+                  <span className="absolute right-2.5 text-[10px] select-none pointer-events-none opacity-70">🛍️</span>
+                  <span
+                    className={`pointer-events-none flex items-center justify-center h-6 w-6 transform rounded-full bg-white shadow-md transition-all duration-300 ease-in-out ${
+                      modoMacro ? 'translate-x-9' : 'translate-x-1'
+                    }`}
+                  >
+                    <span className="text-[10px] select-none">{modoMacro ? '⚖️' : '🛍️'}</span>
+                  </span>
                 </button>
               </div>
               <Tooltip texto="Filtra productos que no terminen en 'K' y asume una relación de producción simplificada 1:1 (1 kg MP = 1 kg PT)." />
