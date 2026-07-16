@@ -40,6 +40,8 @@ export default function DropdownFiltrosPedidos({
   const opciones = [
     { id: 'eliminar_sin_accion', etiqueta: 'Eliminar Sin acción' },
     { id: 'con_datos', etiqueta: 'Productos con datos' },
+    { id: 'solo_stock_er', etiqueta: 'Sólo con stock en E.R.' },
+    { id: 'solo_stock_caba', etiqueta: 'Sólo con stock en CABA' },
   ];
 
   const cantidadActivos = filtrosActivos.length;
