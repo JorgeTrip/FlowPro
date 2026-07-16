@@ -113,7 +113,14 @@ export default function VistaResultados() {
             Re-importar Excel
           </button>
           <button
-            onClick={() => resultadosMRP && exportarExcelMRP(resultadosMRP, mesesProyeccionTransferencia, mesesProyeccionCompra)}
+            onClick={() => exportarExcelMRP(
+              {
+                propios: resultadosFiltradosPropios,
+                tercerizados: resultadosFiltradosTercerizados
+              },
+              mesesProyeccionTransferencia,
+              mesesProyeccionCompra
+            )}
             disabled={cargandoCalculo || !resultadosMRP}
             className="px-4 h-9 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-800 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
           >
