@@ -11,6 +11,7 @@ interface TablaProductosPropiosProps {
   getIndP: (k: keyof ResultadoMRP) => string;
   mesesProyeccionTransferencia: number;
   mesesProyeccionCompra: number;
+  modoMacro: boolean;
 }
 
 function BadgeCriticidad({ criticidad }: { criticidad: 'alta' | 'media' | 'baja' }) {
@@ -32,6 +33,7 @@ export function TablaProductosPropios({
   getIndP,
   mesesProyeccionTransferencia,
   mesesProyeccionCompra,
+  modoMacro,
 }: TablaProductosPropiosProps) {
   
   const clsExcelHeader = "sticky top-0 z-10 bg-gray-100 dark:bg-[#2C2C2E] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#3A3A3C] transition-colors";
@@ -53,14 +55,37 @@ export function TablaProductosPropios({
           <th onClick={() => solicitarOrdenPropios('codigoMP')} className={`${clsExcelHeader} px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer`}>Código MP{getIndP('codigoMP')}</th>
           <th onClick={() => solicitarOrdenPropios('descripcionMP')} className={`${clsExcelHeader} px-2.5 py-2 border-r border-gray-150 dark:border-gray-800 cursor-pointer`}>Descripción MP{getIndP('descripcionMP')}</th>
           <th onClick={() => solicitarOrdenPropios('unidadMedida')} className={`${clsExcelHeader} px-2.5 py-2 border-r border-gray-150 dark:border-gray-800`}>UM{getIndP('unidadMedida')}</th>
-          <th onClick={() => solicitarOrdenPropios('stockMPEntreRios')} className={`${clsVerdeHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer`}>Stock MP E.R.{getIndP('stockMPEntreRios')}</th>
-          <th onClick={() => solicitarOrdenPropios('stockMPCABA')} className={`${clsVioletaHeader} px-2.5 py-2 text-right border-r-2 border-gray-300 dark:border-gray-700 cursor-pointer`}>Stock MP CABA{getIndP('stockMPCABA')}</th>
+          
+          {!modoMacro && (
+            <>
+              <th onClick={() => solicitarOrdenPropios('stockMPEntreRios')} className={`${clsVerdeHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer`}>Stock MP E.R.{getIndP('stockMPEntreRios')}</th>
+              <th onClick={() => solicitarOrdenPropios('stockMPCABA')} className={`${clsVioletaHeader} px-2.5 py-2 text-right border-r-2 border-gray-300 dark:border-gray-700 cursor-pointer`}>Stock MP CABA{getIndP('stockMPCABA')}</th>
+            </>
+          )}
+
           <th className={`${clsExcelHeader} px-2.5 py-2 border-r border-gray-150 dark:border-gray-800`}>Código PT</th>
           <th className={`${clsExcelHeader} px-2.5 py-2 border-r border-gray-150 dark:border-gray-800`}>Descripción PT</th>
           <th className={`${clsNormalHeader} px-2.5 py-2 border-r border-gray-150 dark:border-gray-800`}>Línea</th>
-          <th className={`${clsNormalHeader} px-2.5 py-2 border-r border-gray-150 dark:border-gray-800`}>Planta</th>
-          <th className={`${clsVerdeHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>Stock PT E.R.</th>
-          <th className={`${clsVioletaHeader} px-2.5 py-2 text-right border-r-2 border-gray-300 dark:border-gray-700`}>Stock PT CABA</th>
+          
+          {modoMacro ? (
+            <>
+              {/* Grupo E.R. */}
+              <th onClick={() => solicitarOrdenPropios('stockMPEntreRios')} className={`${clsVerdeHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer`}>Stock MP E.R.{getIndP('stockMPEntreRios')}</th>
+              <th className={`${clsVerdeHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>Stock PT E.R.</th>
+              <th className={`${clsVerdeHeader} px-2.5 py-2 text-right border-r border-gray-300 dark:border-gray-700 font-bold`}>Total PT + MP E.R.</th>
+
+              {/* Grupo CABA */}
+              <th onClick={() => solicitarOrdenPropios('stockMPCABA')} className={`${clsVioletaHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer`}>Stock MP CABA{getIndP('stockMPCABA')}</th>
+              <th className={`${clsVioletaHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>Stock PT CABA</th>
+              <th className={`${clsVioletaHeader} px-2.5 py-2 text-right border-r-2 border-gray-300 dark:border-gray-700 font-bold`}>Total PT + MP CABA</th>
+            </>
+          ) : (
+            <>
+              <th className={`${clsVerdeHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>Stock PT E.R.</th>
+              <th className={`${clsVioletaHeader} px-2.5 py-2 text-right border-r-2 border-gray-300 dark:border-gray-700`}>Stock PT CABA</th>
+            </>
+          )}
+
           <th className={`${clsNormalHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>Rot. Mensual PT</th>
           <th className={`${clsNormalHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>Rot. {mesesProyeccionTransferencia}M PT (Transf.)</th>
           <th className={`${clsNormalHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>Rot. {mesesProyeccionCompra}M PT (Compra)</th>
@@ -80,14 +105,41 @@ export function TablaProductosPropios({
             <td className={`${clsExcelCell} px-2.5 py-2 font-mono font-semibold`}>{fila.codigoMP}</td>
             <td className={`${clsExcelCell} px-2.5 py-2 group relative cursor-help`}><div className="truncate max-w-[150px] text-ellipsis">{fila.descripcionMP}</div><Tooltip texto={fila.descripcionMP} /></td>
             <td className={`${clsExcelCell} px-2.5 py-2`}>{fila.unidadMedida}</td>
-            <td className={`${clsVerdeCell} px-2.5 py-2 text-right font-mono`}>{(fila.stockMPEntreRios ?? 0).toFixed(1)}</td>
-            <td className={`${clsVioletaCell} px-2.5 py-2 text-right font-mono border-r-2 border-gray-300 dark:border-gray-700`}>{(fila.stockMPCABA ?? 0).toFixed(1)}</td>
+            
+            {!modoMacro && (
+              <>
+                <td className={`${clsVerdeCell} px-2.5 py-2 text-right font-mono`}>{(fila.stockMPEntreRios ?? 0).toFixed(1)}</td>
+                <td className={`${clsVioletaCell} px-2.5 py-2 text-right font-mono border-r-2 border-gray-300 dark:border-gray-700`}>{(fila.stockMPCABA ?? 0).toFixed(1)}</td>
+              </>
+            )}
+
             <td className={`${clsExcelCell} px-2.5 py-2`}>{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{p.codigoProducto}</div>)}</td>
-            <td className={`${clsExcelCell} px-2.5 py-2`}>{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{p.descripcion}</div>)}</td>
+            <td className={`${clsExcelCell} px-2.5 py-2`}>{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px] truncate" title={p.descripcion}>{p.descripcion}</div>)}</td>
             <td className="px-2.5 py-2">{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{p.linea || '-'}</div>)}</td>
-            <td className="px-2.5 py-2 text-center">{fila.productosUsados?.map((p, i) => <div key={i} className="text-[9px] h-[15px] font-bold">{p.sitioFabricacion || '-'}</div>)}</td>
-            <td className={`${clsVerdeCell} px-2.5 py-2 text-right font-mono`}>{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{(p.stockPTEntreRios ?? 0).toFixed(1)}</div>)}</td>
-            <td className={`${clsVioletaCell} px-2.5 py-2 text-right font-mono border-r-2 border-gray-300 dark:border-gray-700`}>{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{(p.stockPTCABA ?? 0).toFixed(1)}</div>)}</td>
+            
+            {modoMacro ? (
+              <>
+                {/* Grupo E.R. */}
+                <td className={`${clsVerdeCell} px-2.5 py-2 text-right font-mono`}>{(fila.stockMPEntreRios ?? 0).toFixed(1)}</td>
+                <td className={`${clsVerdeCell} px-2.5 py-2 text-right font-mono`}>{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{(p.stockPTEntreRios ?? 0).toFixed(1)}</div>)}</td>
+                <td className={`${clsVerdeCell} px-2.5 py-2 text-right font-mono border-r border-gray-300 dark:border-gray-700 font-semibold`}>
+                  {fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{((fila.stockMPEntreRios ?? 0) + (p.stockPTEntreRios ?? 0)).toFixed(1)}</div>)}
+                </td>
+
+                {/* Grupo CABA */}
+                <td className={`${clsVioletaCell} px-2.5 py-2 text-right font-mono`}>{(fila.stockMPCABA ?? 0).toFixed(1)}</td>
+                <td className={`${clsVioletaCell} px-2.5 py-2 text-right font-mono`}>{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{(p.stockPTCABA ?? 0).toFixed(1)}</div>)}</td>
+                <td className={`${clsVioletaCell} px-2.5 py-2 text-right font-mono border-r-2 border-gray-300 dark:border-gray-700 font-semibold`}>
+                  {fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{((fila.stockMPCABA ?? 0) + (p.stockPTCABA ?? 0)).toFixed(1)}</div>)}
+                </td>
+              </>
+            ) : (
+              <>
+                <td className={`${clsVerdeCell} px-2.5 py-2 text-right font-mono`}>{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{(p.stockPTEntreRios ?? 0).toFixed(1)}</div>)}</td>
+                <td className={`${clsVioletaCell} px-2.5 py-2 text-right font-mono border-r-2 border-gray-300 dark:border-gray-700`}>{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{(p.stockPTCABA ?? 0).toFixed(1)}</div>)}</td>
+              </>
+            )}
+
             <td className="px-2.5 py-2 text-right font-mono">{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{(p.rotacionMensual ?? 0).toFixed(1)}</div>)}</td>
             <td className="px-2.5 py-2 text-right font-mono">{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{((p.rotacionMensual ?? 0) * mesesProyeccionTransferencia).toFixed(1)}</div>)}</td>
             <td className="px-2.5 py-2 text-right font-mono">{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{((p.rotacionMensual ?? 0) * mesesProyeccionCompra).toFixed(1)}</div>)}</td>

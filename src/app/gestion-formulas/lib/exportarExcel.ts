@@ -39,7 +39,7 @@ export async function exportarExcelMRP(
     }
 
     // 1. Hoja de Productos Propios (Agrupados y alineados verticalmente arriba)
-    agregarHojaProductosPropios(wb, propios, mesesTransferencia, mesesCompra);
+    agregarHojaProductosPropios(wb, propios, mesesTransferencia, mesesCompra, modoMacro);
 
     // 2. Hoja de Materias Primas (Una fila única por MP para tablas dinámicas limpias)
     agregarHojaMateriasPrimas(wb, propios, mesesTransferencia, mesesCompra);

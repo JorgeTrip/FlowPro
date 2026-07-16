@@ -179,6 +179,7 @@ export default function VistaResultados() {
               <TablaProductosPropios
                 resultadosFiltradosPropios={resultadosFiltradosPropios} solicitarOrdenPropios={solicitarOrdenPropios} getIndP={getIndP}
                 mesesProyeccionTransferencia={mesesProyeccionTransferencia} mesesProyeccionCompra={mesesProyeccionCompra}
+                modoMacro={modoMacro}
               />
             ) : (
               <TablaProductosTercerizados
