@@ -33,7 +33,7 @@ export function useVistaResultados() {
     if (store.analisisSemielaborados !== esSemi) {
       store.toggleAnalisisSemielaborados();
     }
-  }, [tipoAnalisis, store.analisisSemielaborados, store.toggleAnalisisSemielaborados]);
+  }, [tipoAnalisis, store]);
 
   const [sortPropios, setSortPropios] = useState<{ key: keyof ResultadoMRP; direction: 'asc' | 'desc' } | null>(null);
   const [sortTercerizados, setSortTercerizados] = useState<{ key: keyof ResultadoTercerizadosMRP; direction: 'asc' | 'desc' } | null>(null);

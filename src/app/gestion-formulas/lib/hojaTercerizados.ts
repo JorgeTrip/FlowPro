@@ -1,7 +1,7 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 import * as ExcelJS from 'exceljs';
 import { ResultadoTercerizadosMRP } from './types';
-import { borderFino, aplicarBordesExternos, formatearHeaders } from './excelEstilos';
+import { borderFino, aplicarBordesExternos } from './excelEstilos';
 
 /**
  * Agrega la hoja de "Productos Tercerizados" si existen registros.

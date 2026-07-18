@@ -1,7 +1,7 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 import * as ExcelJS from 'exceljs';
 import { ResultadoMRP } from './types';
-import { borderFino, aplicarBordesExternos, formatearHeaders } from './excelEstilos';
+import { borderFino, aplicarBordesExternos } from './excelEstilos';
 
 /**
  * Agrega la hoja de "Relación MP - PT" desglosada y plana, ideal para ordenamiento y tablas dinámicas.
