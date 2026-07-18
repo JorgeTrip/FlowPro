@@ -141,6 +141,12 @@ export default function UploadStep() {
                 <span className={`w-2.5 h-2.5 rounded-full ${store.datosCrudosConsumo.length > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
                 <span className="text-gray-700 dark:text-gray-300">Consumos: {store.datosCrudosConsumo.length}</span>
               </div>
+              {store.datosCrudosRotacionSemiElab.length > 0 && (
+                <div className="flex items-center space-x-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                  <span className="text-gray-700 dark:text-gray-300">Rotación Semi: {store.datosCrudosRotacionSemiElab.length}</span>
+                </div>
+              )}
               <div className="flex items-center space-x-1.5">
                 <span className={`w-2.5 h-2.5 rounded-full ${store.datosCrudosStockPT.length > 0 ? 'bg-green-500' : 'bg-amber-500'}`} />
                 <span className="text-gray-700 dark:text-gray-300">Maestro PT: {store.datosCrudosStockPT.length}</span>

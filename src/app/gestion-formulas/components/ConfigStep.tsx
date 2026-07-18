@@ -34,6 +34,7 @@ export default function ConfigStep() {
     },
     consumo: { codigoProducto: '', anio: '', mes: '', cantidadConsumida: '' },
     stockPT: { codigo: '', descripcion: '', descripcionAdicional: '' },
+    consumoSemi: { codigoProducto: '', anio: '', mes: '', cantidadConsumida: '' },
   });
 
   useEffect(() => {
@@ -41,6 +42,7 @@ export default function ConfigStep() {
     const sCols = store.columnasStock;
     const cCols = store.columnasConsumo;
     const ptCols = store.columnasStockPT;
+    const csCols = store.columnasRotacionSemiElab;
 
     setMapeoLocal({
       formulas: {
@@ -71,8 +73,14 @@ export default function ConfigStep() {
         descripcion: buscarCoincidenciaColumna(ptCols, ['DESCRIPCIÓN', 'descripcion', 'desc', 'detalle', 'nombre']),
         descripcionAdicional: buscarCoincidenciaColumna(ptCols, ['DESCRIPCIÓN ADICIONAL', 'adicional', 'presentacion', 'contenido']),
       },
+      consumoSemi: {
+        codigoProducto: buscarCoincidenciaColumna(csCols, ['CÓDIGO', 'codigo', 'articulo', 'producto']),
+        anio: buscarCoincidenciaColumna(csCols, ['anio', 'año', 'periodo']),
+        mes: buscarCoincidenciaColumna(csCols, ['mes', 'periodo_mes']),
+        cantidadConsumida: buscarCoincidenciaColumna(csCols, ['ROTACIÓN MENSUAL', 'ROTACION SEMI ELAB', 'rotacion', 'rotación', 'consumo', 'cantidad']),
+      },
     });
-  }, [store.columnasFormulas, store.columnasStock, store.columnasConsumo, store.columnasStockPT]);
+  }, [store.columnasFormulas, store.columnasStock, store.columnasConsumo, store.columnasStockPT, store.columnasRotacionSemiElab]);
 
   const handleConfirmar = async () => {
     store.setConfiguracionMapeo({
@@ -81,6 +89,7 @@ export default function ConfigStep() {
       productos: null,
       consumo: mapeoLocal.consumo,
       stockPT: store.datosCrudosStockPT.length > 0 ? mapeoLocal.stockPT : null,
+      consumoSemi: store.datosCrudosRotacionSemiElab.length > 0 ? mapeoLocal.consumoSemi : null,
     });
     procesarConfirmacion();
   };
@@ -89,7 +98,8 @@ export default function ConfigStep() {
   const stockReady = mapeoLocal.stock.codigoProducto && mapeoLocal.stock.deposito && mapeoLocal.stock.stockFisico;
   const consumoReady = mapeoLocal.consumo.codigoProducto && mapeoLocal.consumo.cantidadConsumida;
   const stockPTReady = store.datosCrudosStockPT.length > 0 ? (mapeoLocal.stockPT.codigo && mapeoLocal.stockPT.descripcion) : true;
-  const listoParaImportar = formulasReady && stockReady && consumoReady && stockPTReady;
+  const consumoSemiReady = store.datosCrudosRotacionSemiElab.length > 0 ? (mapeoLocal.consumoSemi.codigoProducto && mapeoLocal.consumoSemi.cantidadConsumida) : true;
+  const listoParaImportar = formulasReady && stockReady && consumoReady && stockPTReady && consumoSemiReady;
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto text-xs">
@@ -141,6 +151,20 @@ export default function ConfigStep() {
             </div>
             <DataPreviewTable previewData={store.previewConsumo} columns={store.columnasConsumo} title="Datos de Consumo" columnasMapeadas={Object.values(mapeoLocal.consumo)} />
           </div>
+          {/* Consumos Semielaborados */}
+          {store.datosCrudosRotacionSemiElab.length > 0 && (
+            <div className="p-4 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-gray-800 shadow-sm space-y-4">
+              <h3 className="text-sm font-bold text-gray-800 dark:text-white flex items-center">
+                <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs mr-2 font-bold font-mono">3B</span>
+                Consumo Semielaborados (Rotación)
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <SelectorMapeo label="Código Producto" columnas={store.columnasRotacionSemiElab} value={mapeoLocal.consumoSemi.codigoProducto} onChange={(v) => setMapeoLocal((prev) => ({ ...prev, consumoSemi: { ...prev.consumoSemi, codigoProducto: v } }))} requerido />
+                <SelectorMapeo label="Rotación Mensual" columnas={store.columnasRotacionSemiElab} value={mapeoLocal.consumoSemi.cantidadConsumida} onChange={(v) => setMapeoLocal((prev) => ({ ...prev, consumoSemi: { ...prev.consumoSemi, cantidadConsumida: v } }))} requerido />
+              </div>
+              <DataPreviewTable previewData={store.previewRotacionSemiElab} columns={store.columnasRotacionSemiElab} title="Datos de Consumo Semielaborados" columnasMapeadas={Object.values(mapeoLocal.consumoSemi)} />
+            </div>
+          )}
 
           {/* Maestro PT (STOCK PT) */}
           {store.datosCrudosStockPT.length > 0 && (

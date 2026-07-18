@@ -168,6 +168,7 @@ export interface ConfiguracionMapeoFormulas {
   stock: MapeoStock | null;
   consumo: MapeoConsumo | null;
   stockPT: MapeoStockPT | null;
+  consumoSemi?: MapeoConsumo | null;
 }
 
 /**

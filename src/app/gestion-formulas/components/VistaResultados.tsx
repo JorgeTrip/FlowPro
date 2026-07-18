@@ -8,8 +8,8 @@ import DropdownFiltrosPedidos from './DropdownFiltrosPedidos';
 import DropdownCriticidad from './DropdownCriticidad';
 import DropdownMovimientos from './DropdownMovimientos';
 import DropdownLinea from './DropdownLinea';
-import DropdownAnalisisHierbas from './DropdownAnalisisHierbas';
-import * as Select from '@radix-ui/react-select';
+import DropdownTipoAnalisis from './DropdownTipoAnalisis';
+import SelectorMeses from './SelectorMeses';
 import { TablaProductosPropios } from './TablaProductosPropios';
 import { TablaProductosTercerizados } from './TablaProductosTercerizados';
 
@@ -20,38 +20,13 @@ export default function VistaResultados() {
     mesesProyeccionTransferencia, mesesProyeccionCompra, setMesesProyeccionTransferencia, setMesesProyeccionCompra,
     scrollSuperiorRef, scrollInferiorRef, anchoScroll, resultadosFiltradosPropios, resultadosFiltradosTercerizados,
     cargandoCalculo, resultadosMRP, pestañaActiva, setPestañaActiva, setStep, sortPropios, solicitarOrdenPropios,
-    sortTercerizados, solicitarOrdenTercerizados, analisisHierbas, setAnalisisHierbas, modoMacro, toggleModoMacro
+    sortTercerizados, solicitarOrdenTercerizados, tipoAnalisis, setTipoAnalisis, modoMacro, toggleModoMacro
   } = useVistaResultados();
 
   const getIndP = (k: any) => (sortPropios && sortPropios.key === k) ? (sortPropios.direction === 'asc' ? ' ▲' : ' ▼') : '';
   const getIndT = (k: any) => (sortTercerizados && sortTercerizados.key === k) ? (sortTercerizados.direction === 'asc' ? ' ▲' : ' ▼') : '';
 
-  const renderSelectorMeses = (titulo: string, valor: number, setValor: (v: number) => void) => (
-    <div className="flex flex-col">
-      <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">{titulo}</span>
-      <Select.Root value={String(valor)} onValueChange={(val) => setValor(Number(val))}>
-        <Select.Trigger className="flex items-center justify-between h-9 w-36 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#2C2C2E] text-xs text-gray-700 dark:text-gray-300 px-3 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-sm hover:border-gray-400 transition-all">
-          <Select.Value />
-          <Select.Icon className="text-gray-400 text-[10px]">▼</Select.Icon>
-        </Select.Trigger>
-        <Select.Portal>
-          <Select.Content className="overflow-hidden bg-white dark:bg-[#2C2C2E] rounded-lg shadow-lg border border-gray-200 dark:border-gray-800 z-50">
-            <Select.Viewport className="p-1">
-              {[1, 2, 3, 4, 5, 6].map((mes) => (
-                <Select.Item
-                  key={mes} value={String(mes)}
-                  className="relative flex items-center h-8 pl-8 pr-4 text-xs text-gray-700 dark:text-gray-300 rounded-md select-none focus:bg-blue-600 focus:text-white dark:focus:bg-blue-500 cursor-pointer outline-none transition-colors"
-                >
-                  <span className="absolute left-2.5 flex items-center justify-center"><Select.ItemIndicator>✓</Select.ItemIndicator></span>
-                  <Select.ItemText>{mes} {mes === 1 ? 'Mes' : 'Meses'}</Select.ItemText>
-                </Select.Item>
-              ))}
-            </Select.Viewport>
-          </Select.Content>
-        </Select.Portal>
-      </Select.Root>
-    </div>
-  );
+  // SelectorMeses se extrajo a su propio componente para modularidad y mantener el archivo < 200 líneas
 
   return (
     <div className="space-y-6 w-full">
@@ -100,18 +75,18 @@ export default function VistaResultados() {
           {/* Separador */}
           <div className="self-end h-9 w-px bg-gray-200 dark:bg-gray-700 mx-1.5" />
 
-          {/* Grupo 2: Análisis de Hierbas (solo en pestaña Propios) */}
+          {/* Grupo 2: Tipo de Análisis (solo en pestaña Propios) */}
           {pestañaActiva === 'propios' && (
             <>
-              <DropdownAnalisisHierbas analisisHierbas={analisisHierbas} setAnalisisHierbas={setAnalisisHierbas} />
+              <DropdownTipoAnalisis tipoAnalisis={tipoAnalisis} setTipoAnalisis={setTipoAnalisis} />
               <div className="self-end h-9 w-px bg-gray-200 dark:bg-gray-700 mx-1.5" />
             </>
           )}
 
           {/* Grupo 3: Proyección de meses + Switch Modo Mayorista */}
           <div className="flex items-end gap-3.5">
-            {renderSelectorMeses("Meses de Transferencia", mesesProyeccionTransferencia, setMesesProyeccionTransferencia)}
-            {renderSelectorMeses("Meses de Compra", mesesProyeccionCompra, setMesesProyeccionCompra)}
+            <SelectorMeses titulo="Meses de Transferencia" valor={mesesProyeccionTransferencia} setValor={setMesesProyeccionTransferencia} />
+            <SelectorMeses titulo="Meses de Compra" valor={mesesProyeccionCompra} setValor={setMesesProyeccionCompra} />
 
             <div className="flex flex-col relative group select-none">
               <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Modo Mayorista (Kilos)</span>

@@ -29,11 +29,17 @@ export function calcularMRPPropios(
   mesesTransferencia: number,
   mesesCompra: number,
   reglasPrefijos: ReglaPrefijo[],
-  modoMacro: boolean = false
+  modoMacro: boolean = false,
+  analisisSemielaborados: boolean = false
 ): ResultadoMRP[] {
   let recetasActivas = formulas.filter((f) => f.estado === 'activa');
   if (modoMacro) {
     recetasActivas = recetasActivas.filter((f) => f.codigoProducto.toLowerCase().endsWith('k'));
+  }
+  if (analisisSemielaborados) {
+    recetasActivas = recetasActivas.filter((f) => f.codigoProducto.toUpperCase().startsWith('00SEM'));
+  } else {
+    recetasActivas = recetasActivas.filter((f) => !f.codigoProducto.toUpperCase().startsWith('00SEM'));
   }
   const productosMap = new Map(productos.map((p) => [p.codigo, p]));
   const stockPTMap = new Map(stockPT.map((s) => [s.codigo, s]));

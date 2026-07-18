@@ -46,9 +46,10 @@ export function GoogleDriveSection() {
   // Indicadores de carga en tiempo real para Stock y Rotación
   const stockCargado = store.datosCrudosStock.length;
   const consumoCargado = store.datosCrudosConsumo.length;
+  const rotacionSemiElabCargada = store.datosCrudosRotacionSemiElab.length;
   const stockPTCargado = store.datosCrudosStockPT.length;
   
-  const statusStock = (stockCargado > 0 || consumoCargado > 0 || stockPTCargado > 0) ? (
+  const statusStock = (stockCargado > 0 || consumoCargado > 0 || rotacionSemiElabCargada > 0 || stockPTCargado > 0) ? (
     <div className="space-y-1.5 p-2.5 rounded-lg bg-green-500/10 border border-green-500/20 shadow-sm text-xs font-semibold">
       {stockCargado > 0 && (
         <div className="flex items-center space-x-2 text-green-700 dark:text-green-400">
@@ -60,6 +61,12 @@ export function GoogleDriveSection() {
         <div className="flex items-center space-x-2 text-green-700 dark:text-green-400">
           <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
           <span>Consumo Mensual: {consumoCargado.toLocaleString()} filas</span>
+        </div>
+      )}
+      {rotacionSemiElabCargada > 0 && (
+        <div className="flex items-center space-x-2 text-green-700 dark:text-green-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+          <span>Rotación Semielaborados: {rotacionSemiElabCargada.toLocaleString()} filas</span>
         </div>
       )}
       {stockPTCargado > 0 && (
@@ -101,7 +108,7 @@ export function GoogleDriveSection() {
 
         <VinculadorFuente
           titulo="Stock y Rotación"
-          descripcion="Hojas: BASE DE DATOS ROTACIÓN MENSUAL y BASE DE DATOS STOCK"
+          descripcion="Hojas: BASE DE DATOS ROTACIÓN MENSUAL, BASE DE DATOS STOCK y ROTACION SEMI ELAB"
           urlGuardada={store.urlGoogleDriveStock}
           onGuardarUrl={store.setUrlGoogleDriveStock}
           onCambiarEnlace={limpiarEstado}

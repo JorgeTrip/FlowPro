@@ -77,6 +77,7 @@ export function useGoogleDriveSync() {
       const hojaRotacion = hojas.find((h) => h.toUpperCase() === 'BASE DE DATOS ROTACIÓN MENSUAL');
       const hojaStock = hojas.find((h) => h.toUpperCase() === 'BASE DE DATOS STOCK');
       const hojaStockPT = hojas.find((h) => h.toUpperCase() === 'BASE DE DATOS STOCK PT' || h.toUpperCase() === 'STOCK PT');
+      const hojaRotacionSemiElab = hojas.find((h) => h.toUpperCase() === 'ROTACION SEMI ELAB');
 
       if (!hojaStock) throw new Error('No se encontró la hoja obligatoria "BASE DE DATOS STOCK" en la planilla de Drive.');
       if (!hojaRotacion) throw new Error('No se encontró la hoja obligatoria "BASE DE DATOS ROTACIÓN MENSUAL" en la planilla de Drive.');
@@ -89,7 +90,22 @@ export function useGoogleDriveSync() {
       });
 
       if (hojaStock) await procesarYGuardarHoja(archivo, hojaStock, 'stock');
-      if (hojaRotacion) await procesarYGuardarHoja(archivo, hojaRotacion, 'consumo');
+      
+      if (hojaRotacion) {
+        const { data: dataConsumo, columns: colsConsumo, previewData: prevConsumo } = await procesarHojaEspecifica(archivo, hojaRotacion);
+        store.setDatosCrudosConsumo(dataConsumo, colsConsumo, prevConsumo);
+      }
+
+      if (hojaRotacionSemiElab) {
+        try {
+          const { data: dataSemi, columns: colsSemi, previewData: prevSemi } = await procesarHojaEspecifica(archivo, hojaRotacionSemiElab);
+          store.setDatosCrudosRotacionSemiElab(dataSemi, colsSemi, prevSemi);
+          console.log(`[useGoogleDriveSync] Se cargaron ${dataSemi.length} registros de 'ROTACION SEMI ELAB'.`);
+        } catch (errSemi) {
+          console.error("Error al procesar la hoja ROTACION SEMI ELAB:", errSemi);
+        }
+      }
+
       if (hojaStockPT) await procesarYGuardarHoja(archivo, hojaStockPT, 'stockPT');
 
       // Buscar e importar prefijos si existe la solapa en la planilla de Stock

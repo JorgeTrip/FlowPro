@@ -46,6 +46,7 @@ export function useProcesarImportacion() {
         datosCrudosFormulas,
         datosCrudosStock,
         datosCrudosConsumo,
+        datosCrudosRotacionSemiElab,
         datosCrudosStockPT,
         configuracionMapeo,
         formulas: formulasActuales,
@@ -63,10 +64,16 @@ export function useProcesarImportacion() {
       const formulasExcel = mapearFormulas(datosCrudosFormulas, configuracionMapeo.formulas);
       const stockProcesado = mapearStock(datosCrudosStock, configuracionMapeo.stock);
       
-      const consumosProcesados =
+      const consumosNormales =
         datosCrudosConsumo.length > 0 && configuracionMapeo.consumo
           ? mapearConsumo(datosCrudosConsumo, configuracionMapeo.consumo)
           : [];
+      const mapeoConsumoSemi = configuracionMapeo.consumoSemi || configuracionMapeo.consumo;
+      const consumosSemi =
+        datosCrudosRotacionSemiElab.length > 0 && mapeoConsumoSemi
+          ? mapearConsumo(datosCrudosRotacionSemiElab, mapeoConsumoSemi)
+          : [];
+      const consumosProcesados = [...consumosNormales, ...consumosSemi];
 
       const stockPTProcesado =
         datosCrudosStockPT.length > 0 && configuracionMapeo.stockPT

@@ -2,17 +2,25 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { TipoAnalisisHierbas } from '../hooks/useVistaResultados';
+import { TipoAnalisis } from '../hooks/useVistaResultados';
 
-interface DropdownAnalisisHierbasProps {
-  analisisHierbas: TipoAnalisisHierbas;
-  setAnalisisHierbas: (opcion: TipoAnalisisHierbas) => void;
+interface DropdownTipoAnalisisProps {
+  tipoAnalisis: TipoAnalisis;
+  setTipoAnalisis: (opcion: TipoAnalisis) => void;
 }
 
-export default function DropdownAnalisisHierbas({
-  analisisHierbas,
-  setAnalisisHierbas,
-}: DropdownAnalisisHierbasProps) {
+/**
+ * Componente DropdownTipoAnalisis
+ *
+ * Su responsabilidad es permitir al usuario filtrar los resultados MRP propios
+ * por categorías (Hierbas, Insumos) o activar el análisis de productos semielaborados.
+ * Se unifica aquí toda la lógica de filtrado por tipo de análisis para mantener la UI
+ * minimalista y limpia, reduciendo el ruido visual de controles separados.
+ */
+export default function DropdownTipoAnalisis({
+  tipoAnalisis,
+  setTipoAnalisis,
+}: DropdownTipoAnalisisProps) {
   const [abierto, setAbierto] = useState(false);
   const refContenedor = useRef<HTMLDivElement>(null);
 
@@ -34,16 +42,19 @@ export default function DropdownAnalisisHierbas({
     { id: 'todos' as const, etiqueta: '🌿 Desactivado (Ver todo)' },
     { id: 'hierbas' as const, etiqueta: '🍃 Solo Hierbas (MP)' },
     { id: 'insumos' as const, etiqueta: '📦 Solo Insumos (Bolsas + Etiq.)' },
+    { id: 'semielaborados' as const, etiqueta: '⚙ Solo Semielaborados (Explorar componentes)' },
   ];
 
   const obtenerEtiquetaBoton = () => {
-    switch (analisisHierbas) {
+    switch (tipoAnalisis) {
       case 'hierbas':
         return 'Análisis: Hierbas';
       case 'insumos':
         return 'Análisis: Insumos';
+      case 'semielaborados':
+        return 'Análisis: Semielaborados';
       default:
-        return 'Análisis Hierbas';
+        return 'Tipo de análisis';
     }
   };
 
@@ -52,19 +63,19 @@ export default function DropdownAnalisisHierbas({
       <button
         onClick={() => setAbierto(!abierto)}
         type="button"
-        className="px-4 h-9 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#2C2C2E] hover:bg-gray-50 dark:hover:bg-[#3A3A3C] text-xs font-bold text-gray-700 dark:text-gray-200 transition-all flex items-center space-x-2 cursor-pointer shadow-sm"
+        className="px-4 h-9 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#2C2C2E] hover:bg-gray-50 dark:hover:bg-[#3A3A3C] text-xs font-bold text-gray-700 dark:text-gray-200 transition-all flex items-center space-x-2 cursor-pointer shadow-sm animate-fade-in"
       >
         <span>{obtenerEtiquetaBoton()}</span>
-        {analisisHierbas !== 'todos' && (
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+        {tipoAnalisis !== 'todos' && (
+          <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)] animate-pulse" />
         )}
         <span className="text-[10px] text-gray-400">▼</span>
       </button>
 
       {abierto && (
-        <div className="absolute left-0 mt-1.5 w-60 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-250 dark:border-gray-800 shadow-lg p-2.5 z-30 space-y-1 transition-all animate-in fade-in slide-in-from-top-1 duration-100">
+        <div className="absolute left-0 mt-1.5 w-64 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-250 dark:border-gray-800 shadow-lg p-2.5 z-30 space-y-1 transition-all animate-in fade-in slide-in-from-top-1 duration-100">
           <h3 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider px-2 py-1 select-none">
-            Análisis de Hierbas PT
+            Tipo de análisis PT
           </h3>
           <div className="space-y-0.5">
             {opciones.map((op) => (
@@ -72,11 +83,11 @@ export default function DropdownAnalisisHierbas({
                 key={op.id}
                 type="button"
                 onClick={() => {
-                  setAnalisisHierbas(op.id);
+                  setTipoAnalisis(op.id);
                   setAbierto(false);
                 }}
                 className={`w-full text-left flex items-center space-x-2 px-2.5 py-1.5 rounded-lg cursor-pointer transition-colors text-xs font-semibold ${
-                  analisisHierbas === op.id
+                  tipoAnalisis === op.id
                     ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#2C2C2E]/40'
                 }`}

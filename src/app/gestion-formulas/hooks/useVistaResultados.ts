@@ -17,7 +17,7 @@ function ordenarItems<T>(items: T[], config: { key: keyof T; direction: 'asc' | 
   });
 }
 
-export type TipoAnalisisHierbas = 'todos' | 'hierbas' | 'insumos';
+export type TipoAnalisis = 'todos' | 'hierbas' | 'insumos' | 'semielaborados';
 
 export function useVistaResultados() {
   const store = useGestionFormulasStore();
@@ -26,7 +26,14 @@ export function useVistaResultados() {
   const [criticidades, setCriticidades] = useState<string[]>(['alta', 'media', 'baja']);
   const [movimientosFiltrados, setMovimientosFiltrados] = useState<string[]>([]);
   const [lineasFiltradas, setLineasFiltradas] = useState<string[]>([]);
-  const [analisisHierbas, setAnalisisHierbas] = useState<TipoAnalisisHierbas>('todos');
+  const [tipoAnalisis, setTipoAnalisis] = useState<TipoAnalisis>('todos');
+
+  useEffect(() => {
+    const esSemi = tipoAnalisis === 'semielaborados';
+    if (store.analisisSemielaborados !== esSemi) {
+      store.toggleAnalisisSemielaborados();
+    }
+  }, [tipoAnalisis, store.analisisSemielaborados, store.toggleAnalisisSemielaborados]);
 
   const [sortPropios, setSortPropios] = useState<{ key: keyof ResultadoMRP; direction: 'asc' | 'desc' } | null>(null);
   const [sortTercerizados, setSortTercerizados] = useState<{ key: keyof ResultadoTercerizadosMRP; direction: 'asc' | 'desc' } | null>(null);
@@ -71,11 +78,11 @@ export function useVistaResultados() {
       items = items.filter((r) => r.productosUsados.some((p) => p.linea && lineasFiltradas.includes(p.linea)));
     }
 
-    if (analisisHierbas !== 'todos') {
+    if (tipoAnalisis !== 'todos' && tipoAnalisis !== 'semielaborados') {
       items = items.filter((r) => {
         if (!r.productosUsados?.some((pt) => pt.codigoProducto.startsWith('07HIE'))) return false;
-        if (analisisHierbas === 'hierbas') return !r.codigoMP.startsWith('00INSBO') && !r.codigoMP.startsWith('00INSET');
-        if (analisisHierbas === 'insumos') return r.codigoMP.startsWith('00INSBO') || r.codigoMP.startsWith('00INSET');
+        if (tipoAnalisis === 'hierbas') return !r.codigoMP.startsWith('00INSBO') && !r.codigoMP.startsWith('00INSET');
+        if (tipoAnalisis === 'insumos') return r.codigoMP.startsWith('00INSBO') || r.codigoMP.startsWith('00INSET');
         return true;
       });
     }
@@ -86,7 +93,7 @@ export function useVistaResultados() {
     }
 
     return ordenarItems(items, sortPropios);
-  }, [store.resultadosMRP?.propios, busqueda, filtrosActivos, sortPropios, criticidades, movimientosFiltrados, lineasFiltradas, analisisHierbas]);
+  }, [store.resultadosMRP?.propios, busqueda, filtrosActivos, sortPropios, criticidades, movimientosFiltrados, lineasFiltradas, tipoAnalisis]);
 
   const resultadosFiltradosTercerizados = useMemo(() => {
     let items = store.resultadosMRP?.tercerizados || [];
@@ -121,7 +128,7 @@ export function useVistaResultados() {
   useEffect(() => {
     store.ejecutarCalculoMRP(store.mesesProyeccionTransferencia, store.mesesProyeccionCompra);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store.mesesProyeccionTransferencia, store.mesesProyeccionCompra, store.modoMacro]);
+  }, [store.mesesProyeccionTransferencia, store.mesesProyeccionCompra, store.modoMacro, store.analisisSemielaborados]);
 
   const activeListLength = store.pestañaActiva === 'propios' ? resultadosFiltradosPropios.length : resultadosFiltradosTercerizados.length;
 
@@ -162,7 +169,7 @@ export function useVistaResultados() {
     scrollSuperiorRef, scrollInferiorRef, anchoScroll, resultadosFiltradosPropios, resultadosFiltradosTercerizados,
     cargandoCalculo: store.cargandoCalculo, resultadosMRP: store.resultadosMRP, pestañaActiva: store.pestañaActiva,
     setPestañaActiva: store.setPestañaActiva, setStep: store.setStep, sortPropios, solicitarOrdenPropios, sortTercerizados, solicitarOrdenTercerizados,
-    analisisHierbas, setAnalisisHierbas,
+    tipoAnalisis, setTipoAnalisis,
     modoMacro: store.modoMacro, toggleModoMacro: store.toggleModoMacro,
   };
 }
