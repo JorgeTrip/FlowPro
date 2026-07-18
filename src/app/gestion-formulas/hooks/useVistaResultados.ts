@@ -89,7 +89,17 @@ export function useVistaResultados() {
 
     if (busqueda.trim()) {
       const term = busqueda.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      items = items.filter((r) => r.codigoMP.toLowerCase().includes(term) || r.descripcionMP.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(term));
+      items = items.filter((r) => {
+        const coincideMP = r.codigoMP.toLowerCase().includes(term) ||
+          r.descripcionMP.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(term);
+        
+        const coincidePT = r.productosUsados?.some((pt) =>
+          pt.codigoProducto.toLowerCase().includes(term) ||
+          pt.descripcion.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(term)
+        );
+        
+        return coincideMP || coincidePT;
+      });
     }
 
     return ordenarItems(items, sortPropios);
