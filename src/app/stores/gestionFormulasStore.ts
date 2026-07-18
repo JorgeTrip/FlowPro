@@ -24,7 +24,7 @@ export interface GestionFormulasState {
   setArchivoProductos: (file: File | null) => void; setArchivoFormulas: (file: File | null) => void; setArchivoStock: (file: File | null) => void; setArchivoConsumo: (file: File | null) => void; setArchivoStockPT: (file: File | null) => void;
   setDatosCrudosProductos: (data: any[], cols: string[], preview: any[]) => void; setDatosCrudosFormulas: (data: any[], cols: string[], preview: any[]) => void; setDatosCrudosStock: (data: any[], cols: string[], preview: any[]) => void; setDatosCrudosConsumo: (data: any[], cols: string[], preview: any[]) => void; setDatosCrudosStockPT: (data: any[], cols: string[], preview: any[]) => void; setDatosCrudosRotacionSemiElab: (data: any[], cols: string[], preview: any[]) => void;
   setStep: (step: number) => void; setPestañaActiva: (pest: 'propios' | 'tercerizados') => void; setProductos: (productos: Producto[]) => void; setFormulas: (formulas: Formula[]) => void; setStocks: (stocks: StockPorDeposito[]) => void; setConsumos: (consumos: ConsumoMensual[]) => void; setStockPT: (stockPT: ProductoTerminadoMaestro[]) => void; setConfiguracionMapeo: (mapeo: Partial<ConfiguracionMapeoFormulas>) => void; setIsLoading: (isLoading: boolean) => void; setError: (error: string | null) => void; setFormulasClasificadas: (clasificadas: any) => void;
-  ejecutarCalculoMRP: (mesesTransferencia?: number, mesesCompra?: number) => Promise<void>; guardarImportacionConfirmada: () => void; limpiarDatos: () => void; reset: () => void;
+  ejecutarCalculoMRP: (mesesTransferencia?: number, mesesCompra?: number, lineasFiltradas?: string[]) => Promise<void>; guardarImportacionConfirmada: () => void; limpiarDatos: () => void; reset: () => void;
   urlGoogleDriveFormulas: string | null; urlGoogleDriveStock: string | null; setUrlGoogleDriveFormulas: (url: string | null) => void; setUrlGoogleDriveStock: (url: string | null) => void;
   mesesProyeccionTransferencia: number; mesesProyeccionCompra: number; setMesesProyeccionTransferencia: (meses: number) => void; setMesesProyeccionCompra: (meses: number) => void;
   modoMacro: boolean; toggleModoMacro: () => void;
@@ -77,7 +77,7 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
       toggleModoMacro: () => set((state) => ({ modoMacro: !state.modoMacro })),
       toggleAnalisisSemielaborados: () => set((state) => ({ analisisSemielaborados: !state.analisisSemielaborados })),
 
-      ejecutarCalculoMRP: async (mesesTransferencia, mesesCompra) => {
+      ejecutarCalculoMRP: async (mesesTransferencia, mesesCompra, lineasFiltradas) => {
         set({ cargandoCalculo: true, error: null });
         try {
           const { productos, formulas, stocks, consumos, stockPT, mesesProyeccionTransferencia, mesesProyeccionCompra, modoMacro, analisisSemielaborados } = get();
@@ -99,7 +99,8 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
             mC,
             reglasPrefijos,
             modoMacro,
-            analisisSemielaborados
+            analisisSemielaborados,
+            lineasFiltradas || []
           );
           set({ resultadosMRP: resultados, cargandoCalculo: false });
         } catch (err: any) {

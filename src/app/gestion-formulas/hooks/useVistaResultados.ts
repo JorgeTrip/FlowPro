@@ -17,8 +17,6 @@ function ordenarItems<T>(items: T[], config: { key: keyof T; direction: 'asc' | 
   });
 }
 
-export type TipoAnalisis = 'todos' | 'hierbas' | 'insumos' | 'semielaborados';
-
 export function useVistaResultados() {
   const store = useGestionFormulasStore();
   const [busqueda, setBusqueda] = useState('');
@@ -26,14 +24,14 @@ export function useVistaResultados() {
   const [criticidades, setCriticidades] = useState<string[]>(['alta', 'media', 'baja']);
   const [movimientosFiltrados, setMovimientosFiltrados] = useState<string[]>([]);
   const [lineasFiltradas, setLineasFiltradas] = useState<string[]>([]);
-  const [tipoAnalisis, setTipoAnalisis] = useState<TipoAnalisis>('todos');
+  const [soloInsumos, setSoloInsumos] = useState(false);
 
   useEffect(() => {
-    const esSemi = tipoAnalisis === 'semielaborados';
-    if (store.analisisSemielaborados !== esSemi) {
+    const tieneSemi = lineasFiltradas.includes('Semielaborado');
+    if (store.analisisSemielaborados !== tieneSemi) {
       store.toggleAnalisisSemielaborados();
     }
-  }, [tipoAnalisis, store]);
+  }, [lineasFiltradas, store.analisisSemielaborados, store.toggleAnalisisSemielaborados]);
 
   const [sortPropios, setSortPropios] = useState<{ key: keyof ResultadoMRP; direction: 'asc' | 'desc' } | null>(null);
   const [sortTercerizados, setSortTercerizados] = useState<{ key: keyof ResultadoTercerizadosMRP; direction: 'asc' | 'desc' } | null>(null);
@@ -74,17 +72,12 @@ export function useVistaResultados() {
       });
     }
 
-    if (lineasFiltradas.length > 0) {
-      items = items.filter((r) => r.productosUsados.some((p) => p.linea && lineasFiltradas.includes(p.linea)));
+    if (lineasFiltradas.includes('Hierbas')) {
+      items = items.filter((r) => !r.codigoMP.startsWith('00INSBO') && !r.codigoMP.startsWith('00INSET'));
     }
 
-    if (tipoAnalisis !== 'todos' && tipoAnalisis !== 'semielaborados') {
-      items = items.filter((r) => {
-        if (!r.productosUsados?.some((pt) => pt.codigoProducto.startsWith('07HIE'))) return false;
-        if (tipoAnalisis === 'hierbas') return !r.codigoMP.startsWith('00INSBO') && !r.codigoMP.startsWith('00INSET');
-        if (tipoAnalisis === 'insumos') return r.codigoMP.startsWith('00INSBO') || r.codigoMP.startsWith('00INSET');
-        return true;
-      });
+    if (soloInsumos) {
+      items = items.filter((r) => r.codigoMP.startsWith('00INSBO') || r.codigoMP.startsWith('00INSET'));
     }
 
     if (busqueda.trim()) {
@@ -103,7 +96,7 @@ export function useVistaResultados() {
     }
 
     return ordenarItems(items, sortPropios);
-  }, [store.resultadosMRP?.propios, busqueda, filtrosActivos, sortPropios, criticidades, movimientosFiltrados, lineasFiltradas, tipoAnalisis]);
+  }, [store.resultadosMRP?.propios, busqueda, filtrosActivos, sortPropios, criticidades, movimientosFiltrados, lineasFiltradas, soloInsumos]);
 
   const resultadosFiltradosTercerizados = useMemo(() => {
     let items = store.resultadosMRP?.tercerizados || [];
@@ -136,9 +129,9 @@ export function useVistaResultados() {
   }, [store.resultadosMRP?.tercerizados, busqueda, filtrosActivos, sortTercerizados, criticidades, movimientosFiltrados, lineasFiltradas]);
 
   useEffect(() => {
-    store.ejecutarCalculoMRP(store.mesesProyeccionTransferencia, store.mesesProyeccionCompra);
+    store.ejecutarCalculoMRP(store.mesesProyeccionTransferencia, store.mesesProyeccionCompra, lineasFiltradas);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store.mesesProyeccionTransferencia, store.mesesProyeccionCompra, store.modoMacro, store.analisisSemielaborados]);
+  }, [store.mesesProyeccionTransferencia, store.mesesProyeccionCompra, store.modoMacro, store.analisisSemielaborados, lineasFiltradas]);
 
   const activeListLength = store.pestañaActiva === 'propios' ? resultadosFiltradosPropios.length : resultadosFiltradosTercerizados.length;
 
@@ -168,8 +161,26 @@ export function useVistaResultados() {
     };
   }, [activeListLength, anchoScroll, store.pestañaActiva]);
 
-  const reglas = usePrefijosStore((state) => state.reglas);
-  const lineasDisponibles = useMemo(() => Array.from(new Set((reglas || []).map((r) => r.linea).filter(Boolean))).sort(), [reglas]);
+  const lineasDisponibles = useMemo(() => {
+    if (store.pestañaActiva === 'propios') {
+      const lineasSet = new Set<string>();
+      const propios = store.resultadosMRP?.propios || [];
+      propios.forEach((r) => {
+        r.productosUsados?.forEach((p) => {
+          if (p.linea) lineasSet.add(p.linea);
+        });
+      });
+      const lineas = Array.from(lineasSet).sort();
+      return ['Semielaborado', 'Hierbas', ...lineas];
+    } else {
+      const lineasSet = new Set<string>();
+      const tercerizados = store.resultadosMRP?.tercerizados || [];
+      tercerizados.forEach((r) => {
+        if (r.linea) lineasSet.add(r.linea);
+      });
+      return Array.from(lineasSet).sort();
+    }
+  }, [store.resultadosMRP, store.pestañaActiva]);
 
   return {
     busqueda, setBusqueda, filtrosActivos, setFiltrosActivos, criticidades, setCriticidades, movimientosFiltrados, setMovimientosFiltrados,
@@ -179,7 +190,7 @@ export function useVistaResultados() {
     scrollSuperiorRef, scrollInferiorRef, anchoScroll, resultadosFiltradosPropios, resultadosFiltradosTercerizados,
     cargandoCalculo: store.cargandoCalculo, resultadosMRP: store.resultadosMRP, pestañaActiva: store.pestañaActiva,
     setPestañaActiva: store.setPestañaActiva, setStep: store.setStep, sortPropios, solicitarOrdenPropios, sortTercerizados, solicitarOrdenTercerizados,
-    tipoAnalisis, setTipoAnalisis,
+    soloInsumos, setSoloInsumos,
     modoMacro: store.modoMacro, toggleModoMacro: store.toggleModoMacro,
   };
 }

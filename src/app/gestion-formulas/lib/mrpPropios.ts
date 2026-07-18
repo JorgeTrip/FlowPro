@@ -30,7 +30,8 @@ export function calcularMRPPropios(
   mesesCompra: number,
   reglasPrefijos: ReglaPrefijo[],
   modoMacro: boolean = false,
-  analisisSemielaborados: boolean = false
+  analisisSemielaborados: boolean = false,
+  lineasFiltradas: string[] = []
 ): ResultadoMRP[] {
   let recetasActivas = formulas.filter((f) => f.estado === 'activa');
   if (modoMacro) {
@@ -40,6 +41,22 @@ export function calcularMRPPropios(
     recetasActivas = recetasActivas.filter((f) => f.codigoProducto.toUpperCase().startsWith('00SEM'));
   } else {
     recetasActivas = recetasActivas.filter((f) => !f.codigoProducto.toUpperCase().startsWith('00SEM'));
+
+    const lineasNormales = lineasFiltradas.filter((l) => l !== 'Semielaborado' && l !== 'Hierbas');
+    const filtrarPorHierbas = lineasFiltradas.includes('Hierbas');
+
+    if (lineasNormales.length > 0 || filtrarPorHierbas) {
+      recetasActivas = recetasActivas.filter((receta) => {
+        if (filtrarPorHierbas && receta.codigoProducto.toUpperCase().startsWith('07HIE')) {
+          return true;
+        }
+        if (lineasNormales.length > 0) {
+          const regla = obtenerReglaParaProducto(receta.codigoProducto, reglasPrefijos);
+          return regla && lineasNormales.includes(regla.linea);
+        }
+        return false;
+      });
+    }
   }
   const productosMap = new Map(productos.map((p) => [p.codigo, p]));
   const stockPTMap = new Map(stockPT.map((s) => [s.codigo, s]));

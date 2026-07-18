@@ -8,7 +8,6 @@ import DropdownFiltrosPedidos from './DropdownFiltrosPedidos';
 import DropdownCriticidad from './DropdownCriticidad';
 import DropdownMovimientos from './DropdownMovimientos';
 import DropdownLinea from './DropdownLinea';
-import DropdownTipoAnalisis from './DropdownTipoAnalisis';
 import SelectorMeses from './SelectorMeses';
 import { TablaProductosPropios } from './TablaProductosPropios';
 import { TablaProductosTercerizados } from './TablaProductosTercerizados';
@@ -20,7 +19,7 @@ export default function VistaResultados() {
     mesesProyeccionTransferencia, mesesProyeccionCompra, setMesesProyeccionTransferencia, setMesesProyeccionCompra,
     scrollSuperiorRef, scrollInferiorRef, anchoScroll, resultadosFiltradosPropios, resultadosFiltradosTercerizados,
     cargandoCalculo, resultadosMRP, pestañaActiva, setPestañaActiva, setStep, sortPropios, solicitarOrdenPropios,
-    sortTercerizados, solicitarOrdenTercerizados, tipoAnalisis, setTipoAnalisis, modoMacro, toggleModoMacro
+    sortTercerizados, solicitarOrdenTercerizados, soloInsumos, setSoloInsumos, modoMacro, toggleModoMacro
   } = useVistaResultados();
 
   const getIndP = (k: any) => (sortPropios && sortPropios.key === k) ? (sortPropios.direction === 'asc' ? ' ▲' : ' ▼') : '';
@@ -75,10 +74,19 @@ export default function VistaResultados() {
           {/* Separador */}
           <div className="self-end h-9 w-px bg-gray-200 dark:bg-gray-700 mx-1.5" />
 
-          {/* Grupo 2: Tipo de Análisis (solo en pestaña Propios) */}
+          {/* Grupo 2: Sólo Insumos (solo en pestaña Propios) */}
           {pestañaActiva === 'propios' && (
             <>
-              <DropdownTipoAnalisis tipoAnalisis={tipoAnalisis} setTipoAnalisis={setTipoAnalisis} />
+              <button
+                onClick={() => setSoloInsumos(!soloInsumos)}
+                type="button"
+                className="px-4 h-9 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#2C2C2E] hover:bg-gray-50 dark:hover:bg-[#3A3A3C] text-xs font-bold text-gray-700 dark:text-gray-200 transition-all flex items-center space-x-2 cursor-pointer shadow-sm animate-fade-in"
+              >
+                <span>Sólo Insumos</span>
+                {soloInsumos && (
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)] animate-pulse" />
+                )}
+              </button>
               <div className="self-end h-9 w-px bg-gray-200 dark:bg-gray-700 mx-1.5" />
             </>
           )}
