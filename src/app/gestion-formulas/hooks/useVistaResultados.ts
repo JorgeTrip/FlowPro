@@ -31,7 +31,7 @@ export function useVistaResultados() {
     if (store.analisisSemielaborados !== tieneSemi) {
       store.toggleAnalisisSemielaborados();
     }
-  }, [lineasFiltradas, store.analisisSemielaborados, store.toggleAnalisisSemielaborados]);
+  }, [lineasFiltradas, store]);
 
   const [sortPropios, setSortPropios] = useState<{ key: keyof ResultadoMRP; direction: 'asc' | 'desc' } | null>(null);
   const [sortTercerizados, setSortTercerizados] = useState<{ key: keyof ResultadoTercerizadosMRP; direction: 'asc' | 'desc' } | null>(null);
@@ -161,8 +161,11 @@ export function useVistaResultados() {
     };
   }, [activeListLength, anchoScroll, store.pestañaActiva]);
 
-  const reglas = usePrefijosStore((state) => state.reglas) || [];
-  const tieneReglaHierbas = useMemo(() => reglas.some((r) => r.prefijo === '07HIE' && r.linea === 'Hierbas'), [reglas]);
+  const reglas = usePrefijosStore((state) => state.reglas);
+  const tieneReglaHierbas = useMemo(() => {
+    const listaReglas = reglas || [];
+    return listaReglas.some((r) => r.prefijo === '07HIE' && r.linea === 'Hierbas');
+  }, [reglas]);
 
   const lineasDisponibles = useMemo(() => {
     if (store.pestañaActiva === 'propios') {
