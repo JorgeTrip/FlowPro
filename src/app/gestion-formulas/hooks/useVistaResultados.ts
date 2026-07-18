@@ -161,6 +161,9 @@ export function useVistaResultados() {
     };
   }, [activeListLength, anchoScroll, store.pestañaActiva]);
 
+  const reglas = usePrefijosStore((state) => state.reglas) || [];
+  const tieneReglaHierbas = useMemo(() => reglas.some((r) => r.prefijo === '07HIE' && r.linea === 'Hierbas'), [reglas]);
+
   const lineasDisponibles = useMemo(() => {
     if (store.pestañaActiva === 'propios') {
       const lineasSet = new Set<string>();
@@ -170,8 +173,11 @@ export function useVistaResultados() {
           if (p.linea) lineasSet.add(p.linea);
         });
       });
+      if (tieneReglaHierbas) {
+        lineasSet.add('Hierbas');
+      }
       const lineas = Array.from(lineasSet).sort();
-      return ['Semielaborado', 'Hierbas', ...lineas];
+      return ['Semielaborado', ...lineas];
     } else {
       const lineasSet = new Set<string>();
       const tercerizados = store.resultadosMRP?.tercerizados || [];
@@ -180,7 +186,7 @@ export function useVistaResultados() {
       });
       return Array.from(lineasSet).sort();
     }
-  }, [store.resultadosMRP, store.pestañaActiva]);
+  }, [store.resultadosMRP, store.pestañaActiva, tieneReglaHierbas]);
 
   return {
     busqueda, setBusqueda, filtrosActivos, setFiltrosActivos, criticidades, setCriticidades, movimientosFiltrados, setMovimientosFiltrados,
