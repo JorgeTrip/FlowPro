@@ -39,6 +39,15 @@ export function calcularMRPPropios(
   }
   if (analisisSemielaborados) {
     recetasActivas = recetasActivas.filter((f) => f.codigoProducto.toUpperCase().startsWith('00SEM'));
+    
+    const lineasNormales = lineasFiltradas.filter((l) => l !== 'Semielaborado');
+    if (lineasNormales.length > 0) {
+      recetasActivas = recetasActivas.filter((receta) => {
+        const regla = obtenerReglaParaProducto(receta.codigoProducto, reglasPrefijos);
+        const esHierbasSeleccionado = lineasNormales.includes('Hierbas') && receta.codigoProducto.toUpperCase().startsWith('07HIE');
+        return esHierbasSeleccionado || (regla && lineasNormales.includes(regla.linea));
+      });
+    }
   } else {
     recetasActivas = recetasActivas.filter((f) => !f.codigoProducto.toUpperCase().startsWith('00SEM'));
 
