@@ -19,7 +19,8 @@ import { calcularMetricasGlobales, calcularRendimientoPorEmpleado } from './util
 import { UploadCloud, BarChart3, AlertCircle, Database } from 'lucide-react';
 
 import { ScanProgressWidget } from './components/carga/ScanProgressWidget';
-
+import { GeminiQuotaWidget } from './components/carga/GeminiQuotaWidget';
+import { ExternalJsonImporter } from './components/carga/ExternalJsonImporter';
 import { IrregularitiesModal } from './components/analisis/IrregularitiesModal';
 
 export default function ControlArmadoPedidosPage() {
@@ -154,7 +155,15 @@ export default function ControlArmadoPedidosPage() {
         {/* Contenido Pestaña 1: Carga y Verificación */}
         {pestanaActiva === 'carga' && (
           <div className="space-y-6">
-            <BatchDropzone />
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+              <div className="lg:col-span-7">
+                <BatchDropzone />
+              </div>
+              <div className="lg:col-span-5">
+                <ExternalJsonImporter />
+              </div>
+            </div>
+            <GeminiQuotaWidget />
             <PendingQueueList />
             <VerificationSideBySide />
             <DatabaseSyncFooterBar />

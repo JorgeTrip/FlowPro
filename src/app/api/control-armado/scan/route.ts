@@ -58,9 +58,6 @@ Instrucciones de alta precisión:
     const modelos = [
       'gemini-3.6-flash',
       'gemini-3.5-flash',
-      'gemini-3.1-pro-preview',
-      'gemini-2.0-flash',
-      'gemini-2.0-flash-lite',
       'gemini-flash-latest',
     ];
     let ultimoError = '';
@@ -134,7 +131,19 @@ Instrucciones de alta precisión:
             if (response.status === 429) {
               hubicoQuotaError = true;
               statusError = 429;
-              ultimoError = 'Se alcanzó el límite de solicitudes por minuto de Gemini API (Error 429). Por favor aguardá unos 30 segundos e intentá nuevamente.';
+              try {
+                const errJson = JSON.parse(errText);
+                const msg = errJson.error?.message || '';
+                const matchRetry = msg.match(/Please retry in ([\d\.]+)s/);
+                if (matchRetry) {
+                  const segs = Math.ceil(parseFloat(matchRetry[1]));
+                  ultimoError = `Google API: Se alcanzó la cuota del nivel gratuito. Aguardá ${segs} segundos para volver a escanear.`;
+                } else {
+                  ultimoError = 'Google API: Se alcanzó la cuota del nivel gratuito. Aguardá 30-60 segundos para volver a escanear.';
+                }
+              } catch {
+                ultimoError = 'Google API: Se alcanzó la cuota del nivel gratuito. Aguardá 30-60 segundos para volver a escanear.';
+              }
 
               if (reintentos < maxReintentos) {
                 console.log(`[API Gemini Scan] Pausando 3.5 segundos antes de reintentar con ${modelo}...`);
@@ -156,13 +165,8 @@ Instrucciones de alta precisión:
       }
     }
 
-    let mensajeUsuario = ultimoError;
-    if (hubicoQuotaError || statusError === 429) {
-      mensajeUsuario = 'Se alcanzó el límite de cuota por minuto de la API gratuita de Gemini. Aguardá 30-60 segundos e intentá re-escanear.';
-    }
-
     return NextResponse.json(
-      { error: mensajeUsuario },
+      { error: ultimoError },
       { status: statusError }
     );
   } catch (error: any) {

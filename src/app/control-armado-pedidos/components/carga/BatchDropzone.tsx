@@ -4,6 +4,7 @@
 import React, { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useArmadoStore } from '../../stores/armadoStore';
+import { useGeminiQuotaStore } from '../../stores/useGeminiQuotaStore';
 import { UploadCloud, Loader2 } from 'lucide-react';
 import { verificarDuplicado } from '../../services/firestoreService';
 
@@ -57,6 +58,8 @@ export function BatchDropzone() {
 
         try {
           const base64 = await fileToBase64(file);
+          useGeminiQuotaStore.getState().registrarPeticion();
+
           const res = await fetch('/api/control-armado/scan', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

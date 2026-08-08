@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { RegistroArmadoDocumento } from '../../types/armado';
 import { obtenerImagenLocal } from '../../services/localImageStore';
-import { Edit3, Trash2, User, RefreshCw, ZoomIn, ImageOff, FileText, Clock } from 'lucide-react';
+import { Edit3, Trash2, User, RefreshCw, ZoomIn, ImageOff, FileText, Clock, FileJson } from 'lucide-react';
 
 interface SheetCardProps {
   p: RegistroArmadoDocumento;
@@ -96,9 +96,20 @@ export function SheetCard({ p, onEditar, onEliminar, onVerImagen }: SheetCardPro
               {/* Metadata de Archivo Original y Timestamp */}
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-500 dark:text-gray-400">
                 {p.nombreArchivoOriginal && (
-                  <div className="flex items-center space-x-1 truncate max-w-xs" title={p.nombreArchivoOriginal}>
-                    <FileText className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                    <span className="truncate font-mono font-medium text-gray-700 dark:text-gray-300">
+                  <div
+                    className={`flex items-center space-x-1 truncate max-w-xs ${
+                      p.nombreArchivoOriginal.includes('Externa')
+                        ? 'text-purple-600 font-bold dark:text-purple-400'
+                        : 'text-gray-700 dark:text-gray-300 font-medium'
+                    }`}
+                    title={p.nombreArchivoOriginal}
+                  >
+                    {p.nombreArchivoOriginal.includes('Externa') ? (
+                      <FileJson className="h-3.5 w-3.5 text-purple-500 shrink-0" />
+                    ) : (
+                      <FileText className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                    )}
+                    <span className="truncate font-mono">
                       {p.nombreArchivoOriginal}
                     </span>
                   </div>
