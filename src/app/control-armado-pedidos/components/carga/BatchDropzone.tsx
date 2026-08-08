@@ -135,7 +135,9 @@ export function BatchDropzone() {
             }
 
             const itemPendiente: RegistroArmadoDocumento = {
-              id: resVerif.docExistenteId || `scan-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+              // Siempre se genera un ID nuevo: cada archivo de imagen corresponde
+              // a una planilla digital separada, sin unificar con entradas previas.
+              id: `scan-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
               empleadoHeader: data.empleadoHeader || 'Empleado Desconocido',
               fechaPrimeraFila: primeraFilaFecha,
               horaInicioPrimeraFila: primeraFilaHora,
