@@ -23,7 +23,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   if (!mounted || loading) {
     return (
-      <div className="flex h-96 w-full flex-col items-center justify-center space-y-4">
+      <div className="flex h-screen w-full flex-col items-center justify-center space-y-4 bg-gray-50 dark:bg-[#1C1C1E]">
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
         <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">Verificando autenticación...</p>
       </div>
@@ -32,7 +32,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   if (!user) {
     return (
-      <div className="flex min-h-[70vh] items-center justify-center p-4">
+      <div className="flex min-h-screen w-full items-center justify-center bg-gray-50 p-4 dark:bg-[#1C1C1E]">
         {modoRegistro ? (
           <RegisterForm onIrALogin={() => setModoRegistro(false)} />
         ) : (
