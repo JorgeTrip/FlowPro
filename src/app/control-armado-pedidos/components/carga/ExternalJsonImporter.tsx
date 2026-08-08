@@ -9,16 +9,18 @@ import { guardarPlanillaPendienteFirestore } from '../../services/firestoreServi
 import { FileJson, Sparkles, Copy, ExternalLink, Check, AlertCircle } from 'lucide-react';
 
 const PROMPT_IA_EXTERNA = `Sos un sistema OCR experto de alta precisión especializado en leer planillas de "CONTROL DE ARMADO DE PEDIDOS".
-ESTRUCTURA GEOMÉTRICA DE LA PLANILLA EN PAPEL:
-- El encabezado contiene "CONTROL DE ARMADO DE PEDIDOS" y el campo "EMPLEADO: [NOMBRE]".
-- La grilla impresa puede contener una cantidad variable de filas de datos según el formato de cada planilla.
 
-Analizá la(s) foto(s) de planilla(s) adjunta(s) recorriendo TODOS los renglones escritos. Si hay varias planillas en las fotos, sepáralas en una lista.
+ESTRUCTURA DE LA PLANILLA EN PAPEL:
+- El encabezado contiene "CONTROL DE ARMADO DE PEDIDOS" y el campo "EMPLEADO: [NOMBRE]".
+- La grilla contiene una cantidad variable de filas de datos (fechas, hora inicio, hora fin, artículos, notas).
+
+REGLA FUNDAMENTAL — UNA FOTO = UNA PLANILLA:
+Cada imagen adjunta corresponde SIEMPRE a UNA SOLA planilla independiente. El array "planillas" del JSON debe tener EXACTAMENTE LA MISMA CANTIDAD DE ELEMENTOS QUE FOTOS ADJUNTAS. Si adjuntás 6 fotos, el JSON debe tener 6 objetos en "planillas". NUNCA combines ni fusiones filas de distintas fotos en un mismo objeto, aunque el empleado sea el mismo. Cada foto es un documento físico separado con su propio bloque de renglones.
 
 INSTRUCCIÓN DE FORMATO OBLIGATORIA:
 Entregá la respuesta ÚNICAMENTE dentro de un bloque de código Markdown (\`\`\`json ... \`\`\`) listo para copiar con un solo clic mediante el botón de copiar código de tu interfaz. NO agregues saludos, introducciones ni explicaciones fuera del bloque de código.
 
-Estructura JSON estricta:
+Estructura JSON estricta (un objeto por imagen adjunta, en el mismo orden en que aparecen):
 {
   "planillas": [
     {
@@ -30,7 +32,7 @@ Estructura JSON estricta:
           "horaFin": "HH:MM (formato 24h) o null si está en blanco",
           "cantArticulos": 283,
           "notaIrregularidad": "Texto manuscrito adicional (ej: FALTANTE, TERMINO SEBA) o null",
-          "esIrregular": true/false
+          "esIrregular": true
         }
       ]
     }
