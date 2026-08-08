@@ -23,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${inter.className} bg-gray-50 dark:bg-gray-900`}>
+      <body className={`${inter.className} bg-gray-50 dark:bg-gray-900`} suppressHydrationWarning>
         <ThemeProvider>
           <AuthGuard>
             <div className="flex h-screen">
