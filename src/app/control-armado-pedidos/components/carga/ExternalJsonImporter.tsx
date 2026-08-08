@@ -14,7 +14,10 @@ ESTRUCTURA GEOMÉTRICA DE LA PLANILLA EN PAPEL:
 
 Analizá la(s) foto(s) de planilla(s) adjunta(s). Si hay varias planillas en las fotos, sepáralas en una lista.
 
-Responde ÚNICAMENTE con un objeto JSON válido con esta estructura estricta:
+INSTRUCCIÓN DE FORMATO OBLIGATORIA:
+Entregá la respuesta ÚNICAMENTE dentro de un bloque de código Markdown (\`\`\`json ... \`\`\`) listo para copiar con un solo clic mediante el botón de copiar código de tu interfaz. NO agregues saludos, introducciones ni explicaciones fuera del bloque de código.
+
+Estructura JSON estricta:
 {
   "planillas": [
     {
@@ -140,7 +143,7 @@ export function ExternalJsonImporter() {
   };
 
   return (
-    <div className="flex flex-col justify-between rounded-2xl border border-purple-200 bg-white p-5 shadow-xl dark:border-purple-900/40 dark:bg-[#1C1C1E]">
+    <div className="flex h-full min-h-[265px] flex-col justify-between rounded-2xl border border-purple-200 bg-white p-5 shadow-xl dark:border-purple-900/40 dark:bg-[#1C1C1E]">
       <div>
         <div className="flex items-center justify-between border-b border-purple-100 pb-3 dark:border-purple-900/40">
           <div className="flex items-center space-x-2">
@@ -149,10 +152,10 @@ export function ExternalJsonImporter() {
             </div>
             <div>
               <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                Importación Externa vía JSON IA
+                Importación Externa
               </h3>
               <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                Plan B ante agotamiento de cuota de API
+                Cargar JSON obtenido desde Gemini Web / ChatGPT
               </p>
             </div>
           </div>

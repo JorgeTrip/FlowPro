@@ -3,15 +3,15 @@
 
 import React, { useEffect, useState } from 'react';
 import { useGeminiQuotaStore, LIMITE_RPM_GRATIS, LIMITE_RPD_GRATIS } from '../../stores/useGeminiQuotaStore';
-import { Cpu, Zap, Activity, ExternalLink, RefreshCw } from 'lucide-react';
+import { Cpu, Zap, Activity, ExternalLink, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 
 export function GeminiQuotaWidget() {
   const { peticionesHoy, timestampsMinuto, limpiarMinuto, resetearContadores } = useGeminiQuotaStore();
   const [isMounted, setIsMounted] = useState(false);
+  const [desplegado, setDesplegado] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-    // Limpieza automática cada 3 segundos para actualizar la ventana del minuto activo
     const interval = setInterval(() => {
       limpiarMinuto();
     }, 3000);
@@ -24,7 +24,6 @@ export function GeminiQuotaWidget() {
   const pctRpm = Math.min(100, Math.round((rpmActual / LIMITE_RPM_GRATIS) * 100));
   const pctRpd = Math.min(100, Math.round((peticionesHoy / LIMITE_RPD_GRATIS) * 100));
 
-  // Determinar estado de salud de la cuota
   let estadoColor = 'bg-emerald-500/10 text-emerald-600 border-emerald-300 dark:border-emerald-800 dark:text-emerald-400';
   let estadoTexto = 'Cuota Óptima (15 RPM / 1.5K RPD)';
   let dotColor = 'bg-emerald-500 animate-pulse';
@@ -40,6 +39,67 @@ export function GeminiQuotaWidget() {
     dotColor = 'bg-red-500';
   }
 
+  // Estado Colapsado (1 Sola Línea)
+  if (!desplegado) {
+    return (
+      <div className="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm transition-all hover:shadow-md dark:border-gray-800 dark:bg-[#1C1C1E] text-xs">
+        <div
+          onClick={() => setDesplegado(true)}
+          className="flex cursor-pointer flex-wrap items-center justify-between gap-3"
+        >
+          <div className="flex items-center space-x-3">
+            <div className="rounded-lg bg-blue-500/10 p-1.5 text-blue-600 dark:text-blue-400">
+              <Cpu className="h-4 w-4" />
+            </div>
+            <div className="flex flex-wrap items-center space-x-2">
+              <h4 className="font-bold text-gray-900 dark:text-white">Cuota Gemini AI</h4>
+              <span className="text-gray-300 dark:text-gray-700">|</span>
+              <span className="font-mono text-gray-600 dark:text-gray-300">
+                RPM: <strong className="text-blue-600 dark:text-blue-400">{rpmActual}/{LIMITE_RPM_GRATIS}</strong>
+              </span>
+              <span className="text-gray-300 dark:text-gray-700">|</span>
+              <span className="font-mono text-gray-600 dark:text-gray-300">
+                RPD: <strong className="text-emerald-600 dark:text-emerald-400">{peticionesHoy}/{LIMITE_RPD_GRATIS} ({pctRpd}%)</strong>
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <div className={`flex items-center space-x-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${estadoColor}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${dotColor}`} />
+              <span>{estadoTexto}</span>
+            </div>
+
+            <a
+              href="https://aistudio.google.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center space-x-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-semibold text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+              title="Abrir panel oficial de Google AI Studio"
+            >
+              <span>Consola</span>
+              <ExternalLink className="h-3 w-3" />
+            </a>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDesplegado(true);
+              }}
+              className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 dark:hover:text-white"
+              title="Desplegar monitoreo detallado"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Estado Expandido (Detallado)
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:shadow-md dark:border-gray-800 dark:bg-[#1C1C1E] text-xs">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3 dark:border-gray-800">
@@ -71,11 +131,19 @@ export function GeminiQuotaWidget() {
             <span>Consola</span>
             <ExternalLink className="h-3 w-3" />
           </a>
+
+          <button
+            type="button"
+            onClick={() => setDesplegado(false)}
+            className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 dark:hover:text-white"
+            title="Colapsar a 1 sola línea"
+          >
+            <ChevronUp className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {/* Métrica 1: Peticiones por Minuto (RPM) */}
         <div className="space-y-1.5 rounded-xl border border-gray-100 bg-gray-50/70 p-3 dark:border-gray-800/60 dark:bg-gray-900/40">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-1 font-semibold text-gray-700 dark:text-gray-300">
@@ -95,11 +163,10 @@ export function GeminiQuotaWidget() {
             />
           </div>
           <p className="text-[10px] text-gray-500 dark:text-gray-400">
-            Ventana móvil de 60s ({LIMITE_RPM_GRATIS - rpmActual} peticiones disponibles en este minuto)
+            Ventana móvil de 60s ({LIMITE_RPM_GRATIS - rpmActual} peticiones disponibles)
           </p>
         </div>
 
-        {/* Métrica 2: Peticiones por Día (RPD) */}
         <div className="space-y-1.5 rounded-xl border border-gray-100 bg-gray-50/70 p-3 dark:border-gray-800/60 dark:bg-gray-900/40">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-1 font-semibold text-gray-700 dark:text-gray-300">

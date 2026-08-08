@@ -169,7 +169,7 @@ export function BatchDropzone() {
   return (
     <div
       {...getRootProps()}
-      className={`relative cursor-pointer rounded-2xl border-2 border-dashed p-8 text-center transition-all ${
+      className={`relative cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-all flex h-full min-h-[265px] flex-col items-center justify-center ${
         isDragActive
           ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20'
           : 'border-gray-300 hover:border-blue-400 dark:border-gray-700 dark:hover:border-blue-500'
