@@ -90,7 +90,7 @@ export async function guardarPlanillaPendienteFirestore(
   docData: RegistroArmadoDocumento
 ): Promise<string> {
   const uid = auth.currentUser?.uid;
-  if (!uid) return docData.id;
+  if (!uid) return docData.id || '';
 
   const { id: docId, ...restoDoc } = docData;
   const payloadBruto = {
@@ -114,7 +114,7 @@ export async function guardarPlanillaPendienteFirestore(
     }
   } catch (error) {
     console.error('Error al guardar borrador de planilla pendiente en Firestore:', error);
-    return docId;
+    return docId || '';
   }
 }
 
