@@ -21,7 +21,7 @@ export function IrregularityResolver({ fila, empleadoHeader, onResolver }: Irreg
           <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
           <span className="font-bold">Aclaración Manuscrita:</span>
           <span className="rounded bg-amber-200/80 px-2 py-0.5 font-semibold italic text-amber-900 dark:bg-amber-900/80 dark:text-amber-100">
-            "{fila.notaIrregularidad || 'Nota en fila'}"
+            &quot;{fila.notaIrregularidad || 'Nota en fila'}&quot;
           </span>
         </div>
         <span className="text-[10px] font-medium text-amber-700 dark:text-amber-400">

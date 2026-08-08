@@ -4,7 +4,7 @@
 import React from 'react';
 import { RendimientoEmpleado, RegistroArmadoDocumento } from '../../types/armado';
 import { exportarAXLSX } from '../../utils/metricsCalculator';
-import { Download, User, FileSpreadsheet } from 'lucide-react';
+import { User, FileSpreadsheet } from 'lucide-react';
 
 interface AnalyticsTableProps {
   rendimiento: RendimientoEmpleado[];

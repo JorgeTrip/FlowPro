@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { useArmadoStore } from '../../stores/armadoStore';
-import { Trash2, FileText, CheckCircle2, Clock } from 'lucide-react';
+import { Trash2, FileText } from 'lucide-react';
 
 export function PendingQueueList() {
   const { itemsPendientes, itemActualIndex, setItemActualIndex, eliminarItemPendiente } =

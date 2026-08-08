@@ -85,7 +85,7 @@ export async function verificarDuplicado(
 export async function guardarPlanillaVerificada(
   docData: Omit<RegistroArmadoDocumento, 'id'> & { id?: string }
 ): Promise<string> {
-  const { id: docId, imagenBase64, ...restoDoc } = docData;
+  const { id: docId, imagenBase64: _imagenBase64, ...restoDoc } = docData;
 
   const payloadBruto = {
     ...restoDoc,

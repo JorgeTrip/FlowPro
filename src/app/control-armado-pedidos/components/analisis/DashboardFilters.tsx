@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { FiltrosAnalisis } from '../../types/armado';
-import { Calendar, Filter, User } from 'lucide-react';
+import { Filter, User } from 'lucide-react';
 
 interface DashboardFiltersProps {
   filtros: FiltrosAnalisis;

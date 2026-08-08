@@ -23,14 +23,10 @@ export default function ControlArmadoPedidosPage() {
   const { pestanaActiva, setPestanaActiva, alertaDuplicado, errorScan, itemsPendientes } = useArmadoStore();
   const [registrosVerificados, setRegistrosVerificados] = useState<RegistroArmadoDocumento[]>([]);
   const [filtros, setFiltros] = useState<FiltrosAnalisis>({ rango: 'semana' });
-  const [cargandoDatos, setCargandoDatos] = useState(false);
-
   useEffect(() => {
     if (pestanaActiva === 'analisis') {
-      setCargandoDatos(true);
       obtenerRegistrosVerificados(filtros)
-        .then((data) => setRegistrosVerificados(data))
-        .finally(() => setCargandoDatos(false));
+        .then((data) => setRegistrosVerificados(data));
     }
   }, [pestanaActiva, filtros]);
 
