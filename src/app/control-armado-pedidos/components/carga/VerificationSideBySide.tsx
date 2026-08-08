@@ -255,6 +255,7 @@ export function VerificationSideBySide() {
             <table className="w-full text-left text-xs text-gray-700 dark:text-gray-300">
               <thead className="border-b bg-gray-50 text-[11px] uppercase tracking-wider text-gray-500 dark:bg-gray-800 dark:text-gray-400">
                 <tr>
+                  <th className="px-2 py-2 w-9 text-center">N°</th>
                   <th className="px-2 py-2">Fecha</th>
                   <th className="px-2 py-2">Inicio</th>
                   <th className="px-2 py-2">Fin</th>
@@ -264,7 +265,9 @@ export function VerificationSideBySide() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                {actual.filas.map((fila) => {
+                {actual.filas.map((fila, index) => {
+                  const numLinea = index + 1;
+                  const excedeLimite = numLinea > 17;
                   const esIgnorada = fila.accionIrregularidad === 'ignorar';
                   const esIrregular = fila.esIrregular;
                   const faltaHoraInicio = !fila.horaInicio || fila.horaInicio.trim() === '';
@@ -282,6 +285,18 @@ export function VerificationSideBySide() {
                             : 'hover:bg-gray-50 dark:hover:bg-gray-800/40'
                         }`}
                       >
+                        <td className="px-1.5 py-2 text-center font-mono">
+                          <span
+                            className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
+                              excedeLimite
+                                ? 'bg-red-600 text-white animate-pulse'
+                                : 'bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                            }`}
+                            title={excedeLimite ? `Línea #${numLinea} (⚠️ Supera las 17 filas impresas de la planilla)` : `Línea #${numLinea}`}
+                          >
+                            {numLinea}
+                          </span>
+                        </td>
                         <td className="px-2 py-2">
                           <input
                             type="date"
