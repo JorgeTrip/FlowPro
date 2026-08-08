@@ -33,6 +33,7 @@ interface ArmadoState {
   pestanaActiva: 'carga' | 'datos' | 'analisis';
   ultimaGuardadaInfo: UltimoGuardadoInfo | null;
   progresoScan: ProgresoScanInfo;
+  cancelarScanSolicitado: boolean;
 
   setPestanaActiva: (pestana: 'carga' | 'datos' | 'analisis') => void;
   agregarItemPendiente: (item: RegistroArmadoDocumento) => void;
@@ -47,6 +48,8 @@ interface ArmadoState {
   setMinimizadoScan: (minimizado: boolean) => void;
   setOcultoScan: (oculto: boolean) => void;
   finalizarProgresoScan: () => void;
+  cancelarEscaneoLote: () => void;
+  resetCancelarScan: () => void;
 
   actualizarFilaActual: (filaId: string, updates: Partial<FilaArmado>) => void;
   actualizarCabeceraActual: (empleadoHeader: string, fechaPlanilla: string) => void;
@@ -68,6 +71,7 @@ export const useArmadoStore = create<ArmadoState>()(
       alertaDuplicado: null,
       pestanaActiva: 'carga',
       ultimaGuardadaInfo: null,
+      cancelarScanSolicitado: false,
       progresoScan: {
         activo: false,
         totalArchivos: 0,
@@ -129,6 +133,16 @@ export const useArmadoStore = create<ArmadoState>()(
         set((state) => ({
           progresoScan: { ...state.progresoScan, activo: false },
         })),
+
+      cancelarEscaneoLote: () =>
+        set((state) => ({
+          cancelarScanSolicitado: true,
+          cargandoScan: false,
+          progresoScan: { ...state.progresoScan, activo: false },
+        })),
+
+      resetCancelarScan: () =>
+        set({ cancelarScanSolicitado: false }),
 
       actualizarFilaActual: (filaId, updates) => {
         const { itemsPendientes, itemActualIndex } = get();

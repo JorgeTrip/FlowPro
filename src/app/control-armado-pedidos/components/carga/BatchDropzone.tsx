@@ -22,17 +22,23 @@ export function BatchDropzone() {
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
-      if (!acceptedFiles.length) return;
+      if (!acceptedFiles || acceptedFiles.length === 0) return;
+
+      useArmadoStore.getState().resetCancelarScan();
       setCargandoScan(true);
       setErrorScan(null);
       setAlertaDuplicado(null);
 
       const totalArchivos = acceptedFiles.length;
+      const hoyStr = new Date().toISOString().split('T')[0];
       iniciarProgresoScan(totalArchivos);
 
-      const hoyStr = new Date().toISOString().split('T')[0];
-
       for (let i = 0; i < acceptedFiles.length; i++) {
+        if (useArmadoStore.getState().cancelarScanSolicitado) {
+          console.log('[BatchDropzone] Proceso de lote cancelado por el usuario.');
+          break;
+        }
+
         // Regulación de velocidad entre planillas de un lote para no saturar la API
         if (i > 0) {
           await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -63,6 +69,11 @@ export function BatchDropzone() {
           const base64 = await fileToBase64(file);
 
           while (!procesadoExitoso && intentosArchivo < 10) {
+            if (useArmadoStore.getState().cancelarScanSolicitado) {
+              clearInterval(timerProgreso);
+              break;
+            }
+
             intentosArchivo++;
             useGeminiQuotaStore.getState().registrarPeticion();
 
@@ -79,6 +90,10 @@ export function BatchDropzone() {
                 const segsTotales = segsRestantes;
 
                 while (segsRestantes > 0) {
+                  if (useArmadoStore.getState().cancelarScanSolicitado) {
+                    break;
+                  }
+
                   const pctEspera = Math.min(95, Math.round(((segsTotales - segsRestantes) / segsTotales) * 100));
                   actualizarProgresoScan({
                     mensajeEstado: `Reintentando en ${segsRestantes}s (Cuota de Gemini)...`,
@@ -86,6 +101,11 @@ export function BatchDropzone() {
                   });
                   await new Promise((resolve) => setTimeout(resolve, 1000));
                   segsRestantes--;
+                }
+
+                if (useArmadoStore.getState().cancelarScanSolicitado) {
+                  clearInterval(timerProgreso);
+                  break;
                 }
 
                 actualizarProgresoScan({ mensajeEstado: undefined, porcentajePlanilla: 5 });

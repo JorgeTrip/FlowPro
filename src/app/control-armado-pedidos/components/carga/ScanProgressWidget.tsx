@@ -3,10 +3,10 @@
 
 import React from 'react';
 import { useArmadoStore } from '../../stores/armadoStore';
-import { Loader2, Minimize2, Maximize2, X, Sparkles, FileText, Clock, RefreshCw } from 'lucide-react';
+import { Loader2, Minimize2, Maximize2, X, Sparkles, FileText, Clock, RefreshCw, XCircle } from 'lucide-react';
 
 export function ScanProgressWidget() {
-  const { progresoScan, setMinimizadoScan, setOcultoScan } = useArmadoStore();
+  const { progresoScan, setMinimizadoScan, setOcultoScan, cancelarEscaneoLote } = useArmadoStore();
   const [isMounted, setIsMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -38,20 +38,21 @@ export function ScanProgressWidget() {
           </span>
         </div>
 
-        <div className="flex items-center space-x-1 border-l border-gray-700/60 pl-2">
+        <div className="flex items-center space-x-1.5 border-l border-gray-700/60 pl-2">
+          <button
+            onClick={() => cancelarEscaneoLote()}
+            className="flex items-center space-x-1 rounded px-1.5 py-0.5 text-red-400 hover:bg-red-500/20 hover:text-red-300 font-semibold text-[10px]"
+            title="Cancelar todo el proceso de escaneo"
+          >
+            <XCircle className="h-3.5 w-3.5" />
+            <span>Cancelar</span>
+          </button>
           <button
             onClick={() => setMinimizadoScan(false)}
             className="rounded p-1 text-gray-400 hover:bg-gray-800 hover:text-white"
             title="Expandir ventana de progreso"
           >
             <Maximize2 className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => setOcultoScan(true)}
-            className="rounded p-1 text-gray-400 hover:bg-gray-800 hover:text-red-400"
-            title="Ocultar"
-          >
-            <X className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
@@ -73,7 +74,15 @@ export function ScanProgressWidget() {
           </div>
         </div>
 
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-1.5">
+          <button
+            onClick={() => cancelarEscaneoLote()}
+            className="flex items-center space-x-1 rounded-lg border border-red-500/30 bg-red-500/10 px-2 py-1 text-[11px] font-semibold text-red-400 hover:bg-red-500/20 transition-all"
+            title="Cancelar todo el proceso de escaneo"
+          >
+            <XCircle className="h-3.5 w-3.5" />
+            <span>Cancelar</span>
+          </button>
           <button
             onClick={() => setMinimizadoScan(true)}
             className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors"
