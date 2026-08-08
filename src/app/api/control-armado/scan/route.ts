@@ -30,9 +30,9 @@ export async function POST(request: Request) {
     const promptSystem = `${advertenciaReintento}Sos un sistema OCR experto de alta precisión especializado en leer planillas impresas y manuscritas de "CONTROL DE ARMADO DE PEDIDOS".
 ESTRUCTURA GEOMÉTRICA DE LA PLANILLA EN PAPEL:
 - El encabezado superior contiene el título "CONTROL DE ARMADO DE PEDIDOS" y el campo "EMPLEADO: [NOMBRE]".
-- La grilla impresa debajo de los títulos de las columnas consta de EXACTAMENTE 17 FILAS FÍSICAS DE DATOS de arriba hacia abajo.
+- La grilla impresa debajo de los títulos de las columnas puede contener una cantidad variable de filas de datos (el formato puede variar).
 
-Analizá la imagen provista recorriendo metódicamente de arriba a abajo cada uno de los 17 renglones físicos de la planilla.
+Analizá la imagen provista recorriendo metódicamente de arriba a abajo TODOS los renglones físicos escritos de la planilla, sin importar cuántos sean.
 Debes responder ÚNICAMENTE con un objeto JSON válido con esta estructura estricta:
 {
   "empleadoHeader": "Nombre del empleado escrito en el encabezado superior (ej: GABRIEL). Si está en blanco o ilegible, PONER NULL",

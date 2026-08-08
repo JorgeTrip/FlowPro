@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { RegistroArmadoDocumento } from '../../types/armado';
 import { obtenerImagenLocal } from '../../services/localImageStore';
-import { Edit3, Trash2, User, RefreshCw, ZoomIn, ImageOff, FileText, Clock, FileJson, AlertTriangle } from 'lucide-react';
+import { Edit3, Trash2, User, RefreshCw, ZoomIn, ImageOff, FileText, Clock, FileJson } from 'lucide-react';
 
 interface SheetCardProps {
   p: RegistroArmadoDocumento;
@@ -91,16 +91,6 @@ export function SheetCard({ p, onEditar, onEliminar, onVerImagen }: SheetCardPro
                 <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
                   ({cantFilas} pedidos)
                 </span>
-
-                {cantFilas !== 17 && (
-                  <div
-                    className="flex items-center space-x-1.5 rounded-full border border-amber-300 bg-amber-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 dark:border-amber-800 dark:text-amber-300 shadow-sm"
-                    title={`Esta planilla cuenta con ${cantFilas} filas cargadas (lo habitual en la planilla impresa son 17 filas). Se recomienda revisar por el usuario.`}
-                  >
-                    <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-                    <span>{cantFilas < 17 ? `Revisar: ${cantFilas}/17 filas` : `Atípica: ${cantFilas}/17 filas`}</span>
-                  </div>
-                )}
               </div>
 
               {/* Metadata de Archivo Original y Timestamp */}

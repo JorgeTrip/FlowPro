@@ -11,9 +11,9 @@ import { FileJson, Sparkles, Copy, ExternalLink, Check, AlertCircle } from 'luci
 const PROMPT_IA_EXTERNA = `Sos un sistema OCR experto de alta precisión especializado en leer planillas de "CONTROL DE ARMADO DE PEDIDOS".
 ESTRUCTURA GEOMÉTRICA DE LA PLANILLA EN PAPEL:
 - El encabezado contiene "CONTROL DE ARMADO DE PEDIDOS" y el campo "EMPLEADO: [NOMBRE]".
-- La grilla impresa debajo consta de EXACTAMENTE 17 FILAS FÍSICAS DE DATOS de arriba a abajo.
+- La grilla impresa puede contener una cantidad variable de filas de datos según el formato de cada planilla.
 
-Analizá la(s) foto(s) de planilla(s) adjunta(s). Si hay varias planillas en las fotos, sepáralas en una lista.
+Analizá la(s) foto(s) de planilla(s) adjunta(s) recorriendo TODOS los renglones escritos. Si hay varias planillas en las fotos, sepáralas en una lista.
 
 INSTRUCCIÓN DE FORMATO OBLIGATORIA:
 Entregá la respuesta ÚNICAMENTE dentro de un bloque de código Markdown (\`\`\`json ... \`\`\`) listo para copiar con un solo clic mediante el botón de copiar código de tu interfaz. NO agregues saludos, introducciones ni explicaciones fuera del bloque de código.
