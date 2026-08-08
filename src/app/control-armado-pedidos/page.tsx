@@ -18,20 +18,57 @@ import { RegistroArmadoDocumento, FiltrosAnalisis } from './types/armado';
 import { calcularMetricasGlobales, calcularRendimientoPorEmpleado } from './utils/metricsCalculator';
 import { UploadCloud, BarChart3, AlertCircle, Database } from 'lucide-react';
 
+import { ScanProgressWidget } from './components/carga/ScanProgressWidget';
+
+import { IrregularitiesModal } from './components/analisis/IrregularitiesModal';
+
 export default function ControlArmadoPedidosPage() {
   const { pestanaActiva, setPestanaActiva, alertaDuplicado, errorScan, itemsPendientes } = useArmadoStore();
   const [registrosVerificados, setRegistrosVerificados] = useState<RegistroArmadoDocumento[]>([]);
   const [filtros, setFiltros] = useState<FiltrosAnalisis>({ rango: 'semana' });
+  const [isMounted, setIsMounted] = useState(false);
 
-  useEffect(() => {
+  const [modalIrregularidadesAbierta, setModalIrregularidadesAbierta] = useState(false);
+  const [empFiltroModal, setEmpFiltroModal] = useState<string | null>(null);
+
+  const cargarDatosAnalisis = React.useCallback(() => {
     if (pestanaActiva === 'analisis') {
       obtenerRegistrosVerificados(filtros).then((data) => setRegistrosVerificados(data));
     }
   }, [pestanaActiva, filtros]);
 
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (isMounted) {
+      cargarDatosAnalisis();
+    }
+  }, [isMounted, cargarDatosAnalisis]);
+
+  const handleAbrirIrregularidades = (emp?: string) => {
+    setEmpFiltroModal(emp || null);
+    setModalIrregularidadesAbierta(true);
+  };
+
   const metricas = calcularMetricasGlobales(registrosVerificados);
   const rendimiento = calcularRendimientoPorEmpleado(registrosVerificados);
   const empleadosList = Array.from(new Set(rendimiento.map((r) => r.empleado)));
+
+  if (!isMounted) {
+    return (
+      <ModuleLayout
+        titulo="Control de Armado de Pedidos"
+        descripcion="Escaneo de planillas mejorado con inteligencia artificial (Gemini Vision OCR), verificación lado a lado, gestión de datos guardados y análisis de productividad."
+        breadcrumbs={[{ nombre: 'Dashboard', href: '/' }, { nombre: 'Control de Armado' }]}
+      >
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+        </div>
+      </ModuleLayout>
+    );
+  }
 
   return (
     <ModuleLayout
@@ -40,6 +77,20 @@ export default function ControlArmadoPedidosPage() {
       breadcrumbs={[{ nombre: 'Dashboard', href: '/' }, { nombre: 'Control de Armado' }]}
     >
       <div className="space-y-6">
+        {/* Modal Flotante de Revisión de Irregularidades */}
+        {modalIrregularidadesAbierta && (
+          <IrregularitiesModal
+            registros={registrosVerificados}
+            empleadoInicial={empFiltroModal}
+            onClose={() => setModalIrregularidadesAbierta(false)}
+            onActualizado={() => {
+              cargarDatosAnalisis();
+            }}
+          />
+        )}
+
+        {/* Widget Flotante de Progreso de Escaneo con IA */}
+        <ScanProgressWidget />
         {/* Alerta de Error de Escaneo */}
         {errorScan && (
           <div className="flex items-center space-x-2 rounded-xl border border-red-300 bg-red-50 p-4 text-xs font-semibold text-red-800 shadow-md dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
@@ -122,7 +173,11 @@ export default function ControlArmadoPedidosPage() {
               onCambiarFiltros={setFiltros}
             />
             <KPICards metricas={metricas} />
-            <PerformanceCharts rendimiento={rendimiento} promedioEquipo={metricas.velocidadPromedioEq} />
+            <PerformanceCharts
+              rendimiento={rendimiento}
+              promedioEquipo={metricas.velocidadPromedioEq}
+              onVerIrregularidades={handleAbrirIrregularidades}
+            />
             <AnalyticsTable rendimiento={rendimiento} registros={registrosVerificados} />
           </div>
         )}

@@ -34,26 +34,27 @@ export function IrregularityResolver({ fila, empleadoHeader, onResolver }: Irreg
           type="button"
           onClick={() => onResolver('asignar_cabecera')}
           className={`flex items-center justify-center space-x-1.5 rounded-md px-2.5 py-1.5 font-medium transition-all ${
-            fila.accionIrregularidad === 'asignar_cabecera'
-              ? 'bg-amber-600 text-white shadow-sm'
+            !fila.accionIrregularidad || fila.accionIrregularidad === 'asignar_cabecera'
+              ? 'bg-amber-600 text-white shadow-sm font-semibold'
               : 'bg-white text-amber-900 border border-amber-300 hover:bg-amber-100 dark:bg-gray-800 dark:text-amber-200 dark:border-amber-800'
           }`}
         >
           <UserCheck className="h-3.5 w-3.5" />
-          <span>Asignar a {empleadoHeader}</span>
+          <span>Asignar a {empleadoHeader || 'Empleado de Cabecera'}</span>
         </button>
 
         <div className="flex space-x-1">
           <input
             type="text"
-            placeholder="Nombre nuevo emp."
+            list="lista-empleados-sugeridos"
+            placeholder="Nombre nuevo emp..."
             value={nuevoNombre}
-            onChange={(e) => setNuevoNombre(e.target.value)}
-            className="w-full rounded-md border border-amber-300 bg-white px-2 py-1 text-xs text-gray-900 focus:outline-none dark:border-amber-700 dark:bg-gray-800 dark:text-white"
+            onChange={(e) => setNuevoNombre(e.target.value.toUpperCase())}
+            className="w-full rounded-md border border-amber-300 bg-white px-2 py-1 text-xs text-gray-900 focus:outline-none uppercase dark:border-amber-700 dark:bg-gray-800 dark:text-white"
           />
           <button
             type="button"
-            onClick={() => nuevoNombre.trim() && onResolver('asignar_nuevo', nuevoNombre.trim())}
+            onClick={() => nuevoNombre.trim() && onResolver('asignar_nuevo', nuevoNombre.trim().toUpperCase())}
             className="rounded-md bg-amber-600 px-2.5 py-1 text-white hover:bg-amber-700"
             title="Asignar a nuevo empleado"
           >

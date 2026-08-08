@@ -9,7 +9,13 @@ export function PendingQueueList() {
   const { itemsPendientes, itemActualIndex, setItemActualIndex, eliminarItemPendiente } =
     useArmadoStore();
 
-  if (!itemsPendientes.length) return null;
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted || !itemsPendientes.length) return null;
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-[#1C1C1E]">
@@ -32,11 +38,14 @@ export function PendingQueueList() {
               }`}
             >
               <div className="flex items-center space-x-3">
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${esSeleccionado ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'}`}>
+                  #{idx + 1}
+                </span>
                 <FileText className={`h-4 w-4 ${esSeleccionado ? 'text-blue-600' : 'text-gray-400'}`} />
                 <div>
                   <p className="text-gray-900 dark:text-gray-100">{item.empleadoHeader}</p>
                   <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                    {item.fechaPlanilla} • {item.filas.length} filas
+                    {item.fechaPrimeraFila || item.fechaPlanilla} • {item.filas.length} filas
                   </p>
                 </div>
               </div>

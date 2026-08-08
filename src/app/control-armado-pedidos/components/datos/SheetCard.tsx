@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import { RegistroArmadoDocumento } from '../../types/armado';
 import { obtenerImagenLocal } from '../../services/localImageStore';
-import { Edit3, Trash2, User, RefreshCw, ZoomIn, ImageOff } from 'lucide-react';
+import { Edit3, Trash2, User, RefreshCw, ZoomIn, ImageOff, FileText, Clock } from 'lucide-react';
 
 interface SheetCardProps {
   p: RegistroArmadoDocumento;
@@ -36,6 +36,22 @@ export function SheetCard({ p, onEditar, onEliminar, onVerImagen }: SheetCardPro
 
   const cantFilas = p.filas?.length || 0;
 
+  // Formatear Fecha y Hora de registro
+  const fechaHoraStr = p.verificadoEn || p.creadoEn;
+  let fechaHoraFormateada = '';
+  if (fechaHoraStr) {
+    try {
+      const dateObj = new Date(fechaHoraStr);
+      if (!isNaN(dateObj.getTime())) {
+        fechaHoraFormateada = `${dateObj.toLocaleDateString()} ${dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} hs`;
+      } else {
+        fechaHoraFormateada = fechaHoraStr;
+      }
+    } catch {
+      fechaHoraFormateada = fechaHoraStr;
+    }
+  }
+
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:shadow-md dark:border-gray-800 dark:bg-[#1C1C1E]">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
@@ -66,14 +82,34 @@ export function SheetCard({ p, onEditar, onEliminar, onVerImagen }: SheetCardPro
         {/* Información y Tabla Resumen */}
         <div className="flex-1 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-2 dark:border-gray-800">
-            <div className="flex items-center space-x-2">
-              <User className="h-4 w-4 text-blue-500" />
-              <h4 className="text-sm font-bold text-gray-900 dark:text-white">
-                {p.empleadoHeader || 'Empleado Desconocido'}
-              </h4>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                • {p.fechaPrimeraFila || p.fechaPlanilla} ({cantFilas} pedidos)
-              </span>
+            <div>
+              <div className="flex items-center space-x-2">
+                <User className="h-4 w-4 text-blue-500" />
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white">
+                  {p.empleadoHeader || 'Empleado Desconocido'}
+                </h4>
+                <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
+                  ({cantFilas} pedidos)
+                </span>
+              </div>
+
+              {/* Metadata de Archivo Original y Timestamp */}
+              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-500 dark:text-gray-400">
+                {p.nombreArchivoOriginal && (
+                  <div className="flex items-center space-x-1 truncate max-w-xs" title={p.nombreArchivoOriginal}>
+                    <FileText className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                    <span className="truncate font-mono font-medium text-gray-700 dark:text-gray-300">
+                      {p.nombreArchivoOriginal}
+                    </span>
+                  </div>
+                )}
+                {fechaHoraFormateada && (
+                  <div className="flex items-center space-x-1">
+                    <Clock className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                    <span>{fechaHoraFormateada}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center space-x-2">

@@ -9,8 +9,8 @@ import {
   deleteDoc,
   doc,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { RegistroArmadoDocumento, FiltrosAnalisis } from '../types/armado';
+import { db, auth } from '@/lib/firebase';
+import { RegistroArmadoDocumento, FiltrosAnalisis, FilaArmado } from '../types/armado';
 
 const NOMBRE_COLECCION = 'control_armado_pedidos';
 
@@ -42,7 +42,7 @@ export interface ResultadoVerificacionDuplicado {
 }
 
 /**
- * Algoritmo inteligente que verifica si una planilla ya fue procesada y si posee datos válidos en Firestore.
+ * Algoritmo inteligente que verifica si una planilla ya fue procesada y si posee datos válidos en Firestore para el usuario actual.
  */
 export async function verificarDuplicado(
   empleadoHeader: string,
@@ -50,9 +50,13 @@ export async function verificarDuplicado(
   horaInicioPrimeraFila: string
 ): Promise<ResultadoVerificacionDuplicado> {
   try {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return { esDuplicado: false };
+
     const ref = collection(db, NOMBRE_COLECCION);
     const q = query(
       ref,
+      where('userId', '==', uid),
       where('empleadoHeader', '==', empleadoHeader),
       where('fechaPrimeraFila', '==', fechaPrimeraFila),
       where('horaInicioPrimeraFila', '==', horaInicioPrimeraFila)
@@ -80,15 +84,21 @@ export async function verificarDuplicado(
 }
 
 /**
- * Guarda o actualiza un documento verificado en Firestore sanitizando campos undefined.
+ * Guarda o actualiza un documento verificado en Firestore asociándolo al userId del usuario activo.
  */
 export async function guardarPlanillaVerificada(
   docData: Omit<RegistroArmadoDocumento, 'id'> & { id?: string }
 ): Promise<string> {
   const { id: docId, imagenBase64: _imagenBase64, ...restoDoc } = docData;
+  const uid = auth.currentUser?.uid;
+
+  if (!uid) {
+    throw new Error('Debe iniciar sesión para guardar planillas.');
+  }
 
   const payloadBruto = {
     ...restoDoc,
+    userId: uid,
     estado: 'verificado' as const,
     verificadoEn: new Date().toISOString(),
   };
@@ -125,15 +135,22 @@ export async function eliminarPlanillaVerificada(id: string): Promise<void> {
 }
 
 /**
- * Recupera todos los registros verificados en Firestore sin requerir índices compuestos.
+ * Recupera todos los registros verificados en Firestore pertenecientes al usuario actual.
  */
 export async function obtenerRegistrosVerificados(
   filtros?: FiltrosAnalisis
 ): Promise<RegistroArmadoDocumento[]> {
   try {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return [];
+
     const ref = collection(db, NOMBRE_COLECCION);
-    // Consulta simple sin orderBy para evitar requerir índices compuestos en Firestore Console
-    const q = query(ref, where('estado', '==', 'verificado'));
+    // Consulta filtrada estrictamente por el userId del usuario autenticado
+    const q = query(
+      ref,
+      where('userId', '==', uid),
+      where('estado', '==', 'verificado')
+    );
     const snapshot = await getDocs(q);
     const registros: RegistroArmadoDocumento[] = [];
 
@@ -178,4 +195,28 @@ function filtrarRegistrosEnMemoria(
     }
     return true;
   });
+}
+
+/**
+ * Actualiza una fila individual de un documento verificado en Firestore (para re-etiquetar o normalizar irregularidades).
+ */
+export async function actualizarFilaEnDocumento(
+  docId: string,
+  filaId: string,
+  cambiosFila: Partial<FilaArmado>
+): Promise<void> {
+  if (!docId || docId.startsWith('mock-') || docId.startsWith('scan-')) return;
+  const docRef = doc(db, NOMBRE_COLECCION, docId);
+
+  const snapshot = await getDocs(query(collection(db, NOMBRE_COLECCION), where('__name__', '==', docId)));
+  if (!snapshot.empty) {
+    const data = snapshot.docs[0].data() as RegistroArmadoDocumento;
+    const nuevasFilas = (data.filas || []).map((f) => {
+      if (f.id === filaId) {
+        return { ...f, ...cambiosFila };
+      }
+      return f;
+    });
+    await updateDoc(docRef, limpiarUndefined({ filas: nuevasFilas }));
+  }
 }

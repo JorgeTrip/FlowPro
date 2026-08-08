@@ -23,6 +23,7 @@ export interface PlanillaScanResult {
 
 export interface RegistroArmadoDocumento {
   id?: string;
+  userId?: string;
   empleadoHeader: string;
   fechaPlanilla?: string;
   fechaPrimeraFila: string;
@@ -30,6 +31,7 @@ export interface RegistroArmadoDocumento {
   estado: 'pendiente_verificacion' | 'verificado';
   imagenUrl?: string;
   imagenBase64?: string;
+  nombreArchivoOriginal?: string;
   filas: FilaArmado[];
   creadoEn: string;
   verificadoEn?: string;

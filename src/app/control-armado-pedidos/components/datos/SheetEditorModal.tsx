@@ -84,9 +84,10 @@ export function SheetEditorModal({ planilla, onCerrar, onGuardadoExitoso }: Shee
             </label>
             <input
               type="text"
+              list="lista-empleados-sugeridos"
               value={empleadoHeader}
-              onChange={(e) => setEmpleadoHeader(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              onChange={(e) => setEmpleadoHeader(e.target.value.toUpperCase())}
+              className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 uppercase dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
           </div>
 
@@ -103,32 +104,44 @@ export function SheetEditorModal({ planilla, onCerrar, onGuardadoExitoso }: Shee
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                {filas.map((f) => (
-                  <tr key={f.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40">
-                    <td className="px-2 py-1.5">
-                      <input
-                        type="date"
-                        value={f.fecha}
-                        onChange={(e) => handleActualizarFila(f.id, { fecha: e.target.value })}
-                        className="w-28 rounded border border-gray-300 bg-gray-50 px-1.5 py-1 text-xs dark:border-gray-700 dark:bg-gray-800"
-                      />
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <input
-                        type="time"
-                        value={f.horaInicio}
-                        onChange={(e) => handleActualizarFila(f.id, { horaInicio: e.target.value })}
-                        className="rounded border border-gray-300 bg-gray-50 px-1.5 py-1 text-xs dark:border-gray-700 dark:bg-gray-800"
-                      />
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <input
-                        type="time"
-                        value={f.horaFin}
-                        onChange={(e) => handleActualizarFila(f.id, { horaFin: e.target.value })}
-                        className="rounded border border-gray-300 bg-gray-50 px-1.5 py-1 text-xs dark:border-gray-700 dark:bg-gray-800"
-                      />
-                    </td>
+                {filas.map((f) => {
+                  const faltaHoraInicio = !f.horaInicio || f.horaInicio.trim() === '';
+                  const faltaHoraFin = !f.horaFin || f.horaFin.trim() === '';
+
+                  return (
+                    <tr key={f.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40">
+                      <td className="px-2 py-1.5">
+                        <input
+                          type="date"
+                          value={f.fecha}
+                          onChange={(e) => handleActualizarFila(f.id, { fecha: e.target.value })}
+                          className="w-28 rounded border border-gray-300 bg-gray-50 px-1.5 py-1 text-xs dark:border-gray-700 dark:bg-gray-800"
+                        />
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <input
+                          type="time"
+                          value={f.horaInicio}
+                          onChange={(e) => handleActualizarFila(f.id, { horaInicio: e.target.value })}
+                          className={`rounded border px-1.5 py-1 text-xs transition-colors ${
+                            faltaHoraInicio
+                              ? 'border-2 border-amber-500 bg-amber-100 font-bold text-amber-900 dark:bg-amber-950/60 dark:text-amber-200'
+                              : 'border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'
+                          }`}
+                        />
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <input
+                          type="time"
+                          value={f.horaFin}
+                          onChange={(e) => handleActualizarFila(f.id, { horaFin: e.target.value })}
+                          className={`rounded border px-1.5 py-1 text-xs transition-colors ${
+                            faltaHoraFin
+                              ? 'border-2 border-amber-500 bg-amber-100 font-bold text-amber-900 dark:bg-amber-950/60 dark:text-amber-200'
+                              : 'border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'
+                          }`}
+                        />
+                      </td>
                     <td className="px-2 py-1.5">
                       <input
                         type="number"
@@ -140,9 +153,10 @@ export function SheetEditorModal({ planilla, onCerrar, onGuardadoExitoso }: Shee
                     <td className="px-2 py-1.5">
                       <input
                         type="text"
+                        list="lista-empleados-sugeridos"
                         value={f.empleadoAsignado || f.nuevoEmpleado || empleadoHeader}
-                        onChange={(e) => handleActualizarFila(f.id, { empleadoAsignado: e.target.value })}
-                        className="w-36 rounded border border-gray-300 bg-gray-50 px-1.5 py-1 text-xs dark:border-gray-700 dark:bg-gray-800"
+                        onChange={(e) => handleActualizarFila(f.id, { empleadoAsignado: e.target.value.toUpperCase() })}
+                        className="w-36 rounded border border-gray-300 bg-gray-50 px-1.5 py-1 text-xs uppercase dark:border-gray-700 dark:bg-gray-800"
                       />
                     </td>
                     <td className="px-2 py-1.5 text-right">
@@ -154,7 +168,8 @@ export function SheetEditorModal({ planilla, onCerrar, onGuardadoExitoso }: Shee
                       </button>
                     </td>
                   </tr>
-                ))}
+                );
+              })}
               </tbody>
             </table>
           </div>

@@ -6,9 +6,10 @@ import { ZoomIn, ZoomOut, RotateCw, RefreshCw } from 'lucide-react';
 
 interface InteractiveImageViewerProps {
   src?: string;
+  onRotacionChange?: (rotacion: number) => void;
 }
 
-export function InteractiveImageViewer({ src }: InteractiveImageViewerProps) {
+export function InteractiveImageViewer({ src, onRotacionChange }: InteractiveImageViewerProps) {
   const [zoom, setZoom] = useState(1);
   const [rotacion, setRotacion] = useState(0);
   const [posicion, setPosicion] = useState({ x: 0, y: 0 });
@@ -69,6 +70,13 @@ export function InteractiveImageViewer({ src }: InteractiveImageViewerProps) {
     setZoom(1);
     setRotacion(0);
     setPosicion({ x: 0, y: 0 });
+    onRotacionChange?.(0);
+  };
+
+  const handleRotar = () => {
+    const nuevaRotacion = (rotacion + 90) % 360;
+    setRotacion(nuevaRotacion);
+    onRotacionChange?.(nuevaRotacion);
   };
 
   return (
@@ -91,7 +99,7 @@ export function InteractiveImageViewer({ src }: InteractiveImageViewerProps) {
             <ZoomOut className="h-4 w-4" />
           </button>
           <button
-            onClick={() => setRotacion((r) => (r + 90) % 360)}
+            onClick={handleRotar}
             className="rounded bg-gray-800 p-1.5 text-gray-300 hover:bg-gray-700"
             title="Rotar 90°"
           >

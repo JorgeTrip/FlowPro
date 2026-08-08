@@ -4,9 +4,12 @@ import {
   createUserWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  updateProfile,
+  updatePassword,
   UserCredential,
 } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
+import { useArmadoStore } from '@/app/control-armado-pedidos/stores/armadoStore';
 
 /**
  * Inicia sesión con correo electrónico y contraseña.
@@ -45,14 +48,51 @@ export async function loginWithGoogle(): Promise<UserCredential> {
 }
 
 /**
- * Cierra la sesión activa del usuario.
+ * Cierra la sesión activa del usuario y purga los datos locales.
  */
 export async function logoutUser(): Promise<void> {
   try {
+    useArmadoStore.getState().reset();
     await signOut(auth);
   } catch (error: any) {
     console.error('Error al cerrar sesión:', error);
     throw new Error('No se pudo cerrar la sesión.');
+  }
+}
+
+/**
+ * Actualiza el nombre visible y la foto de perfil en Firebase Auth.
+ */
+export async function actualizarPerfilUsuario(
+  displayName: string,
+  photoURL?: string | null
+): Promise<void> {
+  if (!auth.currentUser) {
+    throw new Error('No hay una sesión de usuario activa.');
+  }
+  try {
+    await updateProfile(auth.currentUser, {
+      displayName: displayName.trim(),
+      photoURL: photoURL ? photoURL.trim() : null,
+    });
+  } catch (error: any) {
+    console.error('Error al actualizar perfil de usuario:', error);
+    throw new Error(traducirErrorAuth(error.code || error.message));
+  }
+}
+
+/**
+ * Actualiza la contraseña del usuario en Firebase Auth.
+ */
+export async function cambiarPasswordUsuario(nuevaPassword: string): Promise<void> {
+  if (!auth.currentUser) {
+    throw new Error('No hay una sesión de usuario activa.');
+  }
+  try {
+    await updatePassword(auth.currentUser, nuevaPassword);
+  } catch (error: any) {
+    console.error('Error al cambiar contraseña:', error);
+    throw new Error(traducirErrorAuth(error.code || error.message));
   }
 }
 

@@ -8,8 +8,16 @@ import { UploadCloud, Loader2 } from 'lucide-react';
 import { verificarDuplicado } from '../../services/firestoreService';
 
 export function BatchDropzone() {
-  const { agregarItemPendiente, setCargandoScan, setErrorScan, setAlertaDuplicado, cargandoScan } =
-    useArmadoStore();
+  const {
+    agregarItemPendiente,
+    setCargandoScan,
+    setErrorScan,
+    setAlertaDuplicado,
+    cargandoScan,
+    iniciarProgresoScan,
+    actualizarProgresoScan,
+    finalizarProgresoScan,
+  } = useArmadoStore();
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -18,9 +26,35 @@ export function BatchDropzone() {
       setErrorScan(null);
       setAlertaDuplicado(null);
 
+      const totalArchivos = acceptedFiles.length;
+      iniciarProgresoScan(totalArchivos);
+
       const hoyStr = new Date().toISOString().split('T')[0];
 
-      for (const file of acceptedFiles) {
+      for (let i = 0; i < acceptedFiles.length; i++) {
+        // Regulación de velocidad entre planillas de un lote para no saturar la API
+        if (i > 0) {
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+        }
+
+        const file = acceptedFiles[i];
+        const indiceActual = i + 1;
+        const porcentajeGlobal = Math.round((i / totalArchivos) * 100);
+
+        actualizarProgresoScan({
+          indiceActual,
+          nombreArchivo: file.name,
+          porcentajePlanilla: 5,
+          porcentajeGlobal,
+        });
+
+        // Intervalo para animación fluida continua del escaneo de la planilla actual (0-90%)
+        let pctLocal = 5;
+        const timerProgreso = setInterval(() => {
+          pctLocal = Math.min(92, pctLocal + Math.floor(Math.random() * 8) + 4);
+          actualizarProgresoScan({ porcentajePlanilla: pctLocal });
+        }, 180);
+
         try {
           const base64 = await fileToBase64(file);
           const res = await fetch('/api/control-armado/scan', {
@@ -57,27 +91,45 @@ export function BatchDropzone() {
             horaInicioPrimeraFila: primeraFilaHora,
             estado: 'pendiente_verificacion',
             imagenBase64: base64,
+            nombreArchivoOriginal: file.name,
             filas: (data.filas || []).map((f: any, idx: number) => ({
               id: f.id || `f-${idx}-${Date.now()}`,
-              fecha: f.fecha || primeraFilaFecha,
-              horaInicio: f.horaInicio || '08:00',
-              horaFin: f.horaFin || '09:00',
+              fecha: f.fecha || hoyStr,
+              horaInicio: f.horaInicio || '',
+              horaFin: f.horaFin || '',
               cantArticulos: Number(f.cantArticulos) || 0,
               notaIrregularidad: f.notaIrregularidad || null,
               esIrregular: Boolean(f.esIrregular),
-              empleadoAsignado: data.empleadoHeader,
+              empleadoAsignado: data.empleadoHeader || 'Empleado Desconocido',
             })),
             creadoEn: new Date().toISOString(),
           });
+
+          // Completar planilla al 100% al recibir respuesta exitosa
+          clearInterval(timerProgreso);
+          actualizarProgresoScan({
+            porcentajePlanilla: 100,
+            porcentajeGlobal: Math.round((indiceActual / totalArchivos) * 100),
+          });
         } catch (err: any) {
+          clearInterval(timerProgreso);
           console.error(err);
           setErrorScan(`Error al procesar "${file.name}": ${err.message || 'Error desconocido'}`);
         }
       }
 
       setCargandoScan(false);
+      setTimeout(() => finalizarProgresoScan(), 1000);
     },
-    [agregarItemPendiente, setCargandoScan, setErrorScan, setAlertaDuplicado]
+    [
+      agregarItemPendiente,
+      setCargandoScan,
+      setErrorScan,
+      setAlertaDuplicado,
+      iniciarProgresoScan,
+      actualizarProgresoScan,
+      finalizarProgresoScan,
+    ]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

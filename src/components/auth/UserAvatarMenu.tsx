@@ -4,11 +4,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { logoutUser } from '@/services/authService';
-import { LogOut } from 'lucide-react';
+import { LogOut, User as UserIcon } from 'lucide-react';
+import { EditarPerfilModal } from './EditarPerfilModal';
 
 export function UserAvatarMenu() {
   const { user } = useAuthStore();
   const [open, setOpen] = useState(false);
+  const [modalPerfilAbierto, setModalPerfilAbierto] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,39 +33,58 @@ export function UserAvatarMenu() {
     .toUpperCase();
 
   return (
-    <div className="relative" ref={menuRef}>
-      <button
-        onClick={() => setOpen(!open)}
-        className="flex items-center space-x-2 rounded-full p-1 transition-all hover:bg-gray-100 dark:hover:bg-gray-800"
-      >
-        {user.photoURL ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={user.photoURL} alt={user.displayName || 'Avatar'} className="h-8 w-8 rounded-full object-cover" />
-        ) : (
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-xs font-bold text-white shadow-sm">
-            {iniciales}
+    <>
+      <div className="relative" ref={menuRef}>
+        <button
+          onClick={() => setOpen(!open)}
+          className="flex items-center space-x-2 rounded-full p-1 transition-all hover:bg-gray-100 dark:hover:bg-gray-800"
+        >
+          {user.photoURL ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={user.photoURL} alt={user.displayName || 'Avatar'} className="h-8 w-8 rounded-full object-cover" />
+          ) : (
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-xs font-bold text-white shadow-sm">
+              {iniciales}
+            </div>
+          )}
+          <span className="hidden text-xs font-medium text-gray-700 dark:text-gray-200 md:inline">
+            {user.displayName}
+          </span>
+        </button>
+
+        {open && (
+          <div className="absolute right-0 mt-2 w-56 rounded-xl border border-gray-200 bg-white p-2 shadow-xl backdrop-blur-lg dark:border-gray-800 dark:bg-[#1C1C1E] z-[9999]">
+            <div className="border-b border-gray-100 p-2 dark:border-gray-800">
+              <p className="text-xs font-bold text-gray-900 dark:text-gray-100">{user.displayName}</p>
+              <p className="truncate text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
+            </div>
+
+            <button
+              onClick={() => {
+                setOpen(false);
+                setModalPerfilAbierto(true);
+              }}
+              className="mt-1 flex w-full items-center space-x-2 rounded-lg px-2 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800"
+            >
+              <UserIcon className="h-4 w-4 text-blue-500" />
+              <span>Editar Mi Perfil</span>
+            </button>
+
+            <button
+              onClick={() => logoutUser()}
+              className="mt-1 flex w-full items-center space-x-2 rounded-lg px-2 py-2 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Cerrar Sesión</span>
+            </button>
           </div>
         )}
-        <span className="hidden text-xs font-medium text-gray-700 dark:text-gray-200 md:inline">
-          {user.displayName}
-        </span>
-      </button>
+      </div>
 
-      {open && (
-        <div className="absolute right-0 mt-2 w-56 rounded-xl border border-gray-200 bg-white p-2 shadow-xl backdrop-blur-lg dark:border-gray-800 dark:bg-[#1C1C1E] z-[9999]">
-          <div className="border-b border-gray-100 p-2 dark:border-gray-800">
-            <p className="text-xs font-bold text-gray-900 dark:text-gray-100">{user.displayName}</p>
-            <p className="truncate text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
-          </div>
-          <button
-            onClick={() => logoutUser()}
-            className="mt-1 flex w-full items-center space-x-2 rounded-lg px-2 py-2 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
-          >
-            <LogOut className="h-4 w-4" />
-            <span>Cerrar Sesión</span>
-          </button>
-        </div>
-      )}
-    </div>
+      <EditarPerfilModal
+        isOpen={modalPerfilAbierto}
+        onClose={() => setModalPerfilAbierto(false)}
+      />
+    </>
   );
 }

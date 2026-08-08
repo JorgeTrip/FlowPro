@@ -129,3 +129,42 @@ export function exportarAXLSX(registros: RegistroArmadoDocumento[]): void {
   const hoyStr = new Date().toISOString().split('T')[0];
   XLSX.writeFile(wb, `flowpro_control_armado_${hoyStr}.xlsx`);
 }
+
+/**
+ * Exporta el listado exclusivo de irregularidades registradas a un archivo Excel (.xlsx).
+ */
+export function exportarIrregularidadesAXLSX(
+  registros: RegistroArmadoDocumento[],
+  empleadoFiltro?: string
+): void {
+  const irregularidadesFiltradas: any[] = [];
+
+  registros.forEach((reg) => {
+    reg.filas?.forEach((f) => {
+      const armador = f.empleadoAsignado || f.nuevoEmpleado || reg.empleadoHeader;
+      if (f.esIrregular || f.notaIrregularidad) {
+        if (!empleadoFiltro || armador === empleadoFiltro || reg.empleadoHeader === empleadoFiltro) {
+          irregularidadesFiltradas.push({
+            'Empleado Cabecera': reg.empleadoHeader,
+            'Armador Asignado': armador,
+            'Fecha': f.fecha,
+            'Hora Inicio': f.horaInicio,
+            'Hora Fin': f.horaFin,
+            'Cant. Artículos': f.cantArticulos,
+            'Nota Irregularidad': f.notaIrregularidad || 'Marca sin detalle',
+            'Archivo Origen': reg.nombreArchivoOriginal || 'Escaneo directo',
+            'Fecha Registro': reg.verificadoEn ? new Date(reg.verificadoEn).toLocaleString() : reg.creadoEn,
+          });
+        }
+      }
+    });
+  });
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(irregularidadesFiltradas);
+  XLSX.utils.book_append_sheet(wb, ws, 'Irregularidades');
+
+  const hoyStr = new Date().toISOString().split('T')[0];
+  const sufijoEmp = empleadoFiltro ? `_${empleadoFiltro.replace(/\s+/g, '_')}` : '';
+  XLSX.writeFile(wb, `flowpro_irregularidades${sufijoEmp}_${hoyStr}.xlsx`);
+}
