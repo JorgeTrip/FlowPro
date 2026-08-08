@@ -56,6 +56,7 @@ interface ArmadoState {
   removerFilaActual: (filaId: string) => void;
   reemplazarFilasItemActual: (filas: FilaArmado[], empleadoHeader?: string) => void;
   saltarASiguientePlanilla: () => void;
+  irAPlanillaAnterior: () => void;
   marcarActualComoVerificado: (infoGuardada?: UltimoGuardadoInfo) => void;
   reset: () => void;
 }
@@ -193,6 +194,14 @@ export const useArmadoStore = create<ArmadoState>()(
           itemActualIndex:
             state.itemsPendientes.length > 0
               ? (state.itemActualIndex + 1) % state.itemsPendientes.length
+              : 0,
+        })),
+
+      irAPlanillaAnterior: () =>
+        set((state) => ({
+          itemActualIndex:
+            state.itemsPendientes.length > 0
+              ? (state.itemActualIndex - 1 + state.itemsPendientes.length) % state.itemsPendientes.length
               : 0,
         })),
 

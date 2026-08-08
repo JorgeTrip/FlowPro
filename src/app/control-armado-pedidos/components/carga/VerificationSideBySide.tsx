@@ -5,7 +5,7 @@ import { guardarImagenLocal } from '../../services/localImageStore';
 import { rotarImagenBase64 } from '../../utils/imageUtils';
 import { IrregularityResolver } from './IrregularityResolver';
 import { InteractiveImageViewer } from './InteractiveImageViewer';
-import { CheckCircle, Trash2, AlertTriangle, SkipForward, RefreshCw, AlertCircle, Sparkles, FileJson } from 'lucide-react';
+import { CheckCircle, Trash2, AlertTriangle, SkipForward, SkipBack, RefreshCw, AlertCircle, Sparkles, FileJson } from 'lucide-react';
 
 import { useEmpleadosSugeridos } from '../../hooks/useEmpleadosSugeridos';
 
@@ -19,6 +19,7 @@ export function VerificationSideBySide() {
     removerFilaActual,
     reemplazarFilasItemActual,
     saltarASiguientePlanilla,
+    irAPlanillaAnterior,
     marcarActualComoVerificado,
     iniciarProgresoScan,
     actualizarProgresoScan,
@@ -379,8 +380,18 @@ export function VerificationSideBySide() {
             </table>
           </div>
 
-          {/* Botones de Acción: Confirmar, Re-escanear con IA, Saltar */}
+          {/* Botones de Acción: Anterior, Confirmar, Re-escanear con IA, Saltar */}
           <div className="mt-6 flex flex-col space-y-2 sm:flex-row sm:space-x-3 sm:space-y-0">
+            <button
+              onClick={irAPlanillaAnterior}
+              disabled={guardando || reescaneando}
+              className="flex items-center justify-center space-x-2 rounded-xl border border-gray-300 bg-gray-100 px-4 py-3 font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 text-xs"
+              title="Volver a la planilla no verificada anterior"
+            >
+              <SkipBack className="h-4 w-4" />
+              <span>Anterior</span>
+            </button>
+
             <button
               onClick={handleConfirmar}
               disabled={guardando || reescaneando}
