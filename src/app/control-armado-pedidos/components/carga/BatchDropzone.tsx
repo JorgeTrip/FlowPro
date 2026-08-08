@@ -56,64 +56,89 @@ export function BatchDropzone() {
           actualizarProgresoScan({ porcentajePlanilla: pctLocal });
         }, 180);
 
+        let procesadoExitoso = false;
+        let intentosArchivo = 0;
+
         try {
           const base64 = await fileToBase64(file);
-          useGeminiQuotaStore.getState().registrarPeticion();
 
-          const res = await fetch('/api/control-armado/scan', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ imagenBase64: base64 }),
-          });
+          while (!procesadoExitoso && intentosArchivo < 10) {
+            intentosArchivo++;
+            useGeminiQuotaStore.getState().registrarPeticion();
 
-          if (!res.ok) {
-            const errData = await res.json();
-            throw new Error(errData.error || 'Error al procesar la imagen con Gemini OCR.');
-          }
-          const data = await res.json();
+            const res = await fetch('/api/control-armado/scan', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ imagenBase64: base64 }),
+            });
 
-          const primeraFilaHora = data.filas?.[0]?.horaInicio || '00:00';
-          const primeraFilaFecha = data.filas?.[0]?.fecha || hoyStr;
-          
-          const resVerif = await verificarDuplicado(
-            data.empleadoHeader,
-            primeraFilaFecha,
-            primeraFilaHora
-          );
+            if (!res.ok) {
+              const errData = await res.json();
+              if (res.status === 429 || errData.esErrorCuota) {
+                let segsRestantes = errData.segundosReintento || 35;
+                const segsTotales = segsRestantes;
 
-          if (resVerif.esDuplicado && !resVerif.docIncompleto) {
-            setAlertaDuplicado(
-              `ℹ️ La planilla de "${data.empleadoHeader}" (${primeraFilaFecha} - ${primeraFilaHora}) ya existía en Firestore. Se ha vuelto a cargar a la cola para permitir su actualización o re-verificación.`
+                while (segsRestantes > 0) {
+                  const pctEspera = Math.min(95, Math.round(((segsTotales - segsRestantes) / segsTotales) * 100));
+                  actualizarProgresoScan({
+                    mensajeEstado: `Reintentando en ${segsRestantes}s (Cuota de Gemini)...`,
+                    porcentajePlanilla: pctEspera,
+                  });
+                  await new Promise((resolve) => setTimeout(resolve, 1000));
+                  segsRestantes--;
+                }
+
+                actualizarProgresoScan({ mensajeEstado: undefined, porcentajePlanilla: 5 });
+                continue;
+              } else {
+                throw new Error(errData.error || 'Error al procesar la imagen con Gemini OCR.');
+              }
+            }
+
+            const data = await res.json();
+            procesadoExitoso = true;
+
+            const primeraFilaHora = data.filas?.[0]?.horaInicio || '00:00';
+            const primeraFilaFecha = data.filas?.[0]?.fecha || hoyStr;
+
+            const resVerif = await verificarDuplicado(
+              data.empleadoHeader,
+              primeraFilaFecha,
+              primeraFilaHora
             );
+
+            if (resVerif.esDuplicado && !resVerif.docIncompleto) {
+              setAlertaDuplicado(
+                `ℹ️ La planilla de "${data.empleadoHeader}" (${primeraFilaFecha} - ${primeraFilaHora}) ya existía en Firestore. Se ha vuelto a cargar a la cola para permitir su actualización o re-verificación.`
+              );
+            }
+
+            agregarItemPendiente({
+              id: resVerif.docExistenteId || `scan-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+              empleadoHeader: data.empleadoHeader || 'Empleado Desconocido',
+              fechaPrimeraFila: primeraFilaFecha,
+              horaInicioPrimeraFila: primeraFilaHora,
+              estado: 'pendiente_verificacion',
+              imagenBase64: base64,
+              nombreArchivoOriginal: file.name,
+              creadoEn: new Date().toISOString(),
+              filas: (data.filas || []).map((f: any, idx: number) => ({
+                id: f.id || `f-${idx}-${Date.now()}`,
+                fecha: f.fecha || hoyStr,
+                horaInicio: f.horaInicio || '',
+                horaFin: f.horaFin || '',
+                cantArticulos: Number(f.cantArticulos) || 0,
+                notaIrregularidad: f.notaIrregularidad || null,
+                esIrregular: Boolean(f.esIrregular),
+              })),
+            });
+
+            clearInterval(timerProgreso);
+            actualizarProgresoScan({
+              porcentajePlanilla: 100,
+              porcentajeGlobal: Math.round((indiceActual / totalArchivos) * 100),
+            });
           }
-
-          agregarItemPendiente({
-            id: resVerif.docExistenteId || `scan-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-            empleadoHeader: data.empleadoHeader || 'Empleado Desconocido',
-            fechaPrimeraFila: primeraFilaFecha,
-            horaInicioPrimeraFila: primeraFilaHora,
-            estado: 'pendiente_verificacion',
-            imagenBase64: base64,
-            nombreArchivoOriginal: file.name,
-            filas: (data.filas || []).map((f: any, idx: number) => ({
-              id: f.id || `f-${idx}-${Date.now()}`,
-              fecha: f.fecha || hoyStr,
-              horaInicio: f.horaInicio || '',
-              horaFin: f.horaFin || '',
-              cantArticulos: Number(f.cantArticulos) || 0,
-              notaIrregularidad: f.notaIrregularidad || null,
-              esIrregular: Boolean(f.esIrregular),
-              empleadoAsignado: data.empleadoHeader || 'Empleado Desconocido',
-            })),
-            creadoEn: new Date().toISOString(),
-          });
-
-          // Completar planilla al 100% al recibir respuesta exitosa
-          clearInterval(timerProgreso);
-          actualizarProgresoScan({
-            porcentajePlanilla: 100,
-            porcentajeGlobal: Math.round((indiceActual / totalArchivos) * 100),
-          });
         } catch (err: any) {
           clearInterval(timerProgreso);
           console.error(err);

@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { useArmadoStore } from '../../stores/armadoStore';
-import { Loader2, Minimize2, Maximize2, X, Sparkles, FileText } from 'lucide-react';
+import { Loader2, Minimize2, Maximize2, X, Sparkles, FileText, Clock, RefreshCw } from 'lucide-react';
 
 export function ScanProgressWidget() {
   const { progresoScan, setMinimizadoScan, setOcultoScan } = useArmadoStore();
@@ -91,22 +91,32 @@ export function ScanProgressWidget() {
         </div>
       </div>
 
-      {/* Avance de la Planilla Actual */}
+      {/* Avance de la Planilla Actual o Cuenta Regresiva de Cuota */}
       <div className="mt-3.5 space-y-2">
         <div className="flex items-center justify-between text-[11px]">
-          <div className="flex items-center space-x-1.5 truncate max-w-[70%]">
-            <FileText className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+          <div className="flex items-center space-x-1.5 truncate max-w-[75%]">
+            {progresoScan.mensajeEstado ? (
+              <Clock className="h-3.5 w-3.5 text-amber-400 animate-spin shrink-0" />
+            ) : (
+              <FileText className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+            )}
             <span className="truncate font-medium text-gray-200">
-              {nombreArchivo || `Planilla #${indiceActual}`}
+              {progresoScan.mensajeEstado || nombreArchivo || `Planilla #${indiceActual}`}
             </span>
           </div>
-          <span className="font-mono font-bold text-blue-400">{porcentajePlanilla}%</span>
+          <span className={`font-mono font-bold ${progresoScan.mensajeEstado ? 'text-amber-400' : 'text-blue-400'}`}>
+            {porcentajePlanilla}%
+          </span>
         </div>
 
         {/* Barra de Progreso de la Planilla Actual */}
         <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-800 border border-gray-700/50">
           <div
-            className="h-full bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-500 transition-all duration-150 ease-out"
+            className={`h-full transition-all duration-150 ease-out ${
+              progresoScan.mensajeEstado
+                ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 animate-pulse'
+                : 'bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-500'
+            }`}
             style={{ width: `${porcentajePlanilla}%` }}
           />
         </div>

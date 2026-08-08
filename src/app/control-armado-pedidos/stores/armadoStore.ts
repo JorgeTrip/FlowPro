@@ -20,6 +20,7 @@ export interface ProgresoScanInfo {
   porcentajeGlobal: number;
   minimizado: boolean;
   oculto: boolean;
+  mensajeEstado?: string;
 }
 
 interface ArmadoState {

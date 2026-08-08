@@ -63,6 +63,7 @@ Instrucciones de alta precisión:
     let ultimoError = '';
     let statusError = 500;
     let hubicoQuotaError = false;
+    let segundosReintentoCalculados = 35;
 
     for (const modelo of modelos) {
       let reintentos = 0;
@@ -100,7 +101,6 @@ Instrucciones de alta precisión:
               const hoyStr = new Date().toISOString().split('T')[0];
 
               if (Array.isArray(parsedJSON.filas)) {
-                // 1. Mapeo inicial conservando fechas y horas nulas si no se escribieron explícitamente
                 const filasRaw = parsedJSON.filas.map((f: any, idx: number) => {
                   const notaClean = f.notaIrregularidad && String(f.notaIrregularidad).trim() !== 'null' ? String(f.notaIrregularidad).trim() : null;
                   const tieneNota = Boolean(notaClean && notaClean.length > 0 && !notaClean.toLowerCase().includes('marca de irregularidad'));
@@ -119,7 +119,6 @@ Instrucciones de alta precisión:
                   };
                 });
 
-                // 2. Resolver propagación de fechas (filas vacías iniciales -> fecha escrita anterior)
                 parsedJSON.filas = procesarFechasPlanilla(filasRaw, hoyStr);
               }
               return NextResponse.json(parsedJSON);
@@ -136,13 +135,15 @@ Instrucciones de alta precisión:
                 const msg = errJson.error?.message || '';
                 const matchRetry = msg.match(/Please retry in ([\d\.]+)s/);
                 if (matchRetry) {
-                  const segs = Math.ceil(parseFloat(matchRetry[1]));
-                  ultimoError = `Google API: Se alcanzó la cuota del nivel gratuito. Aguardá ${segs} segundos para volver a escanear.`;
+                  segundosReintentoCalculados = Math.ceil(parseFloat(matchRetry[1])) + 1;
+                  ultimoError = `Google API: Se alcanzó la cuota. Aguardá ${segundosReintentoCalculados} segundos.`;
                 } else {
-                  ultimoError = 'Google API: Se alcanzó la cuota del nivel gratuito. Aguardá 30-60 segundos para volver a escanear.';
+                  segundosReintentoCalculados = 35;
+                  ultimoError = 'Google API: Se alcanzó la cuota del nivel gratuito. Aguardá 35 segundos.';
                 }
               } catch {
-                ultimoError = 'Google API: Se alcanzó la cuota del nivel gratuito. Aguardá 30-60 segundos para volver a escanear.';
+                segundosReintentoCalculados = 35;
+                ultimoError = 'Google API: Se alcanzó la cuota del nivel gratuito. Aguardá 35 segundos.';
               }
 
               if (reintentos < maxReintentos) {
@@ -166,7 +167,11 @@ Instrucciones de alta precisión:
     }
 
     return NextResponse.json(
-      { error: ultimoError },
+      { 
+        error: ultimoError,
+        segundosReintento: segundosReintentoCalculados,
+        esErrorCuota: hubicoQuotaError || statusError === 429
+      },
       { status: statusError }
     );
   } catch (error: any) {
