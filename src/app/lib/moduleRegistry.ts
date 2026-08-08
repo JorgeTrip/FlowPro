@@ -108,6 +108,19 @@ export const MODULOS_DISPONIBLES: Modulo[] = [
     }
   },
   {
+    id: 'control-armado-pedidos',
+    nombre: 'Control Armado Pedidos',
+    ruta: '/control-armado-pedidos',
+    icono: '📦',
+    descripcion: 'Escaneo de planillas mejorado con inteligencia artificial (Gemini Vision OCR), verificación lado a lado, gestión de datos guardados y análisis de productividad.',
+    activo: true,
+    categoria: 'inventario',
+    tooltip: {
+      descripcion: 'Escaneo de planillas mejorado con inteligencia artificial (Gemini Vision OCR), verificación lado a lado, gestión de datos guardados y análisis de productividad.',
+      inputRequerido: 'Requiere imágenes escaneadas o fotos de planillas de armado de pedidos (JPG, PNG, WebP).'
+    }
+  },
+  {
     id: 'recursos-humanos',
     nombre: 'RRHH',
     ruta: '/recursos-humanos',

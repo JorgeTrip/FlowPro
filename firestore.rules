@@ -1,0 +1,9 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Colección de Control de Armado de Pedidos
+    match /control_armado_pedidos/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
