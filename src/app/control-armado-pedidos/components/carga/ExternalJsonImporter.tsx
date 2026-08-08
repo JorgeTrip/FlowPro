@@ -173,7 +173,11 @@ export function ExternalJsonImporter() {
           <button
             type="button"
             onClick={handleCopiarYAbrirGemini}
-            className="flex items-center space-x-1.5 rounded-xl bg-purple-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md hover:bg-purple-700 transition-all shrink-0"
+            className={`flex items-center space-x-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold shadow-sm transition-all shrink-0 ${
+              jsonText.trim()
+                ? 'border border-purple-300 bg-purple-50 text-purple-600 hover:bg-purple-100 dark:border-purple-800 dark:bg-purple-950/30 dark:text-purple-400'
+                : 'bg-purple-600 text-white hover:bg-purple-700 shadow-md'
+            }`}
             title="Copiar prompt al portapapeles y abrir gemini.google.com"
           >
             {copiado ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
@@ -213,7 +217,11 @@ export function ExternalJsonImporter() {
       <button
         type="button"
         onClick={handleProcesarJson}
-        className="mt-3 w-full rounded-xl border border-purple-600 bg-purple-50 py-2 text-xs font-bold text-purple-700 hover:bg-purple-100 dark:border-purple-500/60 dark:bg-purple-950/40 dark:text-purple-300 transition-all"
+        className={`mt-3 w-full rounded-xl py-2 text-xs font-bold transition-all ${
+          jsonText.trim()
+            ? 'bg-purple-600 text-white shadow-md hover:bg-purple-700'
+            : 'border border-purple-600 bg-purple-50 text-purple-700 hover:bg-purple-100 dark:border-purple-500/60 dark:bg-purple-950/40 dark:text-purple-300'
+        }`}
       >
         Procesar y Cargar Planillas (JSON)
       </button>
