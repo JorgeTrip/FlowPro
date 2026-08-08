@@ -168,15 +168,21 @@ export default function ControlArmadoPedidosPage() {
         {/* Contenido Pestaña 1: Carga y Verificación */}
         {pestanaActiva === 'carga' && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-              <div className="lg:col-span-7">
-                <BatchDropzone />
+            <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
+              {/* Columna izquierda: Drag'n'Drop + Widget de cuota API apilados verticalmente */}
+              <div className="lg:col-span-7 flex flex-col gap-3">
+                <div className="flex-1">
+                  <BatchDropzone />
+                </div>
+                <GeminiQuotaWidget />
               </div>
-              <div className="lg:col-span-5">
-                <ExternalJsonImporter />
+              {/* Columna derecha: importación JSON a altura completa */}
+              <div className="lg:col-span-5 flex flex-col">
+                <div className="flex-1">
+                  <ExternalJsonImporter />
+                </div>
               </div>
             </div>
-            <GeminiQuotaWidget />
             <PendingQueueList />
             <VerificationSideBySide />
             <DatabaseSyncFooterBar />
