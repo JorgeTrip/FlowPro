@@ -37,6 +37,7 @@ export function UserAvatarMenu() {
         className="flex items-center space-x-2 rounded-full p-1 transition-all hover:bg-gray-100 dark:hover:bg-gray-800"
       >
         {user.photoURL ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
           <img src={user.photoURL} alt={user.displayName || 'Avatar'} className="h-8 w-8 rounded-full object-cover" />
         ) : (
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-xs font-bold text-white shadow-sm">

@@ -45,6 +45,7 @@ export function SheetCard({ p, onEditar, onEliminar, onVerImagen }: SheetCardPro
             <RefreshCw className="h-5 w-5 animate-spin text-gray-400" />
           ) : imagenBase64 ? (
             <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={imagenBase64} alt="Planilla Escaneada" className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105" />
               <button
                 onClick={() => onVerImagen(imagenBase64, `Planilla de ${p.empleadoHeader} (${p.fechaPrimeraFila})`)}
