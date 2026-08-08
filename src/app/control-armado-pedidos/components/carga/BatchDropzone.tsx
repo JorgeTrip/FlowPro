@@ -6,7 +6,8 @@ import { useDropzone } from 'react-dropzone';
 import { useArmadoStore } from '../../stores/armadoStore';
 import { useGeminiQuotaStore } from '../../stores/useGeminiQuotaStore';
 import { UploadCloud, Loader2 } from 'lucide-react';
-import { verificarDuplicado } from '../../services/firestoreService';
+import { verificarDuplicado, guardarPlanillaPendienteFirestore } from '../../services/firestoreService';
+import { RegistroArmadoDocumento } from '../../types/armado';
 
 export function BatchDropzone() {
   const {
@@ -133,7 +134,7 @@ export function BatchDropzone() {
               );
             }
 
-            agregarItemPendiente({
+            const itemPendiente: RegistroArmadoDocumento = {
               id: resVerif.docExistenteId || `scan-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
               empleadoHeader: data.empleadoHeader || 'Empleado Desconocido',
               fechaPrimeraFila: primeraFilaFecha,
@@ -151,7 +152,12 @@ export function BatchDropzone() {
                 notaIrregularidad: f.notaIrregularidad || null,
                 esIrregular: Boolean(f.esIrregular),
               })),
-            });
+            };
+
+            const idGuardado = await guardarPlanillaPendienteFirestore(itemPendiente);
+            itemPendiente.id = idGuardado;
+
+            agregarItemPendiente(itemPendiente);
 
             clearInterval(timerProgreso);
             actualizarProgresoScan({

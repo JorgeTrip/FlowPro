@@ -13,7 +13,7 @@ import { DashboardFilters } from './components/analisis/DashboardFilters';
 import { KPICards } from './components/analisis/KPICards';
 import { PerformanceCharts } from './components/analisis/PerformanceCharts';
 import { AnalyticsTable } from './components/analisis/AnalyticsTable';
-import { obtenerRegistrosVerificados } from './services/firestoreService';
+import { obtenerRegistrosVerificados, obtenerPlanillasPendientesFirestore } from './services/firestoreService';
 import { RegistroArmadoDocumento, FiltrosAnalisis } from './types/armado';
 import { calcularMetricasGlobales, calcularRendimientoPorEmpleado } from './utils/metricsCalculator';
 import { UploadCloud, BarChart3, AlertCircle, Database } from 'lucide-react';
@@ -40,6 +40,19 @@ export default function ControlArmadoPedidosPage() {
 
   useEffect(() => {
     setIsMounted(true);
+    // Recuperar planillas pendientes desde Firestore para mantener persistencia al recargar
+    obtenerPlanillasPendientesFirestore().then((pendientesFs) => {
+      if (pendientesFs && pendientesFs.length > 0) {
+        const storeState = useArmadoStore.getState();
+        const mapaExistentes = new Set(storeState.itemsPendientes.map((i) => i.id));
+        
+        pendientesFs.forEach((pFs) => {
+          if (!mapaExistentes.has(pFs.id)) {
+            storeState.agregarItemPendiente(pFs);
+          }
+        });
+      }
+    });
   }, []);
 
   useEffect(() => {

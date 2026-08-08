@@ -3,8 +3,9 @@
 
 import React, { useState } from 'react';
 import { useArmadoStore } from '../../stores/armadoStore';
-import { FilaArmado } from '../../types/armado';
+import { FilaArmado, RegistroArmadoDocumento } from '../../types/armado';
 import { procesarFechasPlanilla } from '../../utils/fechaUtils';
+import { guardarPlanillaPendienteFirestore } from '../../services/firestoreService';
 import { FileJson, Sparkles, Copy, ExternalLink, Check, AlertCircle } from 'lucide-react';
 
 const PROMPT_IA_EXTERNA = `Sos un sistema OCR experto de alta precisión especializado en leer planillas de "CONTROL DE ARMADO DE PEDIDOS".
@@ -118,7 +119,7 @@ export function ExternalJsonImporter() {
         const primeraFilaHora = filasProcesadas[0]?.horaInicio || '00:00';
         const primeraFilaFecha = filasProcesadas[0]?.fecha || hoyStr;
 
-        agregarItemPendiente({
+        const itemPendiente: RegistroArmadoDocumento = {
           id: `ext-${Date.now()}-${idxP}-${Math.random().toString(36).substring(2, 6)}`,
           empleadoHeader: empHeader,
           fechaPrimeraFila: primeraFilaFecha,
@@ -128,7 +129,14 @@ export function ExternalJsonImporter() {
           nombreArchivoOriginal: `Importación Externa (JSON #${idxP + 1})`,
           creadoEn: new Date().toISOString(),
           filas: filasProcesadas,
+        };
+
+        // Guardar asincrónicamente en Firestore para persistencia total al refrescar
+        guardarPlanillaPendienteFirestore(itemPendiente).then((idReal) => {
+          itemPendiente.id = idReal;
         });
+
+        agregarItemPendiente(itemPendiente);
 
         cantCargadas++;
       });

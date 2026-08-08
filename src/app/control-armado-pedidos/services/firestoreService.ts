@@ -84,18 +84,78 @@ export async function verificarDuplicado(
 }
 
 /**
- * Guarda o actualiza un documento verificado en Firestore asociándolo al userId del usuario activo.
+ * Guarda o actualiza un borrador de planilla pendiente de verificación en Firestore.
+ */
+export async function guardarPlanillaPendienteFirestore(
+  docData: RegistroArmadoDocumento
+): Promise<string> {
+  const uid = auth.currentUser?.uid;
+  if (!uid) return docData.id;
+
+  const { id: docId, ...restoDoc } = docData;
+  const payloadBruto = {
+    ...restoDoc,
+    userId: uid,
+    estado: 'pendiente_verificacion' as const,
+    creadoEn: restoDoc.creadoEn || new Date().toISOString(),
+  };
+
+  const payloadLimpio = limpiarUndefined(payloadBruto);
+
+  try {
+    if (docId && !docId.startsWith('mock-') && !docId.startsWith('scan-') && !docId.startsWith('ext-')) {
+      const docRef = doc(db, NOMBRE_COLECCION, docId);
+      await updateDoc(docRef, payloadLimpio);
+      return docId;
+    } else {
+      const ref = collection(db, NOMBRE_COLECCION);
+      const res = await addDoc(ref, payloadLimpio);
+      return res.id;
+    }
+  } catch (error) {
+    console.error('Error al guardar borrador de planilla pendiente en Firestore:', error);
+    return docId;
+  }
+}
+
+/**
+ * Recupera todas las planillas en estado 'pendiente_verificacion' guardadas en Firestore para el usuario actual.
+ */
+export async function obtenerPlanillasPendientesFirestore(): Promise<RegistroArmadoDocumento[]> {
+  try {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return [];
+
+    const ref = collection(db, NOMBRE_COLECCION);
+    const q = query(
+      ref,
+      where('userId', '==', uid),
+      where('estado', '==', 'pendiente_verificacion')
+    );
+    const snapshot = await getDocs(q);
+    const pendientes: RegistroArmadoDocumento[] = [];
+
+    snapshot.forEach((d) => {
+      pendientes.push({ id: d.id, ...(d.data() as RegistroArmadoDocumento) });
+    });
+
+    return pendientes;
+  } catch (error) {
+    console.error('Error al recuperar planillas pendientes de Firestore:', error);
+    return [];
+  }
+}
+
+/**
+ * Guarda y confirma de forma definitiva una planilla verificada en Firestore.
  */
 export async function guardarPlanillaVerificada(
-  docData: Omit<RegistroArmadoDocumento, 'id'> & { id?: string }
+  docData: RegistroArmadoDocumento
 ): Promise<string> {
-  const { id: docId, imagenBase64: _imagenBase64, ...restoDoc } = docData;
   const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error('Usuario no autenticado');
 
-  if (!uid) {
-    throw new Error('Debe iniciar sesión para guardar planillas.');
-  }
-
+  const { id: docId, ...restoDoc } = docData;
   const payloadBruto = {
     ...restoDoc,
     userId: uid,
@@ -106,7 +166,7 @@ export async function guardarPlanillaVerificada(
   const payloadLimpio = limpiarUndefined(payloadBruto);
 
   try {
-    if (docId && !docId.startsWith('mock-') && !docId.startsWith('scan-')) {
+    if (docId && !docId.startsWith('mock-') && !docId.startsWith('scan-') && !docId.startsWith('ext-')) {
       const docRef = doc(db, NOMBRE_COLECCION, docId);
       await updateDoc(docRef, payloadLimpio);
       return docId;
