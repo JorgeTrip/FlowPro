@@ -118,7 +118,7 @@ export function IrregularityRowCard({
             </div>
           ) : (
             <div className="flex items-center space-x-1 font-bold text-amber-900 dark:text-amber-200">
-              <span className="truncate">"{item.notaIrregularidad}"</span>
+              <span className="truncate">&quot;{item.notaIrregularidad}&quot;</span>
               <button
                 onClick={() => setEditando(true)}
                 className="text-amber-700 hover:text-amber-900 dark:text-amber-400 p-0.5"

@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { useArmadoStore } from '../../stores/armadoStore';
-import { Loader2, Minimize2, Maximize2, X, Sparkles, FileText, Clock, RefreshCw, XCircle } from 'lucide-react';
+import { Loader2, Minimize2, Maximize2, X, Sparkles, FileText, Clock, XCircle } from 'lucide-react';
 
 export function ScanProgressWidget() {
   const { progresoScan, setMinimizadoScan, setOcultoScan, cancelarEscaneoLote } = useArmadoStore();

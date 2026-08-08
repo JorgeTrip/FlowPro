@@ -27,7 +27,8 @@ export const useGeminiQuotaStore = create<GeminiQuotaState>()(
         const ahora = Date.now();
         const hoyStr = new Date().toISOString().split('T')[0];
 
-        let { peticionesHoy, fechaHoyStr, timestampsMinuto } = get();
+        let { peticionesHoy, fechaHoyStr } = get();
+        const { timestampsMinuto } = get();
 
         // 1. Resetear contador si cambió el día
         if (fechaHoyStr !== hoyStr) {
