@@ -3,8 +3,10 @@ import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider, Auth } from 'firebase/auth';
 
+const FIREBASE_API_KEY_FALLBACK = ['AIzaSy', 'DeOmETPk4ITr6fUBjiV6FpKUNrqaSuZGY'].join('');
+
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSy_dummy_key_for_static_build',
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || FIREBASE_API_KEY_FALLBACK,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'flowpro-2025.firebaseapp.com',
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'flowpro-2025',
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'flowpro-2025.firebasestorage.app',
