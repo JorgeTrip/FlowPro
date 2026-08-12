@@ -5,7 +5,7 @@ import React from 'react';
 import { RegistroArmadoDocumento, FilaArmado } from '../../types/armado';
 import { IrregularityResolver } from './IrregularityResolver';
 import { useEmpleadosSugeridos } from '../../hooks/useEmpleadosSugeridos';
-import { AlertCircle, AlertTriangle, Trash2 } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Trash2, Plus } from 'lucide-react';
 
 interface TablaVerificacionFilasProps {
   actual: RegistroArmadoDocumento;
@@ -13,6 +13,7 @@ interface TablaVerificacionFilasProps {
   actualizarCabeceraActual: (empleado: string, fecha: string) => void;
   actualizarFilaActual: (filaId: string, updates: Partial<FilaArmado>) => void;
   removerFilaActual: (filaId: string) => void;
+  agregarFilaAItemActual: (nuevaFila?: Partial<FilaArmado>) => void;
 }
 
 export function TablaVerificacionFilas({
@@ -21,6 +22,7 @@ export function TablaVerificacionFilas({
   actualizarCabeceraActual,
   actualizarFilaActual,
   removerFilaActual,
+  agregarFilaAItemActual,
 }: TablaVerificacionFilasProps) {
   const sugerenciasEmpleados = useEmpleadosSugeridos();
   const handleEnterBlur = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -67,7 +69,7 @@ export function TablaVerificacionFilas({
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto max-h-[420px] rounded-lg border border-gray-200 dark:border-gray-800">
+      <div className="flex-1 overflow-y-auto max-h-[380px] rounded-lg border border-gray-200 dark:border-gray-800">
         <table className="w-full text-left text-xs text-gray-700 dark:text-gray-300">
           <thead className="sticky top-0 z-10 border-b bg-gray-100 text-[11px] uppercase tracking-wider text-gray-600 dark:bg-gray-800 dark:text-gray-400">
             <tr>
@@ -193,6 +195,15 @@ export function TablaVerificacionFilas({
           </tbody>
         </table>
       </div>
+
+      <button
+        type="button"
+        onClick={() => agregarFilaAItemActual()}
+        className="mt-2.5 flex items-center justify-center space-x-1.5 rounded-lg border border-dashed border-blue-400 bg-blue-50/60 py-2 px-3 text-xs font-semibold text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-950/30 dark:text-blue-300 dark:hover:bg-blue-900/50 transition-all w-full shadow-sm"
+      >
+        <Plus className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        <span>Agregar Fila Manualmente</span>
+      </button>
     </div>
   );
 }

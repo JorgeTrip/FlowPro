@@ -7,7 +7,7 @@ import { useLogicaVerificacion } from '../../hooks/useLogicaVerificacion';
 import { InteractiveImageViewer } from './InteractiveImageViewer';
 import { TablaVerificacionFilas } from './TablaVerificacionFilas';
 import { BarraAccionesVerificacion } from './BarraAccionesVerificacion';
-import { X, Sparkles, FileJson, CheckCircle2 } from 'lucide-react';
+import { X, Sparkles, FileJson } from 'lucide-react';
 
 export function ModalVerificacionPlanilla() {
   const modalVerificacionAbierta = useArmadoStore((state) => state.modalVerificacionAbierta);
@@ -27,6 +27,7 @@ export function ModalVerificacionPlanilla() {
     actualizarFilaActual,
     actualizarCabeceraActual,
     removerFilaActual,
+    agregarFilaAItemActual,
     saltarASiguientePlanilla,
     irAPlanillaAnterior,
     cerrarModalVerificacion,
@@ -135,6 +136,7 @@ export function ModalVerificacionPlanilla() {
                 actualizarCabeceraActual={actualizarCabeceraActual}
                 actualizarFilaActual={actualizarFilaActual}
                 removerFilaActual={removerFilaActual}
+                agregarFilaAItemActual={agregarFilaAItemActual}
               />
 
               <BarraAccionesVerificacion

@@ -43,7 +43,6 @@ interface ArmadoState {
   setCargandoScan: (cargando: boolean) => void;
   setErrorScan: (error: string | null) => void;
   setAlertaDuplicado: (alerta: string | null) => void;
-
   iniciarProgresoScan: (totalArchivos: number) => void;
   actualizarProgresoScan: (updates: Partial<ProgresoScanInfo>) => void;
   setMinimizadoScan: (minimizado: boolean) => void;
@@ -59,6 +58,7 @@ interface ArmadoState {
   actualizarFilaActual: (filaId: string, updates: Partial<FilaArmado>) => void;
   actualizarCabeceraActual: (empleadoHeader: string, fechaPlanilla: string) => void;
   removerFilaActual: (filaId: string) => void;
+  agregarFilaAItemActual: (nuevaFila?: Partial<FilaArmado>) => void;
   reemplazarFilasItemActual: (filas: FilaArmado[], empleadoHeader?: string) => void;
   saltarASiguientePlanilla: () => void;
   irAPlanillaAnterior: () => void;
@@ -107,7 +107,6 @@ export const useArmadoStore = create<ArmadoState>()(
       setCargandoScan: (cargandoScan) => set({ cargandoScan }),
       setErrorScan: (errorScan) => set({ errorScan }),
       setAlertaDuplicado: (alertaDuplicado) => set({ alertaDuplicado }),
-
       setModalVerificacionAbierta: (modalVerificacionAbierta) => set({ modalVerificacionAbierta }),
       abrirModalVerificacion: (index) =>
         set((state) => ({
@@ -129,7 +128,6 @@ export const useArmadoStore = create<ArmadoState>()(
             oculto: false,
           },
         }),
-
       actualizarProgresoScan: (updates) =>
         set((state) => ({ progresoScan: { ...state.progresoScan, ...updates } })),
       setMinimizadoScan: (minimizado) =>
@@ -170,6 +168,28 @@ export const useArmadoStore = create<ArmadoState>()(
         const copia = [...itemsPendientes];
         const actual = { ...copia[itemActualIndex] };
         actual.filas = actual.filas.filter((f) => f.id !== filaId);
+        copia[itemActualIndex] = actual;
+        set({ itemsPendientes: copia });
+      },
+
+      agregarFilaAItemActual: (nuevaFila) => {
+        const { itemsPendientes, itemActualIndex } = get();
+        if (!itemsPendientes[itemActualIndex]) return;
+        const copia = [...itemsPendientes];
+        const actual = { ...copia[itemActualIndex] };
+        const fDef = actual.fechaPrimeraFila || actual.fechaPlanilla || new Date().toISOString().split('T')[0];
+        const filaNueva: FilaArmado = {
+          id: `fila-man-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          fecha: fDef,
+          horaInicio: '',
+          horaFin: '',
+          cantArticulos: 0,
+          empleadoAsignado: actual.empleadoHeader,
+          esIrregular: false,
+          notaIrregularidad: null,
+          ...nuevaFila,
+        };
+        actual.filas = [...actual.filas, filaNueva];
         copia[itemActualIndex] = actual;
         set({ itemsPendientes: copia });
       },
