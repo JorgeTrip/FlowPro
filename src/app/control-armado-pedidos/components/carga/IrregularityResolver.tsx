@@ -14,6 +14,15 @@ interface IrregularityResolverProps {
 export function IrregularityResolver({ fila, empleadoHeader, onResolver }: IrregularityResolverProps) {
   const [nuevoNombre, setNuevoNombre] = useState(fila.nuevoEmpleado || '');
 
+  const handleAplicarNuevo = (e?: React.SyntheticEvent) => {
+    if (e && 'blur' in e.target && typeof (e.target as any).blur === 'function') {
+      (e.target as any).blur();
+    }
+    if (nuevoNombre.trim()) {
+      onResolver('asignar_nuevo', nuevoNombre.trim().toUpperCase());
+    }
+  };
+
   return (
     <div className="rounded-r-lg border border-amber-300 bg-amber-50/90 p-3 text-xs shadow-sm dark:border-amber-800/60 dark:bg-amber-950/40">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200/80 pb-2 dark:border-amber-900/50">
@@ -50,11 +59,17 @@ export function IrregularityResolver({ fila, empleadoHeader, onResolver }: Irreg
             placeholder="Nombre nuevo emp..."
             value={nuevoNombre}
             onChange={(e) => setNuevoNombre(e.target.value.toUpperCase())}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAplicarNuevo(e);
+              }
+            }}
             className="w-full rounded-md border border-amber-300 bg-white px-2 py-1 text-xs text-gray-900 focus:outline-none uppercase dark:border-amber-700 dark:bg-gray-800 dark:text-white"
           />
           <button
             type="button"
-            onClick={() => nuevoNombre.trim() && onResolver('asignar_nuevo', nuevoNombre.trim().toUpperCase())}
+            onClick={handleAplicarNuevo}
             className="rounded-md bg-amber-600 px-2.5 py-1 text-white hover:bg-amber-700"
             title="Asignar a nuevo empleado"
           >

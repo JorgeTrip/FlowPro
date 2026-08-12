@@ -23,6 +23,9 @@ export function TablaVerificacionFilas({
   removerFilaActual,
 }: TablaVerificacionFilasProps) {
   const sugerenciasEmpleados = useEmpleadosSugeridos();
+  const handleEnterBlur = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') e.currentTarget.blur();
+  };
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -48,6 +51,7 @@ export function TablaVerificacionFilas({
           onChange={(e) =>
             actualizarCabeceraActual(e.target.value.toUpperCase(), actual.fechaPlanilla || '')
           }
+          onKeyDown={handleEnterBlur}
           placeholder="Ingrese o seleccione empleado en MAYÚSCULAS..."
           className={`mt-1 w-full rounded-lg border px-3 py-2 text-sm focus:outline-none transition-all uppercase ${
             faltaEmpleado
@@ -81,8 +85,8 @@ export function TablaVerificacionFilas({
               const numLinea = index + 1;
               const esIgnorada = fila.accionIrregularidad === 'ignorar';
               const esIrregular = fila.esIrregular;
-              const faltaHoraInicio = !fila.horaInicio || fila.horaInicio.trim() === '';
-              const faltaHoraFin = !fila.horaFin || fila.horaFin.trim() === '';
+              const faltaInicio = !fila.horaInicio || fila.horaInicio.trim() === '';
+              const faltaFin = !fila.horaFin || fila.horaFin.trim() === '';
 
               return (
                 <React.Fragment key={fila.id}>
@@ -105,6 +109,7 @@ export function TablaVerificacionFilas({
                         type="date"
                         value={fila.fecha || new Date().toISOString().split('T')[0]}
                         onChange={(e) => actualizarFilaActual(fila.id, { fecha: e.target.value })}
+                        onKeyDown={handleEnterBlur}
                         className="w-28 rounded border border-gray-300 bg-gray-50 px-1.5 py-1 text-[11px] dark:border-gray-700 dark:bg-gray-800"
                       />
                     </td>
@@ -112,11 +117,10 @@ export function TablaVerificacionFilas({
                       <input
                         type="time"
                         value={fila.horaInicio}
-                        onChange={(e) =>
-                          actualizarFilaActual(fila.id, { horaInicio: e.target.value })
-                        }
+                        onChange={(e) => actualizarFilaActual(fila.id, { horaInicio: e.target.value })}
+                        onKeyDown={handleEnterBlur}
                         className={`rounded border px-1.5 py-1 text-[11px] transition-colors ${
-                          faltaHoraInicio
+                          faltaInicio
                             ? 'border-2 border-amber-500 bg-amber-100 text-amber-900 font-bold dark:bg-amber-950/60 dark:text-amber-200'
                             : 'border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'
                         }`}
@@ -127,8 +131,9 @@ export function TablaVerificacionFilas({
                         type="time"
                         value={fila.horaFin}
                         onChange={(e) => actualizarFilaActual(fila.id, { horaFin: e.target.value })}
+                        onKeyDown={handleEnterBlur}
                         className={`rounded border px-1.5 py-1 text-[11px] transition-colors ${
-                          faltaHoraFin
+                          faltaFin
                             ? 'border-2 border-amber-500 bg-amber-100 text-amber-900 font-bold dark:bg-amber-950/60 dark:text-amber-200'
                             : 'border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'
                         }`}
@@ -138,17 +143,14 @@ export function TablaVerificacionFilas({
                       <input
                         type="number"
                         value={fila.cantArticulos}
-                        onChange={(e) =>
-                          actualizarFilaActual(fila.id, { cantArticulos: Number(e.target.value) })
-                        }
+                        onChange={(e) => actualizarFilaActual(fila.id, { cantArticulos: Number(e.target.value) })}
+                        onKeyDown={handleEnterBlur}
                         className="w-16 rounded border border-gray-300 bg-gray-50 px-1.5 py-1 text-[11px] dark:border-gray-700 dark:bg-gray-800"
                       />
                     </td>
                     <td className="px-2 py-2 font-medium">
                       <div className="flex items-center space-x-1">
-                        <span>
-                          {fila.nuevoEmpleado || fila.empleadoAsignado || actual.empleadoHeader}
-                        </span>
+                        <span>{fila.nuevoEmpleado || fila.empleadoAsignado || actual.empleadoHeader}</span>
                         {esIrregular && (
                           <span className="flex items-center space-x-0.5 rounded bg-amber-200 px-1 py-0.5 text-[9px] font-bold text-amber-900 dark:bg-amber-900/80 dark:text-amber-200">
                             <AlertTriangle className="h-3 w-3" />
@@ -178,8 +180,7 @@ export function TablaVerificacionFilas({
                             actualizarFilaActual(fila.id, {
                               accionIrregularidad: accion,
                               nuevoEmpleado: nuevoEmp,
-                              empleadoAsignado:
-                                accion === 'asignar_nuevo' ? nuevoEmp : actual.empleadoHeader,
+                              empleadoAsignado: accion === 'asignar_nuevo' ? nuevoEmp : actual.empleadoHeader,
                             })
                           }
                         />
