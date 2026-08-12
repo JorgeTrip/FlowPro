@@ -34,6 +34,7 @@ interface ArmadoState {
   ultimaGuardadaInfo: UltimoGuardadoInfo | null;
   progresoScan: ProgresoScanInfo;
   cancelarScanSolicitado: boolean;
+  modalVerificacionAbierta: boolean;
 
   setPestanaActiva: (pestana: 'carga' | 'datos' | 'analisis') => void;
   agregarItemPendiente: (item: RegistroArmadoDocumento) => void;
@@ -50,6 +51,10 @@ interface ArmadoState {
   finalizarProgresoScan: () => void;
   cancelarEscaneoLote: () => void;
   resetCancelarScan: () => void;
+
+  setModalVerificacionAbierta: (abierta: boolean) => void;
+  abrirModalVerificacion: (index?: number) => void;
+  cerrarModalVerificacion: () => void;
 
   actualizarFilaActual: (filaId: string, updates: Partial<FilaArmado>) => void;
   actualizarCabeceraActual: (empleadoHeader: string, fechaPlanilla: string) => void;
@@ -73,6 +78,7 @@ export const useArmadoStore = create<ArmadoState>()(
       pestanaActiva: 'carga',
       ultimaGuardadaInfo: null,
       cancelarScanSolicitado: false,
+      modalVerificacionAbierta: false,
       progresoScan: {
         activo: false,
         totalArchivos: 0,
@@ -94,12 +100,21 @@ export const useArmadoStore = create<ArmadoState>()(
             itemsPendientes: nuevas,
             itemActualIndex: Math.min(state.itemActualIndex, Math.max(0, nuevas.length - 1)),
             cantVerificadasLote: nuevas.length === 0 ? 0 : state.cantVerificadasLote,
+            modalVerificacionAbierta: nuevas.length === 0 ? false : state.modalVerificacionAbierta,
           };
         }),
       setItemActualIndex: (itemActualIndex) => set({ itemActualIndex }),
       setCargandoScan: (cargandoScan) => set({ cargandoScan }),
       setErrorScan: (errorScan) => set({ errorScan }),
       setAlertaDuplicado: (alertaDuplicado) => set({ alertaDuplicado }),
+
+      setModalVerificacionAbierta: (modalVerificacionAbierta) => set({ modalVerificacionAbierta }),
+      abrirModalVerificacion: (index) =>
+        set((state) => ({
+          modalVerificacionAbierta: true,
+          itemActualIndex: typeof index === 'number' ? index : state.itemActualIndex,
+        })),
+      cerrarModalVerificacion: () => set({ modalVerificacionAbierta: false }),
 
       iniciarProgresoScan: (totalArchivos) =>
         set({
@@ -116,34 +131,20 @@ export const useArmadoStore = create<ArmadoState>()(
         }),
 
       actualizarProgresoScan: (updates) =>
-        set((state) => ({
-          progresoScan: { ...state.progresoScan, ...updates },
-        })),
-
+        set((state) => ({ progresoScan: { ...state.progresoScan, ...updates } })),
       setMinimizadoScan: (minimizado) =>
-        set((state) => ({
-          progresoScan: { ...state.progresoScan, minimizado },
-        })),
-
+        set((state) => ({ progresoScan: { ...state.progresoScan, minimizado } })),
       setOcultoScan: (oculto) =>
-        set((state) => ({
-          progresoScan: { ...state.progresoScan, oculto },
-        })),
-
+        set((state) => ({ progresoScan: { ...state.progresoScan, oculto } })),
       finalizarProgresoScan: () =>
-        set((state) => ({
-          progresoScan: { ...state.progresoScan, activo: false },
-        })),
-
+        set((state) => ({ progresoScan: { ...state.progresoScan, activo: false } })),
       cancelarEscaneoLote: () =>
         set((state) => ({
           cancelarScanSolicitado: true,
           cargandoScan: false,
           progresoScan: { ...state.progresoScan, activo: false },
         })),
-
-      resetCancelarScan: () =>
-        set({ cancelarScanSolicitado: false }),
+      resetCancelarScan: () => set({ cancelarScanSolicitado: false }),
 
       actualizarFilaActual: (filaId, updates) => {
         const { itemsPendientes, itemActualIndex } = get();
@@ -159,11 +160,7 @@ export const useArmadoStore = create<ArmadoState>()(
         const { itemsPendientes, itemActualIndex } = get();
         if (!itemsPendientes[itemActualIndex]) return;
         const copia = [...itemsPendientes];
-        copia[itemActualIndex] = {
-          ...copia[itemActualIndex],
-          empleadoHeader,
-          fechaPlanilla,
-        };
+        copia[itemActualIndex] = { ...copia[itemActualIndex], empleadoHeader, fechaPlanilla };
         set({ itemsPendientes: copia });
       },
 
@@ -201,7 +198,8 @@ export const useArmadoStore = create<ArmadoState>()(
         set((state) => ({
           itemActualIndex:
             state.itemsPendientes.length > 0
-              ? (state.itemActualIndex - 1 + state.itemsPendientes.length) % state.itemsPendientes.length
+              ? (state.itemActualIndex - 1 + state.itemsPendientes.length) %
+                state.itemsPendientes.length
               : 0,
         })),
 
@@ -213,6 +211,7 @@ export const useArmadoStore = create<ArmadoState>()(
           itemsPendientes: res,
           itemActualIndex: Math.max(0, Math.min(itemActualIndex, res.length - 1)),
           cantVerificadasLote: res.length === 0 ? 0 : nuevaCantVerificadas,
+          modalVerificacionAbierta: res.length > 0,
           ...(infoGuardada ? { ultimaGuardadaInfo: infoGuardada } : {}),
         });
       },
@@ -226,6 +225,7 @@ export const useArmadoStore = create<ArmadoState>()(
           errorScan: null,
           alertaDuplicado: null,
           ultimaGuardadaInfo: null,
+          modalVerificacionAbierta: false,
         }),
     }),
     {
@@ -236,6 +236,7 @@ export const useArmadoStore = create<ArmadoState>()(
         itemActualIndex: state.itemActualIndex,
         pestanaActiva: state.pestanaActiva,
         ultimaGuardadaInfo: state.ultimaGuardadaInfo,
+        modalVerificacionAbierta: state.modalVerificacionAbierta,
       }),
     }
   )

@@ -1,12 +1,12 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { ModuleLayout } from '@/app/components/layout/ModuleLayout';
 import { useArmadoStore } from './stores/armadoStore';
 import { BatchDropzone } from './components/carga/BatchDropzone';
 import { PendingQueueList } from './components/carga/PendingQueueList';
-import { VerificationSideBySide } from './components/carga/VerificationSideBySide';
+import { ModalVerificacionPlanilla } from './components/carga/ModalVerificacionPlanilla';
 import { DatabaseSyncFooterBar } from './components/carga/DatabaseSyncFooterBar';
 import { DataSheetsList } from './components/datos/DataSheetsList';
 import { DashboardFilters } from './components/analisis/DashboardFilters';
@@ -17,7 +17,6 @@ import { obtenerRegistrosVerificados, obtenerPlanillasPendientesFirestore } from
 import { RegistroArmadoDocumento, FiltrosAnalisis } from './types/armado';
 import { calcularMetricasGlobales, calcularRendimientoPorEmpleado } from './utils/metricsCalculator';
 import { UploadCloud, BarChart3, AlertCircle, Database } from 'lucide-react';
-
 import { ScanProgressWidget } from './components/carga/ScanProgressWidget';
 import { GeminiQuotaWidget } from './components/carga/GeminiQuotaWidget';
 import { ExternalJsonImporter } from './components/carga/ExternalJsonImporter';
@@ -28,11 +27,10 @@ export default function ControlArmadoPedidosPage() {
   const [registrosVerificados, setRegistrosVerificados] = useState<RegistroArmadoDocumento[]>([]);
   const [filtros, setFiltros] = useState<FiltrosAnalisis>({ rango: 'semana' });
   const [isMounted, setIsMounted] = useState(false);
-
   const [modalIrregularidadesAbierta, setModalIrregularidadesAbierta] = useState(false);
   const [empFiltroModal, setEmpFiltroModal] = useState<string | null>(null);
 
-  const cargarDatosAnalisis = React.useCallback(() => {
+  const cargarDatosAnalisis = useCallback(() => {
     if (pestanaActiva === 'analisis') {
       obtenerRegistrosVerificados(filtros).then((data) => setRegistrosVerificados(data));
     }
@@ -40,25 +38,19 @@ export default function ControlArmadoPedidosPage() {
 
   useEffect(() => {
     setIsMounted(true);
-    // Recuperar planillas pendientes desde Firestore para mantener persistencia al recargar
     obtenerPlanillasPendientesFirestore().then((pendientesFs) => {
-      if (pendientesFs && pendientesFs.length > 0) {
+      if (pendientesFs?.length) {
         const storeState = useArmadoStore.getState();
         const mapaExistentes = new Set(storeState.itemsPendientes.map((i) => i.id));
-        
         pendientesFs.forEach((pFs) => {
-          if (!mapaExistentes.has(pFs.id)) {
-            storeState.agregarItemPendiente(pFs);
-          }
+          if (!mapaExistentes.has(pFs.id)) storeState.agregarItemPendiente(pFs);
         });
       }
     });
   }, []);
 
   useEffect(() => {
-    if (isMounted) {
-      cargarDatosAnalisis();
-    }
+    if (isMounted) cargarDatosAnalisis();
   }, [isMounted, cargarDatosAnalisis]);
 
   const handleAbrirIrregularidades = (emp?: string) => {
@@ -74,7 +66,7 @@ export default function ControlArmadoPedidosPage() {
     return (
       <ModuleLayout
         titulo="Control de Armado de Pedidos"
-        descripcion="Escaneo de planillas mejorado con inteligencia artificial (Gemini Vision OCR), verificación lado a lado, gestión de datos guardados y análisis de productividad."
+        descripcion="Escaneo de planillas mejorado con IA (Gemini Vision OCR), verificación lado a lado, datos guardados y métricas."
         breadcrumbs={[{ nombre: 'Dashboard', href: '/' }, { nombre: 'Control de Armado' }]}
       >
         <div className="flex h-64 items-center justify-center">
@@ -87,25 +79,22 @@ export default function ControlArmadoPedidosPage() {
   return (
     <ModuleLayout
       titulo="Control de Armado de Pedidos"
-      descripcion="Escaneo de planillas mejorado con inteligencia artificial (Gemini Vision OCR), verificación lado a lado, gestión de datos guardados y análisis de productividad."
+      descripcion="Escaneo de planillas mejorado con IA (Gemini Vision OCR), verificación lado a lado, datos guardados y métricas."
       breadcrumbs={[{ nombre: 'Dashboard', href: '/' }, { nombre: 'Control de Armado' }]}
     >
       <div className="space-y-6">
-        {/* Modal Flotante de Revisión de Irregularidades */}
         {modalIrregularidadesAbierta && (
           <IrregularitiesModal
             registros={registrosVerificados}
             empleadoInicial={empFiltroModal}
             onClose={() => setModalIrregularidadesAbierta(false)}
-            onActualizado={() => {
-              cargarDatosAnalisis();
-            }}
+            onActualizado={cargarDatosAnalisis}
           />
         )}
 
-        {/* Widget Flotante de Progreso de Escaneo con IA */}
+        <ModalVerificacionPlanilla />
         <ScanProgressWidget />
-        {/* Alerta de Error de Escaneo */}
+
         {errorScan && (
           <div className="flex items-center space-x-2 rounded-xl border border-red-300 bg-red-50 p-4 text-xs font-semibold text-red-800 shadow-md dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300">
             <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
@@ -113,7 +102,6 @@ export default function ControlArmadoPedidosPage() {
           </div>
         )}
 
-        {/* Alerta de Duplicados en Pantalla */}
         {alertaDuplicado && (
           <div className="flex items-center space-x-2 rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs font-semibold text-amber-800 shadow-md dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
             <AlertCircle className="h-5 w-5 shrink-0 text-amber-600" />
@@ -121,7 +109,6 @@ export default function ControlArmadoPedidosPage() {
           </div>
         )}
 
-        {/* Navegación por 3 Pestañas: Carga, Datos, Análisis */}
         <div className="flex space-x-2 border-b border-gray-200 dark:border-gray-800">
           <button
             onClick={() => setPestanaActiva('carga')}
@@ -165,18 +152,15 @@ export default function ControlArmadoPedidosPage() {
           </button>
         </div>
 
-        {/* Contenido Pestaña 1: Carga y Verificación */}
         {pestanaActiva === 'carga' && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
-              {/* Columna izquierda: Drag'n'Drop + Widget de cuota API apilados verticalmente */}
               <div className="lg:col-span-7 flex flex-col gap-3">
                 <div className="flex-1">
                   <BatchDropzone />
                 </div>
                 <GeminiQuotaWidget />
               </div>
-              {/* Columna derecha: importación JSON a altura completa */}
               <div className="lg:col-span-5 flex flex-col">
                 <div className="flex-1">
                   <ExternalJsonImporter />
@@ -184,15 +168,12 @@ export default function ControlArmadoPedidosPage() {
               </div>
             </div>
             <PendingQueueList />
-            <VerificationSideBySide />
             <DatabaseSyncFooterBar />
           </div>
         )}
 
-        {/* Contenido Pestaña 2: Datos Guardados en Firestore */}
         {pestanaActiva === 'datos' && <DataSheetsList />}
 
-        {/* Contenido Pestaña 3: Análisis y Métricas */}
         {pestanaActiva === 'analisis' && (
           <div className="space-y-6">
             <DashboardFilters
