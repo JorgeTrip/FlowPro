@@ -2,69 +2,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { indexedDBStorage } from '@/app/lib/indexedDBStorage';
-import { RegistroArmadoDocumento, FilaArmado } from '../types/armado';
-
-interface UltimoGuardadoInfo {
-  empleado: string;
-  cantFilas: number;
-  cantArticulos: number;
-  guardadoEn: string;
-}
-
-export interface ProgresoScanInfo {
-  activo: boolean;
-  totalArchivos: number;
-  indiceActual: number;
-  nombreArchivo: string;
-  porcentajePlanilla: number;
-  porcentajeGlobal: number;
-  minimizado: boolean;
-  oculto: boolean;
-  mensajeEstado?: string;
-}
-
-interface ArmadoState {
-  itemsPendientes: RegistroArmadoDocumento[];
-  itemActualIndex: number;
-  cantVerificadasLote: number;
-  cargandoScan: boolean;
-  errorScan: string | null;
-  alertaDuplicado: string | null;
-  pestanaActiva: 'carga' | 'datos' | 'analisis';
-  ultimaGuardadaInfo: UltimoGuardadoInfo | null;
-  progresoScan: ProgresoScanInfo;
-  cancelarScanSolicitado: boolean;
-  modalVerificacionAbierta: boolean;
-
-  setPestanaActiva: (pestana: 'carga' | 'datos' | 'analisis') => void;
-  agregarItemPendiente: (item: RegistroArmadoDocumento) => void;
-  eliminarItemPendiente: (id: string) => void;
-  setItemActualIndex: (index: number) => void;
-  setCargandoScan: (cargando: boolean) => void;
-  setErrorScan: (error: string | null) => void;
-  setAlertaDuplicado: (alerta: string | null) => void;
-  iniciarProgresoScan: (totalArchivos: number) => void;
-  actualizarProgresoScan: (updates: Partial<ProgresoScanInfo>) => void;
-  setMinimizadoScan: (minimizado: boolean) => void;
-  setOcultoScan: (oculto: boolean) => void;
-  finalizarProgresoScan: () => void;
-  cancelarEscaneoLote: () => void;
-  resetCancelarScan: () => void;
-
-  setModalVerificacionAbierta: (abierta: boolean) => void;
-  abrirModalVerificacion: (index?: number) => void;
-  cerrarModalVerificacion: () => void;
-
-  actualizarFilaActual: (filaId: string, updates: Partial<FilaArmado>) => void;
-  actualizarCabeceraActual: (empleadoHeader: string, fechaPlanilla: string) => void;
-  removerFilaActual: (filaId: string) => void;
-  agregarFilaAItemActual: (nuevaFila?: Partial<FilaArmado>) => void;
-  reemplazarFilasItemActual: (filas: FilaArmado[], empleadoHeader?: string) => void;
-  saltarASiguientePlanilla: () => void;
-  irAPlanillaAnterior: () => void;
-  marcarActualComoVerificado: (infoGuardada?: UltimoGuardadoInfo) => void;
-  reset: () => void;
-}
+import { FilaArmado } from '../types/armado';
+import { ArmadoState } from './armadoStoreTypes';
 
 export const useArmadoStore = create<ArmadoState>()(
   persist(
@@ -145,6 +84,9 @@ export const useArmadoStore = create<ArmadoState>()(
         const copia = [...itemsPendientes];
         const actual = { ...copia[itemActualIndex] };
         actual.filas = actual.filas.map((f) => (f.id === filaId ? { ...f, ...updates } : f));
+        if (actual.filas.length > 0 && actual.filas[0].id === filaId && updates.fecha) {
+          actual.fechaPrimeraFila = updates.fecha;
+        }
         copia[itemActualIndex] = actual;
         set({ itemsPendientes: copia });
       },
@@ -212,9 +154,7 @@ export const useArmadoStore = create<ArmadoState>()(
       saltarASiguientePlanilla: () =>
         set((state) => ({
           itemActualIndex:
-            state.itemsPendientes.length > 0
-              ? (state.itemActualIndex + 1) % state.itemsPendientes.length
-              : 0,
+            state.itemsPendientes.length > 0 ? (state.itemActualIndex + 1) % state.itemsPendientes.length : 0,
         })),
 
       irAPlanillaAnterior: () =>
