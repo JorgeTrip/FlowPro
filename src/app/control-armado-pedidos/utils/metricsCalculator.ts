@@ -2,9 +2,6 @@
 import { RegistroArmadoDocumento, MetricasKpi, RendimientoEmpleado } from '../types/armado';
 import * as XLSX from 'xlsx';
 
-/**
- * Calcula la diferencia en minutos entre dos horas en formato HH:MM.
- */
 export function calcularDiferenciaMinutos(inicio: string, fin: string): number {
   if (!inicio || !fin) return 0;
   const [h1, m1] = inicio.split(':').map(Number);
@@ -13,12 +10,9 @@ export function calcularDiferenciaMinutos(inicio: string, fin: string): number {
   const min1 = h1 * 60 + m1;
   const min2 = h2 * 60 + m2;
   const dif = min2 - min1;
-  return dif > 0 ? dif : dif + 1440; // Soporta turnos que cruzan medianoche
+  return dif > 0 ? dif : dif + 1440;
 }
 
-/**
- * Calcula los KPIs globales del equipo a partir de los documentos verificados.
- */
 export function calcularMetricasGlobales(registros: RegistroArmadoDocumento[]): MetricasKpi {
   let totalPedidos = 0;
   let totalArticulos = 0;
@@ -45,9 +39,6 @@ export function calcularMetricasGlobales(registros: RegistroArmadoDocumento[]): 
   };
 }
 
-/**
- * Calcula el rendimiento desagregado por cada empleado.
- */
 export function calcularRendimientoPorEmpleado(registros: RegistroArmadoDocumento[]): RendimientoEmpleado[] {
   const mapa = new Map<string, { pedidos: number; articulos: number; minutos: number; irregularidades: number }>();
 
@@ -59,7 +50,10 @@ export function calcularRendimientoPorEmpleado(registros: RegistroArmadoDocument
       actual.pedidos += 1;
       actual.articulos += f.cantArticulos || 0;
       actual.minutos += calcularDiferenciaMinutos(f.horaInicio, f.horaFin);
-      if (f.esIrregular) actual.irregularidades += 1;
+
+      if (f.esIrregular && !f.accionIrregularidad) {
+        actual.irregularidades += 1;
+      }
       mapa.set(emp, actual);
     });
   });
@@ -84,13 +78,9 @@ export function calcularRendimientoPorEmpleado(registros: RegistroArmadoDocument
   return resultado.sort((a, b) => b.velocidadArtHs - a.velocidadArtHs);
 }
 
-/**
- * Exporta el detalle analítico y resumen a formato Excel (.xlsx).
- */
 export function exportarAXLSX(registros: RegistroArmadoDocumento[]): void {
   const rend = calcularRendimientoPorEmpleado(registros);
 
-  // Hoja 1: Resumen por Armador
   const resumenData = rend.map((r) => ({
     'Armador': r.empleado,
     'Total Pedidos': r.totalPedidos,
@@ -101,10 +91,11 @@ export function exportarAXLSX(registros: RegistroArmadoDocumento[]): void {
     'Irregularidades': r.totalIrregularidades,
   }));
 
-  // Hoja 2: Detalle de Pedidos
   const detalleFilas: any[] = [];
   registros.forEach((reg) => {
     reg.filas?.forEach((f) => {
+      if (f.accionIrregularidad === 'ignorar') return;
+      const esIrregularActiva = Boolean(f.esIrregular) && !f.accionIrregularidad;
       detalleFilas.push({
         'Empleado Cabecera': reg.empleadoHeader,
         'Armador Asignado': f.empleadoAsignado || f.nuevoEmpleado || reg.empleadoHeader,
@@ -112,37 +103,29 @@ export function exportarAXLSX(registros: RegistroArmadoDocumento[]): void {
         'Hora Inicio': f.horaInicio,
         'Hora Fin': f.horaFin,
         'Cant. Artículos': f.cantArticulos,
-        'Es Irregular': f.esIrregular ? 'SÍ' : 'NO',
+        'Es Irregular': esIrregularActiva ? 'SÍ' : 'NO',
         'Nota Irregularidad': f.notaIrregularidad || '-',
       });
     });
   });
 
   const wb = XLSX.utils.book_new();
-
-  const wsResumen = XLSX.utils.json_to_sheet(resumenData);
-  XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen por Armador');
-
-  const wsDetalle = XLSX.utils.json_to_sheet(detalleFilas);
-  XLSX.utils.book_append_sheet(wb, wsDetalle, 'Detalle de Pedidos');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumenData), 'Resumen por Armador');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detalleFilas), 'Detalle de Pedidos');
 
   const hoyStr = new Date().toISOString().split('T')[0];
   XLSX.writeFile(wb, `flowpro_control_armado_${hoyStr}.xlsx`);
 }
 
-/**
- * Exporta el listado exclusivo de irregularidades registradas a un archivo Excel (.xlsx).
- */
-export function exportarIrregularidadesAXLSX(
-  registros: RegistroArmadoDocumento[],
-  empleadoFiltro?: string
-): void {
+export function exportarIrregularidadesAXLSX(registros: RegistroArmadoDocumento[], empleadoFiltro?: string): void {
   const irregularidadesFiltradas: any[] = [];
 
   registros.forEach((reg) => {
     reg.filas?.forEach((f) => {
-      const armador = f.empleadoAsignado || f.nuevoEmpleado || reg.empleadoHeader;
-      if (f.esIrregular || f.notaIrregularidad) {
+      if (f.accionIrregularidad === 'ignorar') return;
+      const esIrregularActiva = Boolean(f.esIrregular) && !f.accionIrregularidad;
+      if (esIrregularActiva) {
+        const armador = f.empleadoAsignado || f.nuevoEmpleado || reg.empleadoHeader;
         if (!empleadoFiltro || armador === empleadoFiltro || reg.empleadoHeader === empleadoFiltro) {
           irregularidadesFiltradas.push({
             'Empleado Cabecera': reg.empleadoHeader,
@@ -161,8 +144,7 @@ export function exportarIrregularidadesAXLSX(
   });
 
   const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(irregularidadesFiltradas);
-  XLSX.utils.book_append_sheet(wb, ws, 'Irregularidades');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(irregularidadesFiltradas), 'Irregularidades');
 
   const hoyStr = new Date().toISOString().split('T')[0];
   const sufijoEmp = empleadoFiltro ? `_${empleadoFiltro.replace(/\s+/g, '_')}` : '';

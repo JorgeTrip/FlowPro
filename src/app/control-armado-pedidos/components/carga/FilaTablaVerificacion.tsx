@@ -125,6 +125,7 @@ export function FilaTablaVerificacion({
               onResolver={(accion, nuevoEmp) =>
                 actualizarFilaActual(fila.id, {
                   accionIrregularidad: accion,
+                  esIrregular: false,
                   nuevoEmpleado: nuevoEmp,
                   empleadoAsignado: accion === 'asignar_nuevo' ? nuevoEmp : actual.empleadoHeader,
                 })

@@ -90,13 +90,39 @@ export function DashboardFilters({ filtros, empleadosDisponibles, registrosCompl
     onCambiarFiltros({ ...filtros, rango: 'mes', fechaInicio: `${y}-${mmStr}-01`, fechaFin: `${y}-${mmStr}-${String(ultDia).padStart(2, '0')}` });
   };
 
+  const formatFechaVisual = (fStr?: string) => {
+    if (!fStr || !fStr.includes('-')) return fStr || '';
+    const p = fStr.split('-');
+    return p.length === 3 && p[0].length === 4 ? `${p[2]}/${p[1]}/${p[0]}` : fStr;
+  };
+
   const getTextoBadgeTodos = () => {
-    const fInicio = filtros.fechaInicio;
-    const fFin = filtros.fechaFin;
-    if (fInicio && fFin) {
-      return fInicio === fFin ? `Todos los registros (${fInicio})` : `Todos los registros: del ${fInicio} al ${fFin}`;
+    let fInicio = filtros.fechaInicio;
+    let fFin = filtros.fechaFin;
+
+    if (!fInicio || !fFin) {
+      const todasLasFechas: string[] = [];
+      registrosCompletos.forEach((r) => {
+        if (r.fechaPrimeraFila) todasLasFechas.push(normalizarFechaYYYYMMDD(r.fechaPrimeraFila));
+        if (r.verificadoEn) todasLasFechas.push(normalizarFechaYYYYMMDD(r.verificadoEn));
+        r.filas?.forEach((f) => f.fecha && todasLasFechas.push(normalizarFechaYYYYMMDD(f.fecha)));
+      });
+
+      const fechasValidas = Array.from(new Set(todasLasFechas.filter((f) => /^\d{4}-\d{2}-\d{2}$/.test(f)))).sort();
+      if (fechasValidas.length > 0) {
+        fInicio = fInicio || fechasValidas[0];
+        fFin = fFin || fechasValidas[fechasValidas.length - 1];
+      }
     }
-    return 'Todos los registros históricos';
+
+    if (fInicio && fFin) {
+      const visInicio = formatFechaVisual(fInicio);
+      const visFin = formatFechaVisual(fFin);
+      return visInicio === visFin
+        ? `Mostrando registros del ${visInicio}`
+        : `Mostrando registros del ${visInicio} al ${visFin}`;
+    }
+    return 'Mostrando todos los registros históricos';
   };
 
   return (

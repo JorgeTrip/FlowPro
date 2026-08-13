@@ -21,7 +21,10 @@ export function SheetCard({ p, onEditar, onEliminar, onVerImagen }: SheetCardPro
   useEffect(() => {
     setMontado(true);
     let cancelado = false;
-    if (p.id) {
+    if (p.imagenBase64) {
+      setImagenBase64(p.imagenBase64);
+      setCargandoImg(false);
+    } else if (p.id) {
       obtenerImagenLocal(p.id).then((img) => {
         if (!cancelado) {
           setImagenBase64(img);
@@ -34,7 +37,7 @@ export function SheetCard({ p, onEditar, onEliminar, onVerImagen }: SheetCardPro
     return () => {
       cancelado = true;
     };
-  }, [p.id]);
+  }, [p.id, p.imagenBase64]);
 
   const cantFilas = p.filas?.length || 0;
 
