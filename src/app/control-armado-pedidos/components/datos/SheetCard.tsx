@@ -16,8 +16,10 @@ interface SheetCardProps {
 export function SheetCard({ p, onEditar, onEliminar, onVerImagen }: SheetCardProps) {
   const [imagenBase64, setImagenBase64] = useState<string | null>(null);
   const [cargandoImg, setCargandoImg] = useState(true);
+  const [montado, setMontado] = useState(false);
 
   useEffect(() => {
+    setMontado(true);
     let cancelado = false;
     if (p.id) {
       obtenerImagenLocal(p.id).then((img) => {
@@ -39,7 +41,7 @@ export function SheetCard({ p, onEditar, onEliminar, onVerImagen }: SheetCardPro
   // Formatear Fecha y Hora de registro
   const fechaHoraStr = p.verificadoEn || p.creadoEn;
   let fechaHoraFormateada = '';
-  if (fechaHoraStr) {
+  if (montado && fechaHoraStr) {
     try {
       const dateObj = new Date(fechaHoraStr);
       if (!isNaN(dateObj.getTime())) {
@@ -117,7 +119,7 @@ export function SheetCard({ p, onEditar, onEliminar, onVerImagen }: SheetCardPro
                 {fechaHoraFormateada && (
                   <div className="flex items-center space-x-1">
                     <Clock className="h-3.5 w-3.5 text-gray-400 shrink-0" />
-                    <span>{fechaHoraFormateada}</span>
+                    <span suppressHydrationWarning>{fechaHoraFormateada}</span>
                   </div>
                 )}
               </div>

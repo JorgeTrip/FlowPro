@@ -1,7 +1,7 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { RegistroArmadoDocumento } from '../../types/armado';
 import { FileText, Package, Hash, Clock, Database } from 'lucide-react';
 
@@ -18,6 +18,12 @@ export function BarraResumenDatos({
   hayFiltro,
   cargando,
 }: BarraResumenDatosProps) {
+  const [montado, setMontado] = useState(false);
+
+  useEffect(() => {
+    setMontado(true);
+  }, []);
+
   const totalPlanillas = planillasFiltradas.length;
   const totalFilas = planillasFiltradas.reduce((acc, r) => acc + (r.filas?.length || 0), 0);
   const totalArticulos = planillasFiltradas.reduce(
@@ -32,7 +38,9 @@ export function BarraResumenDatos({
   })[0];
 
   const fechaHoraIso = ultimaCargada?.verificadoEn || ultimaCargada?.creadoEn;
-  const fechaHoraTexto = fechaHoraIso
+  const fechaHoraTexto = !montado
+    ? '...'
+    : fechaHoraIso
     ? new Date(fechaHoraIso).toLocaleString('es-AR', {
         day: '2-digit',
         month: '2-digit',
@@ -78,16 +86,16 @@ export function BarraResumenDatos({
           <div className="flex items-center space-x-1.5 pl-4">
             <Hash className="h-3.5 w-3.5 text-emerald-500" />
             <span>Total Artículos:</span>
-            <strong className="text-gray-900 dark:text-white font-bold">
-              {cargando ? '...' : totalArticulos.toLocaleString('es-AR')}
+            <strong suppressHydrationWarning className="text-gray-900 dark:text-white font-bold">
+              {cargando || !montado ? '...' : totalArticulos.toLocaleString('es-AR')}
             </strong>
           </div>
 
           <div className="flex items-center space-x-1.5 pl-4 text-amber-600 dark:text-amber-400">
             <Clock className="h-3.5 w-3.5 shrink-0" />
             <span>Última planilla cargada:</span>
-            <strong className="text-gray-900 dark:text-amber-300 font-bold whitespace-nowrap">
-              {cargando ? '...' : fechaHoraTexto}
+            <strong suppressHydrationWarning className="text-gray-900 dark:text-amber-300 font-bold whitespace-nowrap">
+              {cargando || !montado ? '...' : fechaHoraTexto}
               {ultimaCargada?.empleadoHeader ? ` (${ultimaCargada.empleadoHeader})` : ''}
             </strong>
           </div>
