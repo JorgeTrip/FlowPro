@@ -3,113 +3,39 @@
 
 import React, { useState } from 'react';
 import { useArmadoStore } from '../../stores/armadoStore';
-import { FilaArmado, RegistroArmadoDocumento } from '../../types/armado';
-import { procesarFechasPlanilla } from '../../utils/fechaUtils';
+import { RegistroArmadoDocumento, FilaArmado } from '../../types/armado';
+import { FileJson, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
 import { guardarPlanillaPendienteFirestore } from '../../services/firestoreService';
-import { FileJson, Sparkles, Copy, ExternalLink, Check, AlertCircle } from 'lucide-react';
-
-const PROMPT_IA_EXTERNA = `Sos un sistema OCR experto de alta precisión especializado en leer planillas de "CONTROL DE ARMADO DE PEDIDOS".
-
-ESTRUCTURA DE LA PLANILLA EN PAPEL:
-- El encabezado contiene "CONTROL DE ARMADO DE PEDIDOS" y el campo "EMPLEADO: [NOMBRE]".
-- La grilla contiene una cantidad variable de filas de datos (fechas, hora inicio, hora fin, artículos, notas).
-
-REGLA FUNDAMENTAL — UNA FOTO = UNA PLANILLA:
-Cada imagen adjunta corresponde SIEMPRE a UNA SOLA planilla independiente. El array "planillas" del JSON debe tener EXACTAMENTE LA MISMA CANTIDAD DE ELEMENTOS QUE FOTOS ADJUNTAS. Si adjuntás 6 fotos, el JSON debe tener 6 objetos en "planillas". NUNCA combines ni fusiones filas de distintas fotos en un mismo objeto, aunque el empleado sea el mismo. Cada foto es un documento físico separado con su propio bloque de renglones.
-
-INSTRUCCIÓN DE FORMATO OBLIGATORIA:
-Entregá la respuesta ÚNICAMENTE dentro de un bloque de código Markdown (\`\`\`json ... \`\`\`) listo para copiar con un solo clic mediante el botón de copiar código de tu interfaz. NO agregues saludos, introducciones ni explicaciones fuera del bloque de código.
-
-Estructura JSON estricta (un objeto por imagen adjunta, en el mismo orden en que aparecen):
-{
-  "planillas": [
-    {
-      "empleadoHeader": "Nombre de empleado en el encabezado superior (ej: GABRIEL), o null si falta",
-      "filas": [
-        {
-          "fecha": "YYYY-MM-DD (ej: 2026-07-30) o null si la casilla de fecha en ese renglón está en blanco",
-          "horaInicio": "HH:MM (formato 24h) o null si está en blanco",
-          "horaFin": "HH:MM (formato 24h) o null si está en blanco",
-          "cantArticulos": 283,
-          "notaIrregularidad": "Texto manuscrito adicional (ej: FALTANTE, TERMINO SEBA) o null",
-          "esIrregular": true
-        }
-      ]
-    }
-  ]
-}`;
 
 export function ExternalJsonImporter() {
-  const { agregarItemPendiente } = useArmadoStore();
   const [jsonText, setJsonText] = useState('');
-  const [copiado, setCopiado] = useState(false);
   const [errorParse, setErrorParse] = useState<string | null>(null);
   const [exitoMensaje, setExitoMensaje] = useState<string | null>(null);
 
-  const handleCopiarYAbrirGemini = async () => {
-    try {
-      await navigator.clipboard.writeText(PROMPT_IA_EXTERNA);
-      setCopiado(true);
-      setTimeout(() => setCopiado(false), 3000);
-
-      // Abrir Gemini Web en una nueva pestaña
-      window.open('https://gemini.google.com/', '_blank');
-    } catch (err) {
-      console.error('Error al copiar al portapapeles:', err);
-    }
-  };
-
-  const handleProcesarJson = () => {
+  const handleImportarJSON = async () => {
     setErrorParse(null);
     setExitoMensaje(null);
 
     if (!jsonText.trim()) {
-      setErrorParse('Por favor pega el código JSON de la IA antes de procesar.');
+      setErrorParse('Por favor, pega el contenido JSON antes de importar.');
       return;
     }
 
     try {
-      // Limpiar posibles bloques de código markdown tipo ```json ... ```
-      let cleanedText = jsonText.trim();
-      if (cleanedText.startsWith('```')) {
-        cleanedText = cleanedText.replace(/^```\w*\n?/, '').replace(/```$/, '').trim();
-      }
-
-      const parsed = JSON.parse(cleanedText);
-      let listaPlanillas: any[] = [];
-
-      if (Array.isArray(parsed)) {
-        listaPlanillas = parsed;
-      } else if (Array.isArray(parsed.planillas)) {
-        listaPlanillas = parsed.planillas;
-      } else if (parsed.filas) {
-        listaPlanillas = [parsed];
-      } else {
-        throw new Error('El JSON no contiene una estructura válida con "filas" o "planillas".');
-      }
+      const parsed = JSON.parse(jsonText);
+      const planillas: any[] = Array.isArray(parsed) ? parsed : [parsed];
+      if (planillas.length === 0) throw new Error('El JSON no contiene ningún registro de planilla válido.');
 
       const hoyStr = new Date().toISOString().split('T')[0];
       let cantCargadas = 0;
 
-      listaPlanillas.forEach((p, idxP) => {
-        const empHeader = (p.empleadoHeader && p.empleadoHeader !== 'null' ? p.empleadoHeader : 'Empleado Desconocido').toUpperCase();
-        const filasRaw = (p.filas || []).map((f: any) => {
-          const notaClean = f.notaIrregularidad && String(f.notaIrregularidad).trim() !== 'null' ? String(f.notaIrregularidad).trim() : null;
-          const tieneNota = Boolean(notaClean && notaClean.length > 0 && !notaClean.toLowerCase().includes('marca de irregularidad'));
-          const fechaClean = f.fecha && String(f.fecha).trim() !== 'null' ? String(f.fecha).trim() : null;
+      for (let idxP = 0; idxP < planillas.length; idxP++) {
+        const p = planillas[idxP];
+        const empHeader = p.empleadoHeader || p.empleado || 'Empleado Externo';
+        const filasRaw = Array.isArray(p.filas) ? p.filas : Array.isArray(p.registros) ? p.registros : [];
 
-          return {
-            fecha: fechaClean,
-            horaInicio: f.horaInicio && String(f.horaInicio).trim() !== 'null' ? String(f.horaInicio).trim() : '',
-            horaFin: f.horaFin && String(f.horaFin).trim() !== 'null' ? String(f.horaFin).trim() : '',
-            cantArticulos: Number(f.cantArticulos) || 0,
-            notaIrregularidad: notaClean ? notaClean.toUpperCase() : null,
-            esIrregular: Boolean(f.esIrregular || tieneNota),
-          };
-        });
-
-        const filasProcesadas: FilaArmado[] = procesarFechasPlanilla(filasRaw, hoyStr).map((f, idxF) => ({
-          id: `fila-ext-${idxP}-${idxF}-${Date.now()}`,
+        const filasProcesadas: FilaArmado[] = filasRaw.map((f: any, idxF: number) => ({
+          id: f.id || `ext-f-${idxP}-${idxF}-${Date.now()}`,
           fecha: f.fecha || hoyStr,
           horaInicio: f.horaInicio || '',
           horaFin: f.horaFin || '',
@@ -118,6 +44,7 @@ export function ExternalJsonImporter() {
           esIrregular: Boolean(f.esIrregular),
           empleadoAsignado: empHeader,
         }));
+
         const primeraFilaHora = filasProcesadas[0]?.horaInicio || '00:00';
         const primeraFilaFecha = filasProcesadas[0]?.fecha || hoyStr;
 
@@ -127,21 +54,18 @@ export function ExternalJsonImporter() {
           fechaPrimeraFila: primeraFilaFecha,
           horaInicioPrimeraFila: primeraFilaHora,
           estado: 'pendiente_verificacion',
-          imagenBase64: '', // Sin imagen física por ser origen externo
+          imagenBase64: '',
           nombreArchivoOriginal: `Importación Externa (JSON #${idxP + 1})`,
           creadoEn: new Date().toISOString(),
           filas: filasProcesadas,
         };
 
-        // Guardar asincrónicamente en Firestore para persistencia total al refrescar
-        guardarPlanillaPendienteFirestore(itemPendiente).then((idReal) => {
-          itemPendiente.id = idReal;
-        });
-
-        agregarItemPendiente(itemPendiente);
-
+        const idReal = await guardarPlanillaPendienteFirestore(itemPendiente);
+        if (!idReal) {
+          useArmadoStore.getState().agregarItemPendiente(itemPendiente);
+        }
         cantCargadas++;
-      });
+      }
 
       setJsonText('');
       setExitoMensaje(`✨ Se cargaron exitosamente ${cantCargadas} planilla(s) externa(s) a la cola de verificación.`);
@@ -161,46 +85,23 @@ export function ExternalJsonImporter() {
               <FileJson className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                Importación Externa
-              </h3>
-              <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                Cargar JSON obtenido desde Gemini Web / ChatGPT
-              </p>
+              <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Importación Externa de JSON</h3>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400">Pega estructuras exportadas de otras instancias</p>
             </div>
           </div>
-
-          <button
-            type="button"
-            onClick={handleCopiarYAbrirGemini}
-            className={`flex items-center space-x-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold shadow-sm transition-all shrink-0 ${
-              jsonText.trim()
-                ? 'border border-purple-300 bg-purple-50 text-purple-600 hover:bg-purple-100 dark:border-purple-800 dark:bg-purple-950/30 dark:text-purple-400'
-                : 'bg-purple-600 text-white hover:bg-purple-700 shadow-md'
-            }`}
-            title="Copiar prompt al portapapeles y abrir gemini.google.com"
-          >
-            {copiado ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-            <span>{copiado ? '¡Copiado!' : 'Copiar Prompt y Abrir Gemini'}</span>
-            <ExternalLink className="h-3 w-3 ml-0.5" />
-          </button>
         </div>
 
-        <div className="mt-3 space-y-2">
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
-            Pegar código JSON emitido por Gemini Web / ChatGPT:
-          </label>
+        <div className="mt-3">
           <textarea
-            rows={4}
             value={jsonText}
             onChange={(e) => setJsonText(e.target.value)}
-            placeholder='Pega aquí el JSON generado (ej: {"planillas": [...]})...'
-            className="w-full rounded-xl border border-purple-200 bg-purple-50/30 p-2.5 font-mono text-xs text-gray-900 focus:outline-none dark:border-purple-900/60 dark:bg-purple-950/20 dark:text-gray-200"
+            placeholder='Pega aquí el código JSON (ej. [{"empleadoHeader": "Juan", "filas": [...]}, ...])'
+            className="h-24 w-full rounded-xl border border-gray-200 bg-gray-50/50 p-3 font-mono text-xs text-gray-800 focus:border-purple-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900/50 dark:text-gray-200"
           />
         </div>
 
         {errorParse && (
-          <div className="mt-2 flex items-center space-x-1.5 text-xs text-red-600 dark:text-red-400 font-semibold">
+          <div className="mt-2 flex items-center space-x-1.5 text-xs text-red-600 dark:text-red-400 font-medium">
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>{errorParse}</span>
           </div>
@@ -208,22 +109,18 @@ export function ExternalJsonImporter() {
 
         {exitoMensaje && (
           <div className="mt-2 flex items-center space-x-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
-            <Sparkles className="h-4 w-4 shrink-0" />
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
             <span>{exitoMensaje}</span>
           </div>
         )}
       </div>
 
       <button
-        type="button"
-        onClick={handleProcesarJson}
-        className={`mt-3 w-full rounded-xl py-2 text-xs font-bold transition-all ${
-          jsonText.trim()
-            ? 'bg-purple-600 text-white shadow-md hover:bg-purple-700'
-            : 'border border-purple-600 bg-purple-50 text-purple-700 hover:bg-purple-100 dark:border-purple-500/60 dark:bg-purple-950/40 dark:text-purple-300'
-        }`}
+        onClick={handleImportarJSON}
+        className="mt-4 flex w-full items-center justify-center space-x-2 rounded-xl bg-purple-600 px-4 py-2.5 text-xs font-semibold text-white shadow-md transition-all hover:bg-purple-700 active:scale-[0.99] dark:bg-purple-600 dark:hover:bg-purple-500"
       >
-        Procesar y Cargar Planillas (JSON)
+        <Upload className="h-4 w-4" />
+        <span>Importar a Cola de Verificación</span>
       </button>
     </div>
   );

@@ -11,7 +11,6 @@ import { RegistroArmadoDocumento } from '../../types/armado';
 
 export function BatchDropzone() {
   const {
-    agregarItemPendiente,
     setCargandoScan,
     setErrorScan,
     setAlertaDuplicado,
@@ -35,28 +34,16 @@ export function BatchDropzone() {
       iniciarProgresoScan(totalArchivos);
 
       for (let i = 0; i < acceptedFiles.length; i++) {
-        if (useArmadoStore.getState().cancelarScanSolicitado) {
-          console.log('[BatchDropzone] Proceso de lote cancelado por el usuario.');
-          break;
-        }
+        if (useArmadoStore.getState().cancelarScanSolicitado) break;
 
-        // Regulación de velocidad entre planillas de un lote para no saturar la API
-        if (i > 0) {
-          await new Promise((resolve) => setTimeout(resolve, 1500));
-        }
+        if (i > 0) await new Promise((resolve) => setTimeout(resolve, 1500));
 
         const file = acceptedFiles[i];
         const indiceActual = i + 1;
         const porcentajeGlobal = Math.round((i / totalArchivos) * 100);
 
-        actualizarProgresoScan({
-          indiceActual,
-          nombreArchivo: file.name,
-          porcentajePlanilla: 5,
-          porcentajeGlobal,
-        });
+        actualizarProgresoScan({ indiceActual, nombreArchivo: file.name, porcentajePlanilla: 5, porcentajeGlobal });
 
-        // Intervalo para animación fluida continua del escaneo de la planilla actual (0-90%)
         let pctLocal = 5;
         const timerProgreso = setInterval(() => {
           pctLocal = Math.min(92, pctLocal + Math.floor(Math.random() * 8) + 4);
@@ -91,10 +78,7 @@ export function BatchDropzone() {
                 const segsTotales = segsRestantes;
 
                 while (segsRestantes > 0) {
-                  if (useArmadoStore.getState().cancelarScanSolicitado) {
-                    break;
-                  }
-
+                  if (useArmadoStore.getState().cancelarScanSolicitado) break;
                   const pctEspera = Math.min(95, Math.round(((segsTotales - segsRestantes) / segsTotales) * 100));
                   actualizarProgresoScan({
                     mensajeEstado: `Reintentando en ${segsRestantes}s (Cuota de Gemini)...`,
@@ -122,21 +106,14 @@ export function BatchDropzone() {
             const primeraFilaHora = data.filas?.[0]?.horaInicio || '00:00';
             const primeraFilaFecha = data.filas?.[0]?.fecha || hoyStr;
 
-            const resVerif = await verificarDuplicado(
-              data.empleadoHeader,
-              primeraFilaFecha,
-              primeraFilaHora
-            );
-
+            const resVerif = await verificarDuplicado(data.empleadoHeader, primeraFilaFecha, primeraFilaHora);
             if (resVerif.esDuplicado && !resVerif.docIncompleto) {
               setAlertaDuplicado(
-                `ℹ️ La planilla de "${data.empleadoHeader}" (${primeraFilaFecha} - ${primeraFilaHora}) ya existía en Firestore. Se ha vuelto a cargar a la cola para permitir su actualización o re-verificación.`
+                `ℹ️ La planilla de "${data.empleadoHeader}" (${primeraFilaFecha} - ${primeraFilaHora}) ya existía en Firestore. Se ha cargado a la cola.`
               );
             }
 
             const itemPendiente: RegistroArmadoDocumento = {
-              // Siempre se genera un ID nuevo: cada archivo de imagen corresponde
-              // a una planilla digital separada, sin unificar con entradas previas.
               id: `scan-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
               empleadoHeader: data.empleadoHeader || 'Empleado Desconocido',
               fechaPrimeraFila: primeraFilaFecha,
@@ -156,10 +133,11 @@ export function BatchDropzone() {
               })),
             };
 
+            // Al guardar en Firestore, el listener de tiempo real (onSnapshot) actualizará la cola en todas las terminales
             const idGuardado = await guardarPlanillaPendienteFirestore(itemPendiente);
-            itemPendiente.id = idGuardado;
-
-            agregarItemPendiente(itemPendiente);
+            if (!idGuardado) {
+              useArmadoStore.getState().agregarItemPendiente(itemPendiente);
+            }
 
             clearInterval(timerProgreso);
             actualizarProgresoScan({
@@ -177,15 +155,7 @@ export function BatchDropzone() {
       setCargandoScan(false);
       setTimeout(() => finalizarProgresoScan(), 1000);
     },
-    [
-      agregarItemPendiente,
-      setCargandoScan,
-      setErrorScan,
-      setAlertaDuplicado,
-      iniciarProgresoScan,
-      actualizarProgresoScan,
-      finalizarProgresoScan,
-    ]
+    [setCargandoScan, setErrorScan, setAlertaDuplicado, iniciarProgresoScan, actualizarProgresoScan, finalizarProgresoScan]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -214,9 +184,7 @@ export function BatchDropzone() {
         )}
         <div>
           <p className="text-base font-semibold text-gray-800 dark:text-gray-200">
-            {cargandoScan
-              ? 'Procesando imágenes con Gemini Vision OCR...'
-              : 'Arrastre planillas escaneadas o haga clic para seleccionar'}
+            {cargandoScan ? 'Procesando imágenes con Gemini Vision OCR...' : 'Arrastre planillas escaneadas o haga clic para seleccionar'}
           </p>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             Soporta carga masiva de imágenes (JPG, PNG, WebP)

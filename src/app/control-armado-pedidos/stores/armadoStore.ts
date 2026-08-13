@@ -32,13 +32,24 @@ export const useArmadoStore = create<ArmadoState>()(
 
       setPestanaActiva: (pestanaActiva) => set({ pestanaActiva }),
       setItemsPendientes: (itemsPendientes) =>
-        set((state) => ({
-          itemsPendientes,
-          itemActualIndex: Math.min(state.itemActualIndex, Math.max(0, itemsPendientes.length - 1)),
-          cantVerificadasLote: itemsPendientes.length === 0 ? 0 : state.cantVerificadasLote,
-          modalVerificacionAbierta: itemsPendientes.length === 0 ? false : state.modalVerificacionAbierta,
-        })),
-      agregarItemPendiente: (item) => set((state) => ({ itemsPendientes: [...state.itemsPendientes, item] })),
+        set((state) => {
+          const mapaUnicos = new Map<string, any>();
+          itemsPendientes.forEach((item) => {
+            if (item.id) mapaUnicos.set(item.id, item);
+          });
+          const unicos = Array.from(mapaUnicos.values());
+          return {
+            itemsPendientes: unicos,
+            itemActualIndex: Math.min(state.itemActualIndex, Math.max(0, unicos.length - 1)),
+            cantVerificadasLote: unicos.length === 0 ? 0 : state.cantVerificadasLote,
+            modalVerificacionAbierta: unicos.length === 0 ? false : state.modalVerificacionAbierta,
+          };
+        }),
+      agregarItemPendiente: (item) =>
+        set((state) => {
+          if (item.id && state.itemsPendientes.some((i) => i.id === item.id)) return state;
+          return { itemsPendientes: [...state.itemsPendientes, item] };
+        }),
       eliminarItemPendiente: (id) => {
         eliminarPlanillaVerificada(id).catch((e) => console.warn('Error al eliminar borrador de Firestore:', e));
         set((state) => {
@@ -110,8 +121,7 @@ export const useArmadoStore = create<ArmadoState>()(
         if (fechaPlanilla) actual.fechaPlanilla = fechaPlanilla;
         actual.filas = actual.filas.map((f) => ({
           ...f,
-          empleadoAsignado:
-            f.accionIrregularidad === 'asignar_nuevo' && f.nuevoEmpleado ? f.nuevoEmpleado : empleadoHeader,
+          empleadoAsignado: f.accionIrregularidad === 'asignar_nuevo' && f.nuevoEmpleado ? f.nuevoEmpleado : empleadoHeader,
         }));
         copia[itemActualIndex] = actual;
         set({ itemsPendientes: copia });
@@ -163,16 +173,13 @@ export const useArmadoStore = create<ArmadoState>()(
 
       saltarASiguientePlanilla: () =>
         set((state) => ({
-          itemActualIndex:
-            state.itemsPendientes.length > 0 ? (state.itemActualIndex + 1) % state.itemsPendientes.length : 0,
+          itemActualIndex: state.itemsPendientes.length > 0 ? (state.itemActualIndex + 1) % state.itemsPendientes.length : 0,
         })),
 
       irAPlanillaAnterior: () =>
         set((state) => ({
           itemActualIndex:
-            state.itemsPendientes.length > 0
-              ? (state.itemActualIndex - 1 + state.itemsPendientes.length) % state.itemsPendientes.length
-              : 0,
+            state.itemsPendientes.length > 0 ? (state.itemActualIndex - 1 + state.itemsPendientes.length) % state.itemsPendientes.length : 0,
         })),
 
       marcarActualComoVerificado: (infoGuardada) => {
