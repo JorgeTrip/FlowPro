@@ -34,6 +34,7 @@ export interface ArmadoState {
   modalVerificacionAbierta: boolean;
 
   setPestanaActiva: (pestana: 'carga' | 'datos' | 'analisis') => void;
+  setItemsPendientes: (items: RegistroArmadoDocumento[]) => void;
   agregarItemPendiente: (item: RegistroArmadoDocumento) => void;
   eliminarItemPendiente: (id: string) => void;
   setItemActualIndex: (index: number) => void;

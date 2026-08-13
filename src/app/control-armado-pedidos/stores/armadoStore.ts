@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { indexedDBStorage } from '@/app/lib/indexedDBStorage';
 import { FilaArmado } from '../types/armado';
+import { eliminarPlanillaVerificada } from '../services/firestoreService';
 import { ArmadoState } from './armadoStoreTypes';
 
 export const useArmadoStore = create<ArmadoState>()(
@@ -30,8 +31,16 @@ export const useArmadoStore = create<ArmadoState>()(
       },
 
       setPestanaActiva: (pestanaActiva) => set({ pestanaActiva }),
+      setItemsPendientes: (itemsPendientes) =>
+        set((state) => ({
+          itemsPendientes,
+          itemActualIndex: Math.min(state.itemActualIndex, Math.max(0, itemsPendientes.length - 1)),
+          cantVerificadasLote: itemsPendientes.length === 0 ? 0 : state.cantVerificadasLote,
+          modalVerificacionAbierta: itemsPendientes.length === 0 ? false : state.modalVerificacionAbierta,
+        })),
       agregarItemPendiente: (item) => set((state) => ({ itemsPendientes: [...state.itemsPendientes, item] })),
-      eliminarItemPendiente: (id) =>
+      eliminarItemPendiente: (id) => {
+        eliminarPlanillaVerificada(id).catch((e) => console.warn('Error al eliminar borrador de Firestore:', e));
         set((state) => {
           const nuevas = state.itemsPendientes.filter((i) => i.id !== id);
           return {
@@ -40,7 +49,8 @@ export const useArmadoStore = create<ArmadoState>()(
             cantVerificadasLote: nuevas.length === 0 ? 0 : state.cantVerificadasLote,
             modalVerificacionAbierta: nuevas.length === 0 ? false : state.modalVerificacionAbierta,
           };
-        }),
+        });
+      },
       setItemActualIndex: (itemActualIndex) => set({ itemActualIndex }),
       setCargandoScan: (cargandoScan) => set({ cargandoScan }),
       setErrorScan: (errorScan) => set({ errorScan }),

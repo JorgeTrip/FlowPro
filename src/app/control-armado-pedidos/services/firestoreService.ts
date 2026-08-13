@@ -12,11 +12,10 @@ import {
 import { db, auth } from '@/lib/firebase';
 import { RegistroArmadoDocumento, FiltrosAnalisis, FilaArmado } from '../types/armado';
 
+export * from './firestorePendientesService';
+
 const NOMBRE_COLECCION = 'control_armado_pedidos';
 
-/**
- * Elimina recursivamente valores undefined para compatibilidad estricta con Firebase Firestore.
- */
 function limpiarUndefined(obj: any): any {
   if (obj === null || obj === undefined) return null;
   if (Array.isArray(obj)) {
@@ -84,69 +83,6 @@ export async function verificarDuplicado(
 }
 
 /**
- * Guarda o actualiza un borrador de planilla pendiente de verificación en Firestore.
- */
-export async function guardarPlanillaPendienteFirestore(
-  docData: RegistroArmadoDocumento
-): Promise<string> {
-  const uid = auth.currentUser?.uid;
-  if (!uid) return docData.id || '';
-
-  const { id: docId, ...restoDoc } = docData;
-  const payloadBruto = {
-    ...restoDoc,
-    userId: uid,
-    estado: 'pendiente_verificacion' as const,
-    creadoEn: restoDoc.creadoEn || new Date().toISOString(),
-  };
-
-  const payloadLimpio = limpiarUndefined(payloadBruto);
-
-  try {
-    if (docId && !docId.startsWith('mock-') && !docId.startsWith('scan-') && !docId.startsWith('ext-')) {
-      const docRef = doc(db, NOMBRE_COLECCION, docId);
-      await updateDoc(docRef, payloadLimpio);
-      return docId;
-    } else {
-      const ref = collection(db, NOMBRE_COLECCION);
-      const res = await addDoc(ref, payloadLimpio);
-      return res.id;
-    }
-  } catch (error) {
-    console.error('Error al guardar borrador de planilla pendiente en Firestore:', error);
-    return docId || '';
-  }
-}
-
-/**
- * Recupera todas las planillas en estado 'pendiente_verificacion' guardadas en Firestore para el usuario actual.
- */
-export async function obtenerPlanillasPendientesFirestore(): Promise<RegistroArmadoDocumento[]> {
-  try {
-    const uid = auth.currentUser?.uid;
-    if (!uid) return [];
-
-    const ref = collection(db, NOMBRE_COLECCION);
-    const q = query(
-      ref,
-      where('userId', '==', uid),
-      where('estado', '==', 'pendiente_verificacion')
-    );
-    const snapshot = await getDocs(q);
-    const pendientes: RegistroArmadoDocumento[] = [];
-
-    snapshot.forEach((d) => {
-      pendientes.push({ id: d.id, ...(d.data() as RegistroArmadoDocumento) });
-    });
-
-    return pendientes;
-  } catch (error) {
-    console.error('Error al recuperar planillas pendientes de Firestore:', error);
-    return [];
-  }
-}
-
-/**
  * Guarda y confirma de forma definitiva una planilla verificada en Firestore.
  */
 export async function guardarPlanillaVerificada(
@@ -205,7 +141,6 @@ export async function obtenerRegistrosVerificados(
     if (!uid) return [];
 
     const ref = collection(db, NOMBRE_COLECCION);
-    // Consulta filtrada estrictamente por el userId del usuario autenticado
     const q = query(
       ref,
       where('userId', '==', uid),
@@ -218,7 +153,6 @@ export async function obtenerRegistrosVerificados(
       registros.push({ id: d.id, ...(d.data() as RegistroArmadoDocumento) });
     });
 
-    // Ordenamiento en memoria por fecha/hora de verificación descendente
     registros.sort((a, b) => {
       const fechaA = new Date(a.verificadoEn || a.creadoEn || 0).getTime();
       const fechaB = new Date(b.verificadoEn || b.creadoEn || 0).getTime();
@@ -258,7 +192,7 @@ function filtrarRegistrosEnMemoria(
 }
 
 /**
- * Actualiza una fila individual de un documento verificado en Firestore (para re-etiquetar o normalizar irregularidades).
+ * Actualiza una fila individual de un documento verificado en Firestore.
  */
 export async function actualizarFilaEnDocumento(
   docId: string,
