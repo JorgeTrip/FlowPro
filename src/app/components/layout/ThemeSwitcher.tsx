@@ -12,13 +12,8 @@ interface ThemeSwitcherProps {
 export function ThemeSwitcher({ estaColapsado = false }: ThemeSwitcherProps) {
   const configuracionGlobal = useAppStore((state) => state.configuracionGlobal);
   const toggleTheme = useAppStore((state) => state.toggleTheme);
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const esOscuro = mounted && configuracionGlobal.tema === 'dark';
+  const esOscuro = configuracionGlobal.tema === 'dark';
 
   if (estaColapsado) {
     return (

@@ -68,14 +68,9 @@ function ModuloNavItem({ modulo, estaColapsado }: { modulo: Modulo; estaColapsad
 
 export function Sidebar() {
   const pathname = usePathname();
-  const [mounted, setMounted] = useState(false);
   const [hovered, setHovered] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const esPaginaModulo = mounted && pathname !== '/';
+  const esPaginaModulo = pathname !== '/';
   const estaColapsado = esPaginaModulo && !hovered;
 
   const modulosPorCategoria = MODULOS_DISPONIBLES

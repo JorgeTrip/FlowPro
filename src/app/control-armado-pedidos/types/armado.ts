@@ -38,7 +38,7 @@ export interface RegistroArmadoDocumento {
 }
 
 export interface FiltrosAnalisis {
-  rango: 'dia' | 'semana' | 'mes' | 'personalizado';
+  rango: 'todos' | 'dia' | 'semana' | 'mes' | 'personalizado';
   fechaInicio?: string;
   fechaFin?: string;
   empleado?: string;

@@ -13,10 +13,7 @@ import { DashboardFilters } from './components/analisis/DashboardFilters';
 import { KPICards } from './components/analisis/KPICards';
 import { PerformanceCharts } from './components/analisis/PerformanceCharts';
 import { AnalyticsTable } from './components/analisis/AnalyticsTable';
-import {
-  obtenerRegistrosVerificados,
-  suscribirPlanillasPendientesFirestore,
-} from './services/firestoreService';
+import { obtenerRegistrosVerificados, suscribirPlanillasPendientesFirestore } from './services/firestoreService';
 import { RegistroArmadoDocumento, FiltrosAnalisis } from './types/armado';
 import { calcularMetricasGlobales, calcularRendimientoPorEmpleado } from './utils/metricsCalculator';
 import { UploadCloud, BarChart3, AlertCircle, Database } from 'lucide-react';
@@ -28,7 +25,7 @@ import { IrregularitiesModal } from './components/analisis/IrregularitiesModal';
 export default function ControlArmadoPedidosPage() {
   const { pestanaActiva, setPestanaActiva, alertaDuplicado, errorScan, itemsPendientes } = useArmadoStore();
   const [registrosVerificados, setRegistrosVerificados] = useState<RegistroArmadoDocumento[]>([]);
-  const [filtros, setFiltros] = useState<FiltrosAnalisis>({ rango: 'semana' });
+  const [filtros, setFiltros] = useState<FiltrosAnalisis>({ rango: 'todos' });
   const [isMounted, setIsMounted] = useState(false);
   const [modalIrregularidadesAbierta, setModalIrregularidadesAbierta] = useState(false);
   const [empFiltroModal, setEmpFiltroModal] = useState<string | null>(null);
@@ -44,9 +41,7 @@ export default function ControlArmadoPedidosPage() {
     const unsubscribe = suscribirPlanillasPendientesFirestore((pendientesFs) => {
       useArmadoStore.getState().setItemsPendientes(pendientesFs);
     });
-    return () => {
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -61,20 +56,6 @@ export default function ControlArmadoPedidosPage() {
   const metricas = calcularMetricasGlobales(registrosVerificados);
   const rendimiento = calcularRendimientoPorEmpleado(registrosVerificados);
   const empleadosList = Array.from(new Set(rendimiento.map((r) => r.empleado)));
-
-  if (!isMounted) {
-    return (
-      <ModuleLayout
-        titulo="Control de Armado de Pedidos"
-        descripcion="Escaneo de planillas mejorado con IA (Gemini Vision OCR), verificación lado a lado, datos guardados y métricas."
-        breadcrumbs={[{ nombre: 'Dashboard', href: '/' }, { nombre: 'Control de Armado' }]}
-      >
-        <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-        </div>
-      </ModuleLayout>
-    );
-  }
 
   return (
     <ModuleLayout
@@ -120,7 +101,7 @@ export default function ControlArmadoPedidosPage() {
           >
             <UploadCloud className="h-4 w-4" />
             <span>Carga y Verificación</span>
-            {itemsPendientes.length > 0 && (
+            {isMounted && itemsPendientes.length > 0 && (
               <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
                 {itemsPendientes.length}
               </span>
@@ -179,6 +160,7 @@ export default function ControlArmadoPedidosPage() {
             <DashboardFilters
               filtros={filtros}
               empleadosDisponibles={empleadosList}
+              registrosCompletos={registrosVerificados}
               onCambiarFiltros={setFiltros}
             />
             <KPICards metricas={metricas} />

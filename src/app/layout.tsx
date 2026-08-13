@@ -6,7 +6,7 @@ import { Navbar } from '@/app/components/layout/Navbar';
 import { Sidebar } from '@/app/components/layout/Sidebar';
 import { Footer } from '@/app/components/layout/Footer';
 import { ThemeProvider } from '@/app/components/layout/ThemeProvider';
-import { AuthGuard } from '@/components/auth/AuthGuard';
+import { ClientAuthGuard } from '@/components/auth/ClientAuthGuard';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -25,7 +25,7 @@ export default function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <body className={`${inter.className} bg-gray-50 dark:bg-gray-900`} suppressHydrationWarning>
         <ThemeProvider>
-          <AuthGuard>
+          <ClientAuthGuard>
             <div className="flex h-screen">
               <Sidebar />
               <div className="flex flex-1 flex-col overflow-hidden">
@@ -34,7 +34,7 @@ export default function RootLayout({
                 <Footer />
               </div>
             </div>
-          </AuthGuard>
+          </ClientAuthGuard>
         </ThemeProvider>
       </body>
     </html>

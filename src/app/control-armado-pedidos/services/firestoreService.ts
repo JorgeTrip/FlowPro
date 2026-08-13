@@ -18,19 +18,41 @@ const NOMBRE_COLECCION = 'control_armado_pedidos';
 
 function limpiarUndefined(obj: any): any {
   if (obj === null || obj === undefined) return null;
-  if (Array.isArray(obj)) {
-    return obj.map((item) => limpiarUndefined(item));
-  }
+  if (Array.isArray(obj)) return obj.map((item) => limpiarUndefined(item));
   if (typeof obj === 'object') {
     const cleaned: Record<string, any> = {};
     for (const [key, value] of Object.entries(obj)) {
-      if (value !== undefined) {
-        cleaned[key] = limpiarUndefined(value);
-      }
+      if (value !== undefined) cleaned[key] = limpiarUndefined(value);
     }
     return cleaned;
   }
   return obj;
+}
+
+export function normalizarFechaYYYYMMDD(fechaStr?: string): string {
+  if (!fechaStr) return '';
+  let str = fechaStr.trim();
+  if (str.includes('T')) str = str.split('T')[0];
+  str = str.replace(/\./g, '-').replace(/\//g, '-');
+
+  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(str)) {
+    const p = str.split('-');
+    return `${p[0]}-${p[1].padStart(2, '0')}-${p[2].padStart(2, '0')}`;
+  }
+  if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(str)) {
+    const p = str.split('-');
+    return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+  }
+  if (/^\d{1,2}-\d{1,2}-\d{2}$/.test(str)) {
+    const p = str.split('-');
+    return `20${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+  }
+  if (/^\d{1,2}-\d{1,2}$/.test(str)) {
+    const p = str.split('-');
+    const yyyy = new Date().getFullYear();
+    return `${yyyy}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+  }
+  return str;
 }
 
 export interface ResultadoVerificacionDuplicado {
@@ -40,9 +62,6 @@ export interface ResultadoVerificacionDuplicado {
   docData?: RegistroArmadoDocumento;
 }
 
-/**
- * Algoritmo inteligente que verifica si una planilla ya fue procesada y si posee datos válidos en Firestore para el usuario actual.
- */
 export async function verificarDuplicado(
   empleadoHeader: string,
   fechaPrimeraFila: string,
@@ -65,16 +84,8 @@ export async function verificarDuplicado(
     if (!snapshot.empty) {
       const docMatch = snapshot.docs[0];
       const docData = { id: docMatch.id, ...(docMatch.data() as RegistroArmadoDocumento) };
-      const docIncompleto = !docData.filas || docData.filas.length === 0;
-
-      return {
-        esDuplicado: true,
-        docExistenteId: docMatch.id,
-        docIncompleto,
-        docData,
-      };
+      return { esDuplicado: true, docExistenteId: docMatch.id, docIncompleto: !docData.filas?.length, docData };
     }
-
     return { esDuplicado: false };
   } catch (error) {
     console.warn('Advertencia en verificarDuplicado Firestore:', error);
@@ -82,33 +93,24 @@ export async function verificarDuplicado(
   }
 }
 
-/**
- * Guarda y confirma de forma definitiva una planilla verificada en Firestore.
- */
-export async function guardarPlanillaVerificada(
-  docData: RegistroArmadoDocumento
-): Promise<string> {
+export async function guardarPlanillaVerificada(docData: RegistroArmadoDocumento): Promise<string> {
   const uid = auth.currentUser?.uid;
   if (!uid) throw new Error('Usuario no autenticado');
 
   const { id: docId, ...restoDoc } = docData;
-  const payloadBruto = {
+  const payloadLimpio = limpiarUndefined({
     ...restoDoc,
     userId: uid,
     estado: 'verificado' as const,
     verificadoEn: new Date().toISOString(),
-  };
-
-  const payloadLimpio = limpiarUndefined(payloadBruto);
+  });
 
   try {
     if (docId && !docId.startsWith('mock-') && !docId.startsWith('scan-') && !docId.startsWith('ext-')) {
-      const docRef = doc(db, NOMBRE_COLECCION, docId);
-      await updateDoc(docRef, payloadLimpio);
+      await updateDoc(doc(db, NOMBRE_COLECCION, docId), payloadLimpio);
       return docId;
     } else {
-      const ref = collection(db, NOMBRE_COLECCION);
-      const res = await addDoc(ref, payloadLimpio);
+      const res = await addDoc(collection(db, NOMBRE_COLECCION), payloadLimpio);
       return res.id;
     }
   } catch (error) {
@@ -117,46 +119,31 @@ export async function guardarPlanillaVerificada(
   }
 }
 
-/**
- * Elimina un documento verificado de Firestore.
- */
 export async function eliminarPlanillaVerificada(id: string): Promise<void> {
   try {
-    const docRef = doc(db, NOMBRE_COLECCION, id);
-    await deleteDoc(docRef);
+    await deleteDoc(doc(db, NOMBRE_COLECCION, id));
   } catch (error) {
     console.error('Error al eliminar planilla de Firestore:', error);
     throw new Error('No se pudo eliminar la planilla de Firestore.');
   }
 }
 
-/**
- * Recupera todos los registros verificados en Firestore pertenecientes al usuario actual.
- */
-export async function obtenerRegistrosVerificados(
-  filtros?: FiltrosAnalisis
-): Promise<RegistroArmadoDocumento[]> {
+export async function obtenerRegistrosVerificados(filtros?: FiltrosAnalisis): Promise<RegistroArmadoDocumento[]> {
   try {
     const uid = auth.currentUser?.uid;
     if (!uid) return [];
 
     const ref = collection(db, NOMBRE_COLECCION);
-    const q = query(
-      ref,
-      where('userId', '==', uid),
-      where('estado', '==', 'verificado')
-    );
+    const q = query(ref, where('userId', '==', uid), where('estado', '==', 'verificado'));
     const snapshot = await getDocs(q);
     const registros: RegistroArmadoDocumento[] = [];
 
-    snapshot.forEach((d) => {
-      registros.push({ id: d.id, ...(d.data() as RegistroArmadoDocumento) });
-    });
+    snapshot.forEach((d) => registros.push({ id: d.id, ...(d.data() as RegistroArmadoDocumento) }));
 
     registros.sort((a, b) => {
-      const fechaA = new Date(a.verificadoEn || a.creadoEn || 0).getTime();
-      const fechaB = new Date(b.verificadoEn || b.creadoEn || 0).getTime();
-      return fechaB - fechaA;
+      const tA = new Date(a.verificadoEn || a.creadoEn || 0).getTime();
+      const tB = new Date(b.verificadoEn || b.creadoEn || 0).getTime();
+      return tB - tA;
     });
 
     return filtrarRegistrosEnMemoria(registros, filtros);
@@ -166,51 +153,43 @@ export async function obtenerRegistrosVerificados(
   }
 }
 
-function filtrarRegistrosEnMemoria(
-  registros: RegistroArmadoDocumento[],
-  filtros?: FiltrosAnalisis
-): RegistroArmadoDocumento[] {
-  if (!filtros) return registros;
+function filtrarRegistrosEnMemoria(registros: RegistroArmadoDocumento[], filtros?: FiltrosAnalisis): RegistroArmadoDocumento[] {
+  if (!filtros || filtros.rango === 'todos') return registros;
 
-  return registros.filter((reg) => {
-    if (filtros.empleado && reg.empleadoHeader !== filtros.empleado) {
-      const tieneEnFilas = reg.filas?.some(
-        (f) => f.empleadoAsignado === filtros.empleado || f.nuevoEmpleado === filtros.empleado
-      );
-      if (!tieneEnFilas) return false;
-    }
-    if (filtros.fechaInicio) {
-      const algunDespues = reg.filas?.some((f) => f.fecha >= filtros.fechaInicio!);
-      if (!algunDespues) return false;
-    }
-    if (filtros.fechaFin) {
-      const algunAntes = reg.filas?.some((f) => f.fecha <= filtros.fechaFin!);
-      if (!algunAntes) return false;
-    }
-    return true;
-  });
+  return registros
+    .map((reg) => {
+      if (!reg.filas?.length) return null;
+
+      const filasFiltradas = reg.filas.filter((f) => {
+        if (f.accionIrregularidad === 'ignorar') return false;
+
+        if (filtros.empleado) {
+          const armador = f.empleadoAsignado || f.nuevoEmpleado || reg.empleadoHeader;
+          if (armador !== filtros.empleado && reg.empleadoHeader !== filtros.empleado) return false;
+        }
+
+        const fechaRaw = f.fecha || reg.fechaPrimeraFila || (reg.creadoEn ? reg.creadoEn.split('T')[0] : '');
+        const fechaNorm = normalizarFechaYYYYMMDD(fechaRaw);
+
+        if (filtros.fechaInicio && fechaNorm && fechaNorm < filtros.fechaInicio) return false;
+        if (filtros.fechaFin && fechaNorm && fechaNorm > filtros.fechaFin) return false;
+
+        return true;
+      });
+
+      if (!filasFiltradas.length) return null;
+      return { ...reg, filas: filasFiltradas };
+    })
+    .filter((reg): reg is RegistroArmadoDocumento => reg !== null);
 }
 
-/**
- * Actualiza una fila individual de un documento verificado en Firestore.
- */
-export async function actualizarFilaEnDocumento(
-  docId: string,
-  filaId: string,
-  cambiosFila: Partial<FilaArmado>
-): Promise<void> {
+export async function actualizarFilaEnDocumento(docId: string, filaId: string, cambiosFila: Partial<FilaArmado>): Promise<void> {
   if (!docId || docId.startsWith('mock-') || docId.startsWith('scan-')) return;
   const docRef = doc(db, NOMBRE_COLECCION, docId);
-
   const snapshot = await getDocs(query(collection(db, NOMBRE_COLECCION), where('__name__', '==', docId)));
   if (!snapshot.empty) {
     const data = snapshot.docs[0].data() as RegistroArmadoDocumento;
-    const nuevasFilas = (data.filas || []).map((f) => {
-      if (f.id === filaId) {
-        return { ...f, ...cambiosFila };
-      }
-      return f;
-    });
+    const nuevasFilas = (data.filas || []).map((f) => (f.id === filaId ? { ...f, ...cambiosFila } : f));
     await updateDoc(docRef, limpiarUndefined({ filas: nuevasFilas }));
   }
 }
