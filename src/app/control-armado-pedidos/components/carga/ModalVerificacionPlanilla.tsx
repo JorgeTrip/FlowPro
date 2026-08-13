@@ -46,8 +46,8 @@ export function ModalVerificacionPlanilla() {
   if (!modalVerificacionAbierta || !actual) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-3 sm:p-6 backdrop-blur-md animate-fade-in">
-      <div className="flex max-h-[92vh] w-full max-w-[96vw] xl:max-w-7xl flex-col overflow-hidden rounded-3xl border border-gray-200 bg-[#F5F5F7] shadow-2xl dark:border-gray-800 dark:bg-[#1C1C1E]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-2 sm:p-4 md:p-6 backdrop-blur-md animate-fade-in">
+      <div className="flex max-h-[95vh] w-full max-w-[98vw] xl:max-w-[1400px] 2xl:max-w-[1600px] flex-col overflow-hidden rounded-3xl border border-gray-200 bg-[#F5F5F7] shadow-2xl dark:border-gray-800 dark:bg-[#1C1C1E]">
         {/* Cabecera del Modal Amplio */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-gray-200 bg-white px-6 py-4 dark:border-gray-800 dark:bg-[#1C1C1E]">
           <div className="flex items-center space-x-3">
@@ -101,7 +101,7 @@ export function ModalVerificacionPlanilla() {
         )}
 
         {/* Cuerpo del Modal: Visor Lado a Lado */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 items-stretch">
             {/* Columna Izquierda: Visor Interactivo de Imagen o Importación JSON */}
             <div className="flex flex-col rounded-2xl border border-gray-200 bg-gray-900 p-4 shadow-xl dark:border-gray-800 lg:col-span-5 min-h-[400px]">
@@ -129,7 +129,7 @@ export function ModalVerificacionPlanilla() {
             </div>
 
             {/* Columna Derecha: Tabla Editable de Datos */}
-            <div className="flex flex-col justify-between rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-800 dark:bg-[#1C1C1E] lg:col-span-7">
+            <div className="flex flex-col justify-between rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-xl dark:border-gray-800 dark:bg-[#1C1C1E] lg:col-span-7">
               <TablaVerificacionFilas
                 actual={actual}
                 faltaEmpleado={faltaEmpleado}
