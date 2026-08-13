@@ -91,8 +91,7 @@ export const useArmadoStore = create<ArmadoState>()(
       },
 
       setPestanaActiva: (pestanaActiva) => set({ pestanaActiva }),
-      agregarItemPendiente: (item) =>
-        set((state) => ({ itemsPendientes: [...state.itemsPendientes, item] })),
+      agregarItemPendiente: (item) => set((state) => ({ itemsPendientes: [...state.itemsPendientes, item] })),
       eliminarItemPendiente: (id) =>
         set((state) => {
           const nuevas = state.itemsPendientes.filter((i) => i.id !== id);
@@ -128,14 +127,10 @@ export const useArmadoStore = create<ArmadoState>()(
             oculto: false,
           },
         }),
-      actualizarProgresoScan: (updates) =>
-        set((state) => ({ progresoScan: { ...state.progresoScan, ...updates } })),
-      setMinimizadoScan: (minimizado) =>
-        set((state) => ({ progresoScan: { ...state.progresoScan, minimizado } })),
-      setOcultoScan: (oculto) =>
-        set((state) => ({ progresoScan: { ...state.progresoScan, oculto } })),
-      finalizarProgresoScan: () =>
-        set((state) => ({ progresoScan: { ...state.progresoScan, activo: false } })),
+      actualizarProgresoScan: (updates) => set((state) => ({ progresoScan: { ...state.progresoScan, ...updates } })),
+      setMinimizadoScan: (minimizado) => set((state) => ({ progresoScan: { ...state.progresoScan, minimizado } })),
+      setOcultoScan: (oculto) => set((state) => ({ progresoScan: { ...state.progresoScan, oculto } })),
+      finalizarProgresoScan: () => set((state) => ({ progresoScan: { ...state.progresoScan, activo: false } })),
       cancelarEscaneoLote: () =>
         set((state) => ({
           cancelarScanSolicitado: true,
@@ -158,7 +153,15 @@ export const useArmadoStore = create<ArmadoState>()(
         const { itemsPendientes, itemActualIndex } = get();
         if (!itemsPendientes[itemActualIndex]) return;
         const copia = [...itemsPendientes];
-        copia[itemActualIndex] = { ...copia[itemActualIndex], empleadoHeader, fechaPlanilla };
+        const actual = { ...copia[itemActualIndex] };
+        actual.empleadoHeader = empleadoHeader;
+        if (fechaPlanilla) actual.fechaPlanilla = fechaPlanilla;
+        actual.filas = actual.filas.map((f) => ({
+          ...f,
+          empleadoAsignado:
+            f.accionIrregularidad === 'asignar_nuevo' && f.nuevoEmpleado ? f.nuevoEmpleado : empleadoHeader,
+        }));
+        copia[itemActualIndex] = actual;
         set({ itemsPendientes: copia });
       },
 
@@ -218,8 +221,7 @@ export const useArmadoStore = create<ArmadoState>()(
         set((state) => ({
           itemActualIndex:
             state.itemsPendientes.length > 0
-              ? (state.itemActualIndex - 1 + state.itemsPendientes.length) %
-                state.itemsPendientes.length
+              ? (state.itemActualIndex - 1 + state.itemsPendientes.length) % state.itemsPendientes.length
               : 0,
         })),
 
