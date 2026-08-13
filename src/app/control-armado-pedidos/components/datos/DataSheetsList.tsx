@@ -8,6 +8,7 @@ import { eliminarImagenLocal } from '../../services/localImageStore';
 import { SheetEditorModal } from './SheetEditorModal';
 import { ImageLightboxModal } from './ImageLightboxModal';
 import { SheetCard } from './SheetCard';
+import { BarraResumenDatos } from './BarraResumenDatos';
 import { Search, FileSpreadsheet, RefreshCw, ArrowUpDown } from 'lucide-react';
 
 type CriterioOrden = 'fecha_planilla' | 'fecha_carga';
@@ -49,7 +50,8 @@ export function DataSheetsList() {
   };
 
   const planillasFiltradas = planillas.filter((p) => {
-    const term = busqueda.toLowerCase();
+    const term = busqueda.toLowerCase().trim();
+    if (!term) return true;
     return (
       p.empleadoHeader?.toLowerCase().includes(term) ||
       p.fechaPrimeraFila?.includes(term) ||
@@ -70,7 +72,8 @@ export function DataSheetsList() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
+      {/* Panel de Control */}
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-[#1C1C1E]">
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
@@ -108,6 +111,15 @@ export function DataSheetsList() {
         </div>
       </div>
 
+      {/* Barra Delgada de Información Resumida según Filtro */}
+      <BarraResumenDatos
+        planillasFiltradas={planillasProcesadas}
+        totalPlanillasOriginal={planillas.length}
+        hayFiltro={busqueda.trim().length > 0}
+        cargando={cargando}
+      />
+
+      {/* Contenido de Planillas */}
       {cargando ? (
         <div className="flex h-48 items-center justify-center space-x-2 text-xs text-gray-500">
           <RefreshCw className="h-5 w-5 animate-spin text-blue-500" />
@@ -116,7 +128,9 @@ export function DataSheetsList() {
       ) : planillasProcesadas.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center text-xs text-gray-500 dark:border-gray-800">
           <FileSpreadsheet className="mx-auto h-8 w-8 text-gray-400 mb-2" />
-          <p className="font-semibold text-gray-700 dark:text-gray-300">No hay planillas guardadas.</p>
+          <p className="font-semibold text-gray-700 dark:text-gray-300">
+            {busqueda ? 'No se encontraron planillas coincidentes.' : 'No hay planillas guardadas.'}
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
