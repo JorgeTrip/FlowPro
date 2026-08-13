@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import { RegistroArmadoDocumento, FilaArmado } from '../../types/armado';
 import { guardarPlanillaVerificada } from '../../services/firestoreService';
+import { useEmpleadosSugeridos } from '../../hooks/useEmpleadosSugeridos';
 import { Save, Trash2, Plus, X } from 'lucide-react';
 
 interface SheetEditorModalProps {
@@ -13,9 +14,26 @@ interface SheetEditorModalProps {
 }
 
 export function SheetEditorModal({ planilla, onCerrar, onGuardadoExitoso }: SheetEditorModalProps) {
+  const sugerenciasEmpleados = useEmpleadosSugeridos();
   const [empleadoHeader, setEmpleadoHeader] = useState(planilla.empleadoHeader);
   const [filas, setFilas] = useState<FilaArmado[]>(planilla.filas || []);
   const [guardando, setGuardando] = useState(false);
+
+  const handleEnterBlur = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') e.currentTarget.blur();
+  };
+
+  const handleCambiarEmpleadoCabecera = (nuevoEmpleado: string) => {
+    const empUpper = nuevoEmpleado.toUpperCase();
+    setEmpleadoHeader(empUpper);
+    setFilas((prev) =>
+      prev.map((f) =>
+        f.accionIrregularidad === 'asignar_nuevo' && f.nuevoEmpleado
+          ? f
+          : { ...f, empleadoAsignado: empUpper }
+      )
+    );
+  };
 
   const handleActualizarFila = (id: string, updates: Partial<FilaArmado>) => {
     setFilas((prev) => prev.map((f) => (f.id === id ? { ...f, ...updates } : f)));
@@ -36,9 +54,7 @@ export function SheetEditorModal({ planilla, onCerrar, onGuardadoExitoso }: Shee
     setFilas((prev) => [...prev, nueva]);
   };
 
-  const handleEliminarFila = (id: string) => {
-    setFilas((prev) => prev.filter((f) => f.id !== id));
-  };
+  const handleEliminarFila = (id: string) => setFilas((prev) => prev.filter((f) => f.id !== id));
 
   const handleGuardar = async () => {
     setGuardando(true);
@@ -59,9 +75,14 @@ export function SheetEditorModal({ planilla, onCerrar, onGuardadoExitoso }: Shee
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="flex max-h-[90vh] w-full max-w-4xl flex-col rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-[#1C1C1E]">
-        {/* Cabecera del Modal */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fade-in">
+      <datalist id="lista-empleados-sugeridos-datos">
+        {sugerenciasEmpleados.map((emp) => (
+          <option key={emp} value={emp} />
+        ))}
+      </datalist>
+
+      <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-800 dark:bg-[#1C1C1E]">
         <div className="flex items-center justify-between border-b border-gray-200 p-4 dark:border-gray-800">
           <div>
             <h3 className="text-base font-bold text-gray-900 dark:text-white">
@@ -76,7 +97,6 @@ export function SheetEditorModal({ planilla, onCerrar, onGuardadoExitoso }: Shee
           </button>
         </div>
 
-        {/* Cuerpo Editable */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <div>
             <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
@@ -84,18 +104,19 @@ export function SheetEditorModal({ planilla, onCerrar, onGuardadoExitoso }: Shee
             </label>
             <input
               type="text"
-              list="lista-empleados-sugeridos"
+              list="lista-empleados-sugeridos-datos"
               value={empleadoHeader}
-              onChange={(e) => setEmpleadoHeader(e.target.value.toUpperCase())}
+              onChange={(e) => handleCambiarEmpleadoCabecera(e.target.value)}
+              onKeyDown={handleEnterBlur}
               className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 uppercase dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
             <table className="w-full text-left text-xs text-gray-700 dark:text-gray-300">
               <thead className="border-b bg-gray-50 text-[11px] uppercase tracking-wider text-gray-500 dark:bg-gray-800 dark:text-gray-400">
                 <tr>
-                  <th className="px-2 py-2 w-9 text-center">N°</th>
+                  <th className="px-2 py-2 w-8 text-center">N°</th>
                   <th className="px-2 py-2">Fecha</th>
                   <th className="px-2 py-2">Inicio</th>
                   <th className="px-2 py-2">Fin</th>
@@ -107,16 +128,13 @@ export function SheetEditorModal({ planilla, onCerrar, onGuardadoExitoso }: Shee
               <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
                 {filas.map((f, index) => {
                   const numLinea = index + 1;
-                  const faltaHoraInicio = !f.horaInicio || f.horaInicio.trim() === '';
-                  const faltaHoraFin = !f.horaFin || f.horaFin.trim() === '';
+                  const faltaInicio = !f.horaInicio || f.horaInicio.trim() === '';
+                  const faltaFin = !f.horaFin || f.horaFin.trim() === '';
 
                   return (
                     <tr key={f.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40">
                       <td className="px-1.5 py-1.5 text-center font-mono">
-                        <span
-                          className="inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                          title={`Línea #${numLinea}`}
-                        >
+                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
                           {numLinea}
                         </span>
                       </td>
@@ -125,7 +143,8 @@ export function SheetEditorModal({ planilla, onCerrar, onGuardadoExitoso }: Shee
                           type="date"
                           value={f.fecha}
                           onChange={(e) => handleActualizarFila(f.id, { fecha: e.target.value })}
-                          className="w-28 rounded border border-gray-300 bg-gray-50 px-1.5 py-1 text-xs dark:border-gray-700 dark:bg-gray-800"
+                          onKeyDown={handleEnterBlur}
+                          className="w-[115px] rounded border border-gray-300 bg-gray-50 px-1.5 py-1 text-xs dark:border-gray-700 dark:bg-gray-800"
                         />
                       </td>
                       <td className="px-2 py-1.5">
@@ -133,8 +152,9 @@ export function SheetEditorModal({ planilla, onCerrar, onGuardadoExitoso }: Shee
                           type="time"
                           value={f.horaInicio}
                           onChange={(e) => handleActualizarFila(f.id, { horaInicio: e.target.value })}
-                          className={`rounded border px-1.5 py-1 text-xs transition-colors ${
-                            faltaHoraInicio
+                          onKeyDown={handleEnterBlur}
+                          className={`w-[76px] rounded border px-1.5 py-1 text-xs transition-colors ${
+                            faltaInicio
                               ? 'border-2 border-amber-500 bg-amber-100 font-bold text-amber-900 dark:bg-amber-950/60 dark:text-amber-200'
                               : 'border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'
                           }`}
@@ -145,41 +165,45 @@ export function SheetEditorModal({ planilla, onCerrar, onGuardadoExitoso }: Shee
                           type="time"
                           value={f.horaFin}
                           onChange={(e) => handleActualizarFila(f.id, { horaFin: e.target.value })}
-                          className={`rounded border px-1.5 py-1 text-xs transition-colors ${
-                            faltaHoraFin
+                          onKeyDown={handleEnterBlur}
+                          className={`w-[76px] rounded border px-1.5 py-1 text-xs transition-colors ${
+                            faltaFin
                               ? 'border-2 border-amber-500 bg-amber-100 font-bold text-amber-900 dark:bg-amber-950/60 dark:text-amber-200'
                               : 'border-gray-300 bg-gray-50 dark:border-gray-700 dark:bg-gray-800'
                           }`}
                         />
                       </td>
-                    <td className="px-2 py-1.5">
-                      <input
-                        type="number"
-                        value={f.cantArticulos}
-                        onChange={(e) => handleActualizarFila(f.id, { cantArticulos: Number(e.target.value) })}
-                        className="w-20 rounded border border-gray-300 bg-gray-50 px-1.5 py-1 text-xs dark:border-gray-700 dark:bg-gray-800"
-                      />
-                    </td>
-                    <td className="px-2 py-1.5">
-                      <input
-                        type="text"
-                        list="lista-empleados-sugeridos"
-                        value={f.empleadoAsignado || f.nuevoEmpleado || empleadoHeader}
-                        onChange={(e) => handleActualizarFila(f.id, { empleadoAsignado: e.target.value.toUpperCase() })}
-                        className="w-36 rounded border border-gray-300 bg-gray-50 px-1.5 py-1 text-xs uppercase dark:border-gray-700 dark:bg-gray-800"
-                      />
-                    </td>
-                    <td className="px-2 py-1.5 text-right">
-                      <button
-                        onClick={() => handleEliminarFila(f.id)}
-                        className="rounded p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
+                      <td className="px-2 py-1.5">
+                        <input
+                          type="number"
+                          value={f.cantArticulos}
+                          onChange={(e) => handleActualizarFila(f.id, { cantArticulos: Number(e.target.value) })}
+                          onKeyDown={handleEnterBlur}
+                          className="w-16 rounded border border-gray-300 bg-gray-50 px-1.5 py-1 text-xs dark:border-gray-700 dark:bg-gray-800"
+                        />
+                      </td>
+                      <td className="px-2 py-1.5">
+                        <input
+                          type="text"
+                          list="lista-empleados-sugeridos-datos"
+                          value={f.empleadoAsignado || f.nuevoEmpleado || empleadoHeader}
+                          onChange={(e) => handleActualizarFila(f.id, { empleadoAsignado: e.target.value.toUpperCase() })}
+                          onKeyDown={handleEnterBlur}
+                          className="w-full rounded border border-gray-300 bg-gray-50 px-1.5 py-1 text-xs uppercase dark:border-gray-700 dark:bg-gray-800"
+                        />
+                      </td>
+                      <td className="px-2 py-1.5 text-right">
+                        <button
+                          onClick={() => handleEliminarFila(f.id)}
+                          className="rounded p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
+                          title="Eliminar fila"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -193,7 +217,6 @@ export function SheetEditorModal({ planilla, onCerrar, onGuardadoExitoso }: Shee
           </button>
         </div>
 
-        {/* Acciones Footer */}
         <div className="flex items-center justify-end space-x-3 border-t border-gray-200 p-4 dark:border-gray-800">
           <button onClick={onCerrar} className="rounded-xl px-4 py-2 text-xs font-semibold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800">
             Cancelar
