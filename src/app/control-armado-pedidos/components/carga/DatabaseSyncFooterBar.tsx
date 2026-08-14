@@ -5,7 +5,8 @@ import React, { useEffect, useState } from 'react';
 import { obtenerRegistrosVerificados } from '../../services/firestoreService';
 import { RegistroArmadoDocumento } from '../../types/armado';
 import { useArmadoStore } from '../../stores/armadoStore';
-import { FileText, Package, Hash, Clock, Database } from 'lucide-react';
+import { calcularRangoFechasRegistros } from '../../utils/calcularRangoFechasDatos';
+import { FileText, Package, Hash, Clock, Database, Calendar } from 'lucide-react';
 
 export function DatabaseSyncFooterBar() {
   const { itemsPendientes, ultimaGuardadaInfo } = useArmadoStore();
@@ -40,6 +41,8 @@ export function DatabaseSyncFooterBar() {
     0
   );
 
+  const { textoRango: rangoFechasTexto } = calcularRangoFechasRegistros(registros);
+
   const ultimoRegistro = registros[0];
   const fechaHoraIso = ultimoRegistro?.verificadoEn || ultimoRegistro?.creadoEn;
   const fechaHoraTexto = !montado
@@ -51,46 +54,53 @@ export function DatabaseSyncFooterBar() {
         year: 'numeric',
         hour: '2-digit',
         minute: '2-digit',
-        second: '2-digit',
       })
     : ultimaGuardadaInfo?.guardadoEn || 'Sin planillas aún';
 
   return (
-    <div className="w-full rounded-2xl border border-gray-200 bg-white/95 p-3.5 shadow-lg backdrop-blur-md dark:border-gray-800 dark:bg-[#1C1C1E]/95 text-xs text-gray-700 dark:text-gray-300">
-      <div className="flex flex-wrap items-center justify-between gap-3 font-medium">
+    <div className="w-full overflow-x-auto rounded-xl border border-gray-200 bg-white/95 px-4 py-2.5 shadow-sm backdrop-blur-md dark:border-gray-800 dark:bg-[#1C1C1E]/95 text-xs text-gray-700 dark:text-gray-300">
+      <div className="flex items-center justify-between gap-4 font-medium min-w-max">
         <div className="flex items-center space-x-2 text-emerald-600 dark:text-emerald-400 font-semibold shrink-0">
-          <span className="relative flex h-2.5 w-2.5">
+          <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
           </span>
-          <Database className="h-4 w-4 shrink-0" />
-          <span>Firestore Sincronizado</span>
+          <Database className="h-3.5 w-3.5 shrink-0" />
+          <span>Base de datos OK</span>
         </div>
 
-        <div className="flex flex-wrap items-center space-x-4 divide-x divide-gray-200 dark:divide-gray-800">
+        <div className="flex items-center space-x-3 divide-x divide-gray-200 dark:divide-gray-800 shrink-0">
           <div className="flex items-center space-x-1.5 pl-2">
             <FileText className="h-3.5 w-3.5 text-blue-500" />
-            <span>Planillas en BD:</span>
+            <span>Planillas:</span>
             <strong className="text-gray-900 dark:text-white font-bold">{cargando ? '...' : totalPlanillas}</strong>
           </div>
 
-          <div className="flex items-center space-x-1.5 pl-4">
+          <div className="flex items-center space-x-1.5 pl-3">
             <Package className="h-3.5 w-3.5 text-indigo-500" />
-            <span>Filas / Pedidos:</span>
+            <span>Pedidos:</span>
             <strong className="text-gray-900 dark:text-white font-bold">{cargando ? '...' : totalFilas}</strong>
           </div>
 
-          <div className="flex items-center space-x-1.5 pl-4">
+          <div className="flex items-center space-x-1.5 pl-3">
             <Hash className="h-3.5 w-3.5 text-emerald-500" />
-            <span>Total Artículos:</span>
+            <span>Artículos:</span>
             <strong suppressHydrationWarning className="text-gray-900 dark:text-white font-bold">
               {cargando || !montado ? '...' : totalArticulos.toLocaleString('es-AR')}
             </strong>
           </div>
 
-          <div className="flex items-center space-x-1.5 pl-4 text-amber-600 dark:text-amber-400">
+          <div className="flex items-center space-x-1.5 pl-3 text-sky-600 dark:text-sky-400">
+            <Calendar className="h-3.5 w-3.5 shrink-0" />
+            <span>Fechas:</span>
+            <strong suppressHydrationWarning className="text-gray-900 dark:text-sky-300 font-bold whitespace-nowrap">
+              {cargando || !montado ? '...' : rangoFechasTexto}
+            </strong>
+          </div>
+
+          <div className="flex items-center space-x-1.5 pl-3 text-amber-600 dark:text-amber-400">
             <Clock className="h-3.5 w-3.5 shrink-0" />
-            <span>Última planilla cargada:</span>
+            <span>Última carga:</span>
             <strong suppressHydrationWarning className="text-gray-900 dark:text-amber-300 font-bold whitespace-nowrap">
               {cargando || !montado ? '...' : fechaHoraTexto}
               {ultimoRegistro?.empleadoHeader ? ` (${ultimoRegistro.empleadoHeader})` : ''}

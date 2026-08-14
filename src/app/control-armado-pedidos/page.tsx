@@ -9,6 +9,7 @@ import { PendingQueueList } from './components/carga/PendingQueueList';
 import { ModalVerificacionPlanilla } from './components/carga/ModalVerificacionPlanilla';
 import { DatabaseSyncFooterBar } from './components/carga/DatabaseSyncFooterBar';
 import { DataSheetsList } from './components/datos/DataSheetsList';
+import { BarraResumenDatos } from './components/datos/BarraResumenDatos';
 import { DashboardFilters } from './components/analisis/DashboardFilters';
 import { KPICards } from './components/analisis/KPICards';
 import { PerformanceCharts } from './components/analisis/PerformanceCharts';
@@ -34,9 +35,7 @@ export default function ControlArmadoPedidosPage() {
 
   const cargarDatosAnalisis = useCallback(() => {
     if (pestanaActiva === 'analisis') {
-      console.log('[DIAG-PAGINA] Solicitando registros verificados para pestaña análisis...');
       obtenerRegistrosVerificados(filtros).then((data) => {
-        console.log(`[DIAG-PAGINA] Registros verificados cargados en estado (${data.length} docs)`);
         setRegistrosVerificados(data);
         normalizarDatosHistoricosFirestore(data);
       });
@@ -144,15 +143,11 @@ export default function ControlArmadoPedidosPage() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-12">
               <div className="lg:col-span-7 flex flex-col gap-3">
-                <div className="flex-1">
-                  <BatchDropzone />
-                </div>
+                <div className="flex-1"><BatchDropzone /></div>
                 <GeminiQuotaWidget />
               </div>
               <div className="lg:col-span-5 flex flex-col">
-                <div className="flex-1">
-                  <ExternalJsonImporter />
-                </div>
+                <div className="flex-1"><ExternalJsonImporter /></div>
               </div>
             </div>
             <PendingQueueList />
@@ -169,6 +164,10 @@ export default function ControlArmadoPedidosPage() {
               empleadosDisponibles={empleadosList}
               registrosCompletos={registrosVerificados}
               onCambiarFiltros={setFiltros}
+            />
+            <BarraResumenDatos
+              planillasFiltradas={registrosVerificados}
+              hayFiltro={filtros.rango !== 'todos' || !!filtros.empleado}
             />
             <KPICards metricas={metricas} />
             <PerformanceCharts
