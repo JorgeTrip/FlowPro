@@ -25,6 +25,30 @@ interface MonthlyChartCardProps {
   onBarClick: (empleado: string, mesClave?: string) => void;
 }
 
+interface CustomBarLabelProps {
+  x?: number;
+  y?: number;
+  width?: number;
+  value?: any;
+  etiquetaMes?: string;
+  sufijo?: string;
+}
+
+function CustomBarLabel({ x = 0, y = 0, width = 0, value, etiquetaMes, sufijo }: CustomBarLabelProps) {
+  if (value === undefined || value === null || value === 0) return null;
+  const posX = x + width / 2;
+  return (
+    <text x={posX} y={y - 20} textAnchor="middle" fontSize={10} className="select-none pointer-events-none">
+      <tspan x={posX} dy="0" fontSize={9} fontWeight="600" fill="#9CA3AF" className="fill-gray-500 dark:fill-gray-400">
+        {etiquetaMes}
+      </tspan>
+      <tspan x={posX} dy="12" fontSize={10} fontWeight="bold" fill="#111827" className="fill-gray-900 dark:fill-gray-100">
+        {value} {sufijo}
+      </tspan>
+    </text>
+  );
+}
+
 export function MonthlyChartCard({
   titulo,
   subtitulo,
@@ -34,21 +58,6 @@ export function MonthlyChartCard({
   sufijo,
   onBarClick,
 }: MonthlyChartCardProps) {
-  const renderCustomLabel = (etiquetaMes: string) => (props: any) => {
-    const { x, y, width, value } = props;
-    if (value === undefined || value === null || value === 0) return null;
-    const posX = x + width / 2;
-    return (
-      <text x={posX} y={y - 20} textAnchor="middle" fontSize={10} className="select-none pointer-events-none">
-        <tspan x={posX} dy="0" fontSize={9} fontWeight="600" fill="#9CA3AF" className="fill-gray-500 dark:fill-gray-400">
-          {etiquetaMes}
-        </tspan>
-        <tspan x={posX} dy="12" fontSize={10} fontWeight="bold" fill="#111827" className="fill-gray-900 dark:fill-gray-100">
-          {value} {sufijo}
-        </tspan>
-      </text>
-    );
-  };
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-800 dark:bg-[#1C1C1E]">
@@ -95,7 +104,7 @@ export function MonthlyChartCard({
                 className="cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={(entry: any) => onBarClick(entry.empleado, m.clave)}
               >
-                <LabelList dataKey={m.clave} content={renderCustomLabel(m.etiquetaCorta)} />
+                <LabelList dataKey={m.clave} content={<CustomBarLabel etiquetaMes={m.etiquetaCorta} sufijo={sufijo} />} />
               </Bar>
             ))}
           </BarChart>

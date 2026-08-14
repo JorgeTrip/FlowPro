@@ -1,7 +1,7 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useAppStore } from '@/app/stores/appStore';
 import { Moon, Sun } from 'lucide-react';
 

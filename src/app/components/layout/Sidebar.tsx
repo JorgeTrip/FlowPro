@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState } from 'react';
 import { MODULOS_DISPONIBLES, CATEGORIAS_MODULOS, type Modulo } from '@/app/lib/moduleRegistry';
 import { clsx } from 'clsx';
 import { ThemeSwitcher } from './ThemeSwitcher';

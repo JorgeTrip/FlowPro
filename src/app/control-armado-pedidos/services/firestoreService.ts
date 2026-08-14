@@ -16,7 +16,7 @@ function limpiarUndefined(obj: any): any {
 
 export function normalizarFechaYYYYMMDD(fechaStr?: string): string {
   if (!fechaStr) return '';
-  let str = fechaStr.trim().split('T')[0].replace(/\./g, '-').replace(/\//g, '-');
+  const str = fechaStr.trim().split('T')[0].replace(/\./g, '-').replace(/\//g, '-');
   if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(str)) {
     const p = str.split('-');
     return `${p[0]}-${p[1].padStart(2, '0')}-${p[2].padStart(2, '0')}`;
@@ -54,7 +54,7 @@ export async function verificarDuplicado(empleadoHeader: string, fechaPrimeraFil
       return { esDuplicado: true, docExistenteId: docMatch.id, docIncompleto: !docData.filas?.length, docData };
     }
     return { esDuplicado: false };
-  } catch (error) {
+  } catch {
     return { esDuplicado: false };
   }
 }
@@ -145,7 +145,7 @@ export async function obtenerRegistrosVerificados(filtros?: FiltrosAnalisis): Pr
     });
 
     return filtrarRegistrosEnMemoria(registrosSanitizados, filtros);
-  } catch (error) {
+  } catch {
     return [];
   }
 }
