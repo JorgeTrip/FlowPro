@@ -1,5 +1,5 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { RegistroArmadoDocumento, FilaArmado } from '../types/armado';
 import { guardarPlanillaVerificada } from '../services/firestoreService';
 import { optimizarImagenBase64 } from '../utils/imageUtils';
@@ -15,6 +15,29 @@ export function useSheetEditor({ planilla, onGuardadoExitoso }: UseSheetEditorPr
   const [guardando, setGuardando] = useState(false);
   const [imagenBase64, setImagenBase64] = useState<string | null>(planilla.imagenBase64 || null);
   const [modoCambiarImagen, setModoCambiarImagen] = useState(false);
+
+  useEffect(() => {
+    console.group(`[DIAG-ORIGEN-NOTA] Inspección de Planilla: ${planilla.empleadoHeader} (ID: ${planilla.id || 'sin-id'})`);
+    console.log('📅 Metadatos del documento:', {
+      creadoEn: planilla.creadoEn,
+      verificadoEn: planilla.verificadoEn,
+      fechaPrimeraFila: planilla.fechaPrimeraFila,
+      estado: planilla.estado,
+    });
+    console.table(
+      planilla.filas?.map((f, idx) => ({
+        '#': idx + 1,
+        'Horario': `${f.horaInicio} - ${f.horaFin}`,
+        'Artículos': f.cantArticulos,
+        'esIrregular': f.esIrregular,
+        'Nota': f.notaIrregularidad || '(Sin nota)',
+        'Acción': f.accionIrregularidad || '(Ninguna)',
+        'ID Fila': f.id,
+        'Origen': f.id?.startsWith('fila-ocr') ? 'OCR Gemini (Escaneo original)' : 'Manual',
+      }))
+    );
+    console.groupEnd();
+  }, [planilla]);
 
   const handleEnterBlur = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') e.currentTarget.blur();

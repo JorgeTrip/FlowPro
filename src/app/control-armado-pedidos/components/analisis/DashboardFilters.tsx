@@ -3,8 +3,7 @@
 
 import React from 'react';
 import { FiltrosAnalisis, RegistroArmadoDocumento } from '../../types/armado';
-import { normalizarFechaYYYYMMDD } from '../../services/firestoreService';
-import { Filter, User, Calendar, Info } from 'lucide-react';
+import { User, Calendar, Info, Clock } from 'lucide-react';
 
 interface DashboardFiltersProps {
   filtros: FiltrosAnalisis;
@@ -13,12 +12,12 @@ interface DashboardFiltersProps {
   onCambiarFiltros: (nuevos: FiltrosAnalisis) => void;
 }
 
-import { getFechaLocalYYYYMMDD, obtenerRangoFechasInteligente } from './DashboardFiltersUtils';
+import { getFechaLocalYYYYMMDD, obtenerRangoFechasInteligente, extraerFechasValidasBD } from './DashboardFiltersUtils';
 
 export function DashboardFilters({ filtros, empleadosDisponibles, registrosCompletos = [], onCambiarFiltros }: DashboardFiltersProps) {
   const handleSeleccionarRango = (r: 'todos' | 'dia' | 'semana' | 'mes' | 'personalizado') => {
-    const { fechaInicio, fechaFin } = obtenerRangoFechasInteligente(r, registrosCompletos, filtros.fechaInicio, filtros.fechaFin);
-    onCambiarFiltros({ ...filtros, rango: r, fechaInicio: r === 'personalizado' ? (filtros.fechaInicio || fechaInicio) : fechaInicio, fechaFin: r === 'personalizado' ? (filtros.fechaFin || fechaFin) : fechaFin });
+    const { fechaInicio, fechaFin } = obtenerRangoFechasInteligente(r, registrosCompletos);
+    onCambiarFiltros({ ...filtros, rango: r, fechaInicio, fechaFin });
   };
 
   const handleCambiarDiaEspecifico = (fecha: string) => {
@@ -38,7 +37,12 @@ export function DashboardFilters({ filtros, empleadosDisponibles, registrosCompl
     const [y, m] = yyyyMm.split('-').map(Number);
     const ultDia = new Date(y, m, 0).getDate();
     const mmStr = String(m).padStart(2, '0');
-    onCambiarFiltros({ ...filtros, rango: 'mes', fechaInicio: `${y}-${mmStr}-01`, fechaFin: `${y}-${mmStr}-${String(ultDia).padStart(2, '0')}` });
+    onCambiarFiltros({
+      ...filtros,
+      rango: 'mes',
+      fechaInicio: `${y}-${mmStr}-01`,
+      fechaFin: `${y}-${mmStr}-${String(ultDia).padStart(2, '0')}`,
+    });
   };
 
   const formatFechaVisual = (fStr?: string) => {
@@ -48,23 +52,9 @@ export function DashboardFilters({ filtros, empleadosDisponibles, registrosCompl
   };
 
   const getTextoBadgeTodos = () => {
-    let fInicio = filtros.fechaInicio;
-    let fFin = filtros.fechaFin;
-
-    if (!fInicio || !fFin) {
-      const todasLasFechas: string[] = [];
-      registrosCompletos.forEach((r) => {
-        if (r.fechaPrimeraFila) todasLasFechas.push(normalizarFechaYYYYMMDD(r.fechaPrimeraFila));
-        if (r.verificadoEn) todasLasFechas.push(normalizarFechaYYYYMMDD(r.verificadoEn));
-        r.filas?.forEach((f) => f.fecha && todasLasFechas.push(normalizarFechaYYYYMMDD(f.fecha)));
-      });
-
-      const fechasValidas = Array.from(new Set(todasLasFechas.filter((f) => /^\d{4}-\d{2}-\d{2}$/.test(f)))).sort();
-      if (fechasValidas.length > 0) {
-        fInicio = fInicio || fechasValidas[0];
-        fFin = fFin || fechasValidas[fechasValidas.length - 1];
-      }
-    }
+    const fechasValidas = extraerFechasValidasBD(registrosCompletos);
+    const fInicio = filtros.fechaInicio || (fechasValidas.length > 0 ? fechasValidas[0] : undefined);
+    const fFin = filtros.fechaFin || (fechasValidas.length > 0 ? fechasValidas[fechasValidas.length - 1] : undefined);
 
     if (fInicio && fFin) {
       const visInicio = formatFechaVisual(fInicio);
@@ -79,10 +69,25 @@ export function DashboardFilters({ filtros, empleadosDisponibles, registrosCompl
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-[#1C1C1E]">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center space-x-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
-          <Filter className="h-4 w-4" />
-          <span>Filtros:</span>
+        <div className="flex items-center space-x-2">
+          <User className="h-4 w-4 text-gray-400" />
+          <select
+            value={filtros.empleado || ''}
+            onChange={(e) => onCambiarFiltros({ ...filtros, empleado: e.target.value || undefined })}
+            className="rounded-lg border border-gray-300 bg-gray-50 px-3 py-1.5 text-xs text-gray-900 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer font-medium"
+          >
+            <option value="">Todos los empleados</option>
+            {empleadosDisponibles.map((emp) => (
+              <option key={emp} value={emp}>
+                {emp}
+              </option>
+            ))}
+          </select>
         </div>
+
+        <div className="h-4 w-px bg-gray-200 dark:bg-gray-700 hidden sm:block" />
+
+        <Clock className="h-4 w-4 text-gray-400 shrink-0" />
 
         <div className="flex rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800">
           {(['todos', 'dia', 'semana', 'mes', 'personalizado'] as const).map((r) => (
@@ -172,22 +177,6 @@ export function DashboardFilters({ filtros, empleadosDisponibles, registrosCompl
             </div>
           </div>
         )}
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <User className="h-4 w-4 text-gray-400" />
-        <select
-          value={filtros.empleado || ''}
-          onChange={(e) => onCambiarFiltros({ ...filtros, empleado: e.target.value || undefined })}
-          className="rounded-lg border border-gray-300 bg-gray-50 px-3 py-1.5 text-xs text-gray-900 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white cursor-pointer"
-        >
-          <option value="">Todos los empleados</option>
-          {empleadosDisponibles.map((emp) => (
-            <option key={emp} value={emp}>
-              {emp}
-            </option>
-          ))}
-        </select>
       </div>
     </div>
   );

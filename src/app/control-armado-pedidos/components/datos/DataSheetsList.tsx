@@ -9,6 +9,7 @@ import { SheetEditorModal } from './SheetEditorModal';
 import { ImageLightboxModal } from './ImageLightboxModal';
 import { SheetCard } from './SheetCard';
 import { BarraResumenDatos } from './BarraResumenDatos';
+import { generarVariacionesBusquedaBD, coincideFechaConBusquedaFlexible } from '../../utils/calcularRangoFechasDatos';
 import { Search, FileSpreadsheet, RefreshCw, ArrowUpDown, X } from 'lucide-react';
 
 type CriterioOrden = 'fecha_planilla' | 'fecha_carga';
@@ -26,6 +27,13 @@ export function DataSheetsList() {
     try {
       const data = await obtenerRegistrosVerificados();
       setPlanillas(data);
+      console.log(`[DIAG-PLANILLAS-CARGADAS] Total planillas: ${data.length}`, data.map((d) => ({
+        emp: d.empleadoHeader,
+        fecha1: d.fechaPrimeraFila,
+        fechaP: d.fechaPlanilla,
+        archivo: d.nombreArchivoOriginal,
+        fechasFilas: Array.from(new Set(d.filas?.map((f) => f.fecha))),
+      })));
     } catch (err) {
       console.error('Error al cargar planillas:', err);
     } finally {
@@ -49,13 +57,26 @@ export function DataSheetsList() {
   };
 
   const planillasFiltradas = planillas.filter((p) => {
-    const term = busquedaDatos.toLowerCase().trim();
+    const term = busquedaDatos.trim();
     if (!term) return true;
-    return (
-      p.empleadoHeader?.toLowerCase().includes(term) ||
-      p.fechaPrimeraFila?.includes(term) ||
-      p.filas?.some((f) => f.empleadoAsignado?.toLowerCase().includes(term) || f.fecha?.includes(term))
-    );
+
+    const terminosBusqueda = generarVariacionesBusquedaBD(term);
+
+    return terminosBusqueda.some((t) => {
+      if (p.empleadoHeader?.toLowerCase().includes(t)) return true;
+      if (p.fechaPrimeraFila?.toLowerCase().includes(t)) return true;
+      if (p.fechaPlanilla?.toLowerCase().includes(t)) return true;
+      if (p.nombreArchivoOriginal?.toLowerCase().includes(t)) return true;
+      if (p.id?.toLowerCase().includes(t)) return true;
+      if (coincideFechaConBusquedaFlexible(p.fechaPrimeraFila, t)) return true;
+      if (coincideFechaConBusquedaFlexible(p.fechaPlanilla, t)) return true;
+      return p.filas?.some(
+        (f) =>
+          f.empleadoAsignado?.toLowerCase().includes(t) ||
+          f.fecha?.toLowerCase().includes(t) ||
+          coincideFechaConBusquedaFlexible(f.fecha, t)
+      );
+    });
   });
 
   const planillasProcesadas = [...planillasFiltradas].sort((a, b) => {

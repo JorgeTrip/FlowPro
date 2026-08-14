@@ -9,46 +9,58 @@ export function getFechaLocalYYYYMMDD(d: Date = new Date()): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-export function obtenerRangoFechasInteligente(
-  rango: 'todos' | 'dia' | 'semana' | 'mes' | 'personalizado',
-  registros: RegistroArmadoDocumento[] = [],
-  inicioActual?: string,
-  finActual?: string
-) {
+export function extraerFechasValidasBD(registros: RegistroArmadoDocumento[] = []): string[] {
   const todasLasFechas: string[] = [];
   registros.forEach((r) => {
     if (r.fechaPrimeraFila) todasLasFechas.push(normalizarFechaYYYYMMDD(r.fechaPrimeraFila));
-    if (r.verificadoEn) todasLasFechas.push(normalizarFechaYYYYMMDD(r.verificadoEn));
+    if (r.fechaPlanilla) todasLasFechas.push(normalizarFechaYYYYMMDD(r.fechaPlanilla));
     r.filas?.forEach((f) => f.fecha && todasLasFechas.push(normalizarFechaYYYYMMDD(f.fecha)));
   });
+  return Array.from(new Set(todasLasFechas.filter((f) => /^\d{4}-\d{2}-\d{2}$/.test(f)))).sort();
+}
 
-  const fechasValidas = Array.from(new Set(todasLasFechas.filter((f) => /^\d{4}-\d{2}-\d{2}$/.test(f)))).sort();
+export function obtenerRangoFechasInteligente(
+  rango: 'todos' | 'dia' | 'semana' | 'mes' | 'personalizado',
+  registros: RegistroArmadoDocumento[] = []
+): { fechaInicio?: string; fechaFin?: string } {
+  const fechasValidas = extraerFechasValidasBD(registros);
+  const hoyStr = getFechaLocalYYYYMMDD(new Date());
+
+  const primeraFechaBD = fechasValidas.length > 0 ? fechasValidas[0] : hoyStr;
+  const ultimaFechaBD = fechasValidas.length > 0 ? fechasValidas[fechasValidas.length - 1] : hoyStr;
 
   if (rango === 'todos') {
-    if (fechasValidas.length > 0) return { fechaInicio: fechasValidas[0], fechaFin: fechasValidas[fechasValidas.length - 1] };
-    return { fechaInicio: undefined, fechaFin: undefined };
+    return {
+      fechaInicio: fechasValidas.length > 0 ? primeraFechaBD : undefined,
+      fechaFin: fechasValidas.length > 0 ? ultimaFechaBD : undefined,
+    };
   }
 
-  let fechaRefStr = getFechaLocalYYYYMMDD(new Date());
-  if (fechasValidas.length > 0) fechaRefStr = fechasValidas[fechasValidas.length - 1];
+  if (rango === 'dia') {
+    return { fechaInicio: ultimaFechaBD, fechaFin: ultimaFechaBD };
+  }
 
-  const [y, m, d] = fechaRefStr.split('-').map(Number);
-  const fechaRefObj = new Date(y, m - 1, d);
-  const format = (dt: Date) => getFechaLocalYYYYMMDD(dt);
-
-  if (rango === 'dia') return { fechaInicio: fechaRefStr, fechaFin: fechaRefStr };
+  const [y, m, d] = ultimaFechaBD.split('-').map(Number);
+  const fechaUltimaObj = new Date(y, m - 1, d);
 
   if (rango === 'semana') {
-    const hace7 = new Date(fechaRefObj);
-    hace7.setDate(fechaRefObj.getDate() - 6);
-    return { fechaInicio: format(hace7), fechaFin: fechaRefStr };
+    const hace6 = new Date(fechaUltimaObj);
+    hace6.setDate(hace6.getDate() - 6);
+    return { fechaInicio: getFechaLocalYYYYMMDD(hace6), fechaFin: ultimaFechaBD };
   }
 
   if (rango === 'mes') {
-    const hace30 = new Date(fechaRefObj);
-    hace30.setDate(fechaRefObj.getDate() - 29);
-    return { fechaInicio: format(hace30), fechaFin: fechaRefStr };
+    const ultDiaMes = new Date(y, m, 0).getDate();
+    const mmStr = String(m).padStart(2, '0');
+    return {
+      fechaInicio: `${y}-${mmStr}-01`,
+      fechaFin: `${y}-${mmStr}-${String(ultDiaMes).padStart(2, '0')}`,
+    };
   }
 
-  return { fechaInicio: inicioActual || format(fechaRefObj), fechaFin: finActual || format(fechaRefObj) };
+  if (rango === 'personalizado') {
+    return { fechaInicio: primeraFechaBD, fechaFin: ultimaFechaBD };
+  }
+
+  return { fechaInicio: undefined, fechaFin: undefined };
 }
