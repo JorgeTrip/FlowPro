@@ -7,6 +7,7 @@ import { SheetCard } from '../datos/SheetCard';
 import { SheetEditorModal } from '../datos/SheetEditorModal';
 import { ImageLightboxModal } from '../datos/ImageLightboxModal';
 import { eliminarPlanillaVerificada } from '../../services/firestoreService';
+import { generarVariacionesBusquedaBD, coincideFechaConBusquedaFlexible } from '../../utils/calcularRangoFechasDatos';
 import { X, Search, FileSpreadsheet, Layers } from 'lucide-react';
 
 interface ModalDetallePlanillasBarraProps {
@@ -42,13 +43,26 @@ export function ModalDetallePlanillasBarra({
   };
 
   const planillasFiltradas = listaPlanillas.filter((p) => {
-    const term = busqueda.toLowerCase().trim();
+    const term = busqueda.trim();
     if (!term) return true;
-    return (
-      p.empleadoHeader?.toLowerCase().includes(term) ||
-      p.fechaPrimeraFila?.includes(term) ||
-      p.filas?.some((f) => f.empleadoAsignado?.toLowerCase().includes(term) || f.fecha?.includes(term))
-    );
+
+    const terminosBusqueda = generarVariacionesBusquedaBD(term);
+
+    return terminosBusqueda.some((t) => {
+      if (p.empleadoHeader?.toLowerCase().includes(t)) return true;
+      if (p.fechaPrimeraFila?.toLowerCase().includes(t)) return true;
+      if (p.fechaPlanilla?.toLowerCase().includes(t)) return true;
+      if (p.nombreArchivoOriginal?.toLowerCase().includes(t)) return true;
+      if (p.id?.toLowerCase().includes(t)) return true;
+      if (coincideFechaConBusquedaFlexible(p.fechaPrimeraFila, t)) return true;
+      if (coincideFechaConBusquedaFlexible(p.fechaPlanilla, t)) return true;
+      return p.filas?.some(
+        (f) =>
+          f.empleadoAsignado?.toLowerCase().includes(t) ||
+          f.fecha?.toLowerCase().includes(t) ||
+          coincideFechaConBusquedaFlexible(f.fecha, t)
+      );
+    });
   });
 
   const totalPedidos = planillasFiltradas.reduce((acc, p) => acc + (p.filas?.length || 0), 0);
