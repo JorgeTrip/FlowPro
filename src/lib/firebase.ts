@@ -1,6 +1,6 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider, Auth } from 'firebase/auth';
 
 const FIREBASE_API_KEY_FALLBACK = ['AIzaSy', 'DeOmETPk4ITr6fUBjiV6FpKUNrqaSuZGY'].join('');
@@ -16,7 +16,17 @@ const firebaseConfig = {
 
 // Inicialización Singleton de Firebase App
 export const app: FirebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-export const db: Firestore = getFirestore(app);
+
+let firestoreDb: Firestore;
+try {
+  firestoreDb = initializeFirestore(app, {
+    experimentalAutoDetectLongPolling: true,
+  });
+} catch {
+  firestoreDb = getFirestore(app);
+}
+
+export const db: Firestore = firestoreDb;
 export const auth: Auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 

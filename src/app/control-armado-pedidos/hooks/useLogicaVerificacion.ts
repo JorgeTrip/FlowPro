@@ -2,7 +2,6 @@
 import { useState, useCallback } from 'react';
 import { useArmadoStore } from '../stores/armadoStore';
 import { guardarPlanillaVerificada } from '../services/firestoreService';
-import { guardarImagenLocal } from '../services/localImageStore';
 import { rotarImagenBase64 } from '../utils/imageUtils';
 
 export function useLogicaVerificacion() {
@@ -32,8 +31,7 @@ export function useLogicaVerificacion() {
   const actual = itemsPendientes[itemActualIndex];
   const totalLote = cantVerificadasLote + itemsPendientes.length;
   const numActual = cantVerificadasLote + 1;
-  const porcentajeProgreso =
-    totalLote > 0 ? Math.round((cantVerificadasLote / totalLote) * 100) : 0;
+  const porcentajeProgreso = totalLote > 0 ? Math.round((cantVerificadasLote / totalLote) * 100) : 0;
 
   const faltaEmpleado =
     !actual ||
@@ -45,14 +43,15 @@ export function useLogicaVerificacion() {
     if (!actual) return;
     setGuardando(true);
     try {
-      const docId = await guardarPlanillaVerificada(actual);
-      if (actual.imagenBase64) {
-        const imagenAGuardar =
-          rotacionGrados !== 0
-            ? await rotarImagenBase64(actual.imagenBase64, rotacionGrados)
-            : actual.imagenBase64;
-        await guardarImagenLocal(docId, imagenAGuardar);
+      let imagenAGuardar = actual.imagenBase64;
+      if (imagenAGuardar && rotacionGrados !== 0) {
+        imagenAGuardar = await rotarImagenBase64(imagenAGuardar, rotacionGrados);
       }
+
+      await guardarPlanillaVerificada({
+        ...actual,
+        imagenBase64: imagenAGuardar,
+      });
 
       const cantFilas = actual.filas.length;
       const cantArticulos = actual.filas.reduce((acc, f) => acc + (f.cantArticulos || 0), 0);
@@ -98,10 +97,7 @@ export function useLogicaVerificacion() {
       const res = await fetch('/api/control-armado/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imagenBase64: actual.imagenBase64,
-          modoAltaPrecision: true,
-        }),
+        body: JSON.stringify({ imagenBase64: actual.imagenBase64, modoAltaPrecision: true }),
       });
 
       if (!res.ok) {
@@ -111,9 +107,10 @@ export function useLogicaVerificacion() {
 
       const data = await res.json();
       if (Array.isArray(data.filas)) {
+        const hoyStr = new Date().toISOString().split('T')[0];
         const nuevasFilas = data.filas.map((f: any, idx: number) => ({
           id: f.id || `f-reescan-${idx}-${Date.now()}`,
-          fecha: f.fecha || actual.fechaPrimeraFila,
+          fecha: f.fecha || actual.fechaPrimeraFila || hoyStr,
           horaInicio: f.horaInicio || '',
           horaFin: f.horaFin || '',
           cantArticulos: Number(f.cantArticulos) || 0,

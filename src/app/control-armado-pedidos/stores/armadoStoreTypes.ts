@@ -28,12 +28,14 @@ export interface ArmadoState {
   errorScan: string | null;
   alertaDuplicado: string | null;
   pestanaActiva: 'carga' | 'datos' | 'analisis';
+  busquedaDatos: string;
   ultimaGuardadaInfo: UltimoGuardadoInfo | null;
   progresoScan: ProgresoScanInfo;
   cancelarScanSolicitado: boolean;
   modalVerificacionAbierta: boolean;
 
   setPestanaActiva: (pestana: 'carga' | 'datos' | 'analisis') => void;
+  setBusquedaDatos: (busqueda: string) => void;
   setItemsPendientes: (items: RegistroArmadoDocumento[]) => void;
   agregarItemPendiente: (item: RegistroArmadoDocumento) => void;
   eliminarItemPendiente: (id: string) => void;

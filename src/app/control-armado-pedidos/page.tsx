@@ -12,8 +12,10 @@ import { DataSheetsList } from './components/datos/DataSheetsList';
 import { DashboardFilters } from './components/analisis/DashboardFilters';
 import { KPICards } from './components/analisis/KPICards';
 import { PerformanceCharts } from './components/analisis/PerformanceCharts';
+import { MonthlyPerformanceCharts } from './components/analisis/MonthlyPerformanceCharts';
 import { AnalyticsTable } from './components/analisis/AnalyticsTable';
 import { obtenerRegistrosVerificados, suscribirPlanillasPendientesFirestore } from './services/firestoreService';
+import { normalizarDatosHistoricosFirestore } from './services/firestoreMigrationService';
 import { RegistroArmadoDocumento, FiltrosAnalisis } from './types/armado';
 import { calcularMetricasGlobales, calcularRendimientoPorEmpleado } from './utils/metricsCalculator';
 import { UploadCloud, BarChart3, AlertCircle, Database } from 'lucide-react';
@@ -32,7 +34,12 @@ export default function ControlArmadoPedidosPage() {
 
   const cargarDatosAnalisis = useCallback(() => {
     if (pestanaActiva === 'analisis') {
-      obtenerRegistrosVerificados(filtros).then((data) => setRegistrosVerificados(data));
+      console.log('[DIAG-PAGINA] Solicitando registros verificados para pestaña análisis...');
+      obtenerRegistrosVerificados(filtros).then((data) => {
+        console.log(`[DIAG-PAGINA] Registros verificados cargados en estado (${data.length} docs)`);
+        setRegistrosVerificados(data);
+        normalizarDatosHistoricosFirestore(data);
+      });
     }
   }, [pestanaActiva, filtros]);
 
@@ -63,7 +70,7 @@ export default function ControlArmadoPedidosPage() {
       descripcion="Escaneo de planillas mejorado con IA (Gemini Vision OCR), verificación lado a lado, datos guardados y métricas."
       breadcrumbs={[{ nombre: 'Dashboard', href: '/' }, { nombre: 'Control de Armado' }]}
     >
-      <div className="space-y-6">
+      <div className="space-y-6" suppressHydrationWarning>
         {modalIrregularidadesAbierta && (
           <IrregularitiesModal
             registros={registrosVerificados}
@@ -102,7 +109,7 @@ export default function ControlArmadoPedidosPage() {
             <UploadCloud className="h-4 w-4" />
             <span>Carga y Verificación</span>
             {isMounted && itemsPendientes.length > 0 && (
-              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+              <span suppressHydrationWarning className="rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
                 {itemsPendientes.length}
               </span>
             )}
@@ -167,8 +174,11 @@ export default function ControlArmadoPedidosPage() {
             <PerformanceCharts
               rendimiento={rendimiento}
               promedioEquipo={metricas.velocidadPromedioEq}
+              registros={registrosVerificados}
               onVerIrregularidades={handleAbrirIrregularidades}
+              onActualizado={cargarDatosAnalisis}
             />
+            <MonthlyPerformanceCharts registros={registrosVerificados} onActualizado={cargarDatosAnalisis} />
             <AnalyticsTable rendimiento={rendimiento} registros={registrosVerificados} />
           </div>
         )}

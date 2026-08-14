@@ -1,8 +1,7 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 
 /**
- * Recibe un String Base64 de imagen y los grados de rotación (90, 180, 270).
- * Devuelve un nuevo String Base64 con los píxeles de la imagen físicamente rotados usando HTML5 Canvas.
+ * Rota una imagen en Base64 los grados indicados y la devuelve comprimida en WebP.
  */
 export function rotarImagenBase64(base64Src: string, grados: number): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -19,10 +18,7 @@ export function rotarImagenBase64(base64Src: string, grados: number): Promise<st
       try {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          resolve(base64Src);
-          return;
-        }
+        if (!ctx) return resolve(base64Src);
 
         const esNoventaODosSetenta = gradosNormalizados === 90 || gradosNormalizados === 270;
         canvas.width = esNoventaODosSetenta ? img.height : img.width;
@@ -32,15 +28,15 @@ export function rotarImagenBase64(base64Src: string, grados: number): Promise<st
         ctx.rotate((gradosNormalizados * Math.PI) / 180);
         ctx.drawImage(img, -img.width / 2, -img.height / 2);
 
-        resolve(canvas.toDataURL('image/jpeg', 0.92));
+        resolve(canvas.toDataURL('image/webp', 0.82));
       } catch (err) {
-        console.error('Error durante el procesamiento del canvas al rotar imagen:', err);
+        console.error('Error al rotar imagen en canvas:', err);
         resolve(base64Src);
       }
     };
 
     img.onerror = (err) => {
-      console.error('Error al cargar la imagen para la rotación en canvas:', err);
+      console.error('Error al cargar imagen para rotación:', err);
       reject(err);
     };
 
@@ -49,22 +45,21 @@ export function rotarImagenBase64(base64Src: string, grados: number): Promise<st
 }
 
 /**
- * Recibe un archivo de imagen (File), redimensiona manteniendo relación de aspecto
- * y aplica compresión adaptativa en canvas para garantizar un tamaño de Base64 inferior a 1MB (~950KB).
+ * Optimiza un archivo (File) o un string Base64 existente convirtiéndolo a WebP de alta eficiencia (~40-120KB).
  */
-export function optimizarImagenBase64(file: File, maxSizeBytes: number = 950000): Promise<string> {
+export function optimizarImagenBase64(
+  origen: File | string,
+  maxDimension: number = 1400,
+  calidadInicial: number = 0.80
+): Promise<string> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (event) => {
-      const srcBase64 = event.target?.result as string;
+    const procesarImagen = (srcBase64: string) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
 
-        const maxDimension = 1920;
         if (width > maxDimension || height > maxDimension) {
           if (width > height) {
             height = Math.round((height * maxDimension) / width);
@@ -83,12 +78,10 @@ export function optimizarImagenBase64(file: File, maxSizeBytes: number = 950000)
 
         ctx.drawImage(img, 0, 0, width, height);
 
-        let calidad = 0.88;
-        let dataUrl = canvas.toDataURL('image/jpeg', calidad);
-
-        while (dataUrl.length > maxSizeBytes && calidad > 0.25) {
-          calidad -= 0.08;
-          dataUrl = canvas.toDataURL('image/jpeg', calidad);
+        let dataUrl = canvas.toDataURL('image/webp', calidadInicial);
+        // Si el navegador no soporta webp o devuelve jpeg por fallback
+        if (!dataUrl.startsWith('data:image/webp')) {
+          dataUrl = canvas.toDataURL('image/jpeg', calidadInicial);
         }
 
         resolve(dataUrl);
@@ -96,6 +89,14 @@ export function optimizarImagenBase64(file: File, maxSizeBytes: number = 950000)
       img.onerror = (err) => reject(err);
       img.src = srcBase64;
     };
-    reader.onerror = (err) => reject(err);
+
+    if (typeof origen === 'string') {
+      procesarImagen(origen);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e) => procesarImagen(e.target?.result as string);
+      reader.onerror = (e) => reject(e);
+      reader.readAsDataURL(origen);
+    }
   });
 }

@@ -4,6 +4,9 @@
 import React, { useState, useEffect } from 'react';
 import { RegistroArmadoDocumento } from '../../types/armado';
 import { obtenerImagenLocal } from '../../services/localImageStore';
+import { optimizarImagenBase64 } from '../../utils/imageUtils';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { Edit3, Trash2, User, RefreshCw, ZoomIn, ImageOff, FileText, Clock, FileJson } from 'lucide-react';
 
 interface SheetCardProps {
@@ -14,34 +17,43 @@ interface SheetCardProps {
 }
 
 export function SheetCard({ p, onEditar, onEliminar, onVerImagen }: SheetCardProps) {
-  const [imagenBase64, setImagenBase64] = useState<string | null>(null);
-  const [cargandoImg, setCargandoImg] = useState(true);
+  const [imagenBase64, setImagenBase64] = useState<string | null>(p.imagenBase64 || null);
+  const [cargandoImg, setCargandoImg] = useState(!p.imagenBase64 && Boolean(p.id));
   const [montado, setMontado] = useState(false);
 
   useEffect(() => {
     setMontado(true);
     let cancelado = false;
+
     if (p.imagenBase64) {
       setImagenBase64(p.imagenBase64);
       setCargandoImg(false);
     } else if (p.id) {
-      obtenerImagenLocal(p.id).then((img) => {
+      // Migración silenciosa de imágenes históricas de IndexedDB a Firestore en formato WebP
+      obtenerImagenLocal(p.id).then(async (imgLegacy) => {
         if (!cancelado) {
-          setImagenBase64(img);
+          if (imgLegacy) {
+            const webp = await optimizarImagenBase64(imgLegacy);
+            setImagenBase64(webp);
+            try {
+              await updateDoc(doc(db, 'control_armado_pedidos', p.id!), { imagenBase64: webp });
+            } catch (e) {
+              console.warn('Migración de imagen a Firestore:', e);
+            }
+          }
           setCargandoImg(false);
         }
       });
     } else {
       setCargandoImg(false);
     }
+
     return () => {
       cancelado = true;
     };
   }, [p.id, p.imagenBase64]);
 
   const cantFilas = p.filas?.length || 0;
-
-  // Formatear Fecha y Hora de registro
   const fechaHoraStr = p.verificadoEn || p.creadoEn;
   let fechaHoraFormateada = '';
   if (montado && fechaHoraStr) {
@@ -60,7 +72,7 @@ export function SheetCard({ p, onEditar, onEliminar, onVerImagen }: SheetCardPro
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:shadow-md dark:border-gray-800 dark:bg-[#1C1C1E]">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-        {/* Thumbnail de la Planilla con Botón Lightbox */}
+        {/* Thumbnail de la Planilla */}
         <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-gray-900 group">
           {cargandoImg ? (
             <RefreshCw className="h-5 w-5 animate-spin text-gray-400" />
@@ -79,7 +91,7 @@ export function SheetCard({ p, onEditar, onEliminar, onVerImagen }: SheetCardPro
           ) : (
             <div className="flex flex-col items-center justify-center p-2 text-center text-gray-400">
               <ImageOff className="h-5 w-5 mb-1 text-gray-400" />
-              <span className="text-[9px]">Sin imagen local</span>
+              <span className="text-[9px]">Sin imagen</span>
             </div>
           )}
         </div>
@@ -98,7 +110,6 @@ export function SheetCard({ p, onEditar, onEliminar, onVerImagen }: SheetCardPro
                 </span>
               </div>
 
-              {/* Metadata de Archivo Original y Timestamp */}
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-500 dark:text-gray-400">
                 {p.nombreArchivoOriginal && (
                   <div
@@ -114,9 +125,7 @@ export function SheetCard({ p, onEditar, onEliminar, onVerImagen }: SheetCardPro
                     ) : (
                       <FileText className="h-3.5 w-3.5 text-gray-400 shrink-0" />
                     )}
-                    <span className="truncate font-mono">
-                      {p.nombreArchivoOriginal}
-                    </span>
+                    <span className="truncate font-mono">{p.nombreArchivoOriginal}</span>
                   </div>
                 )}
                 {fechaHoraFormateada && (

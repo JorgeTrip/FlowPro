@@ -30,7 +30,7 @@ export function IrregularitiesModal({
   registros.forEach((reg) => {
     reg.filas?.forEach((f) => {
       if (f.accionIrregularidad === 'ignorar') return;
-      const esIrregularActiva = Boolean(f.esIrregular) && !f.accionIrregularidad;
+      const esIrregularActiva = !f.accionIrregularidad && Boolean(f.esIrregular && f.notaIrregularidad && f.notaIrregularidad.trim());
       if (esIrregularActiva) {
         const armador = f.empleadoAsignado || f.nuevoEmpleado || reg.empleadoHeader;
         if (!filtroEmp || armador === filtroEmp || reg.empleadoHeader === filtroEmp) {
@@ -51,12 +51,15 @@ export function IrregularitiesModal({
     });
   });
 
+  console.log(`[DIAG-MODAL-IRREG] Total irregularidades activas en modal: ${items.length}`, items);
+
   const handleNormalizar = async (docId: string, filaId: string) => {
     setGuardando(true);
     try {
       await actualizarFilaEnDocumento(docId, filaId, {
         esIrregular: false,
         notaIrregularidad: null,
+        accionIrregularidad: undefined,
       });
       onActualizado();
     } catch (err) {

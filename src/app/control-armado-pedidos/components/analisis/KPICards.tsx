@@ -63,7 +63,7 @@ export function KPICards({ metricas }: KPICardsProps) {
               </div>
             </div>
             <div className="mt-4">
-              <span className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100">
+              <span suppressHydrationWarning className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100">
                 {t.valor}
               </span>
               <span className="ml-2 text-xs font-medium text-gray-500 dark:text-gray-400">{t.unidad}</span>

@@ -6,6 +6,8 @@ import { RegistroArmadoDocumento, FilaArmado } from '../../types/armado';
 import { IrregularityResolver } from './IrregularityResolver';
 import { AlertTriangle, Trash2 } from 'lucide-react';
 
+import { normalizarFechaYYYYMMDD } from '../../services/firestoreService';
+
 interface FilaTablaVerificacionProps {
   fila: FilaArmado;
   index: number;
@@ -29,6 +31,7 @@ export function FilaTablaVerificacion({
   const faltaInicio = !fila.horaInicio || fila.horaInicio.trim() === '';
   const faltaFin = !fila.horaFin || fila.horaFin.trim() === '';
   const armador = fila.nuevoEmpleado || fila.empleadoAsignado || actual.empleadoHeader;
+  const fechaValor = normalizarFechaYYYYMMDD(fila.fecha || actual.fechaPrimeraFila || actual.fechaPlanilla);
 
   return (
     <React.Fragment>
@@ -49,7 +52,7 @@ export function FilaTablaVerificacion({
         <td className="px-1.5 py-2">
           <input
             type="date"
-            value={fila.fecha || ''}
+            value={fechaValor}
             onChange={(e) => {
               if (e.target.value) {
                 actualizarFilaActual(fila.id, { fecha: e.target.value });
@@ -128,6 +131,14 @@ export function FilaTablaVerificacion({
                   esIrregular: false,
                   nuevoEmpleado: nuevoEmp,
                   empleadoAsignado: accion === 'asignar_nuevo' ? nuevoEmp : actual.empleadoHeader,
+                })
+              }
+              onNormalizar={() =>
+                actualizarFilaActual(fila.id, {
+                  esIrregular: false,
+                  notaIrregularidad: null,
+                  accionIrregularidad: undefined,
+                  nuevoEmpleado: undefined,
                 })
               }
             />

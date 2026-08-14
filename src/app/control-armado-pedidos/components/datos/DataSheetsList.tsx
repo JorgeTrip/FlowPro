@@ -4,19 +4,19 @@
 import React, { useState, useEffect } from 'react';
 import { RegistroArmadoDocumento } from '../../types/armado';
 import { obtenerRegistrosVerificados, eliminarPlanillaVerificada } from '../../services/firestoreService';
-import { eliminarImagenLocal } from '../../services/localImageStore';
+import { useArmadoStore } from '../../stores/armadoStore';
 import { SheetEditorModal } from './SheetEditorModal';
 import { ImageLightboxModal } from './ImageLightboxModal';
 import { SheetCard } from './SheetCard';
 import { BarraResumenDatos } from './BarraResumenDatos';
-import { Search, FileSpreadsheet, RefreshCw, ArrowUpDown } from 'lucide-react';
+import { Search, FileSpreadsheet, RefreshCw, ArrowUpDown, X } from 'lucide-react';
 
 type CriterioOrden = 'fecha_planilla' | 'fecha_carga';
 
 export function DataSheetsList() {
+  const { busquedaDatos, setBusquedaDatos } = useArmadoStore();
   const [planillas, setPlanillas] = useState<RegistroArmadoDocumento[]>([]);
   const [cargando, setCargando] = useState(true);
-  const [busqueda, setBusqueda] = useState('');
   const [criterioOrden, setCriterioOrden] = useState<CriterioOrden>('fecha_carga');
   const [planillaEditar, setPlanillaEditar] = useState<RegistroArmadoDocumento | null>(null);
   const [lightboxData, setLightboxData] = useState<{ base64: string; titulo: string } | null>(null);
@@ -41,7 +41,6 @@ export function DataSheetsList() {
     if (confirm(`¿Estás seguro de eliminar la planilla de "${emp}"?`)) {
       try {
         await eliminarPlanillaVerificada(id);
-        await eliminarImagenLocal(id);
         setPlanillas((prev) => prev.filter((p) => p.id !== id));
       } catch (err: any) {
         alert(`Error al eliminar: ${err.message}`);
@@ -50,7 +49,7 @@ export function DataSheetsList() {
   };
 
   const planillasFiltradas = planillas.filter((p) => {
-    const term = busqueda.toLowerCase().trim();
+    const term = busquedaDatos.toLowerCase().trim();
     if (!term) return true;
     return (
       p.empleadoHeader?.toLowerCase().includes(term) ||
@@ -80,10 +79,19 @@ export function DataSheetsList() {
           <input
             type="text"
             placeholder="Buscar por armador o fecha..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full rounded-xl border border-gray-300 bg-gray-50 pl-9 pr-4 py-2 text-xs text-gray-900 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            value={busquedaDatos}
+            onChange={(e) => setBusquedaDatos(e.target.value)}
+            className="w-full rounded-xl border border-gray-300 bg-gray-50 pl-9 pr-8 py-2 text-xs text-gray-900 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
           />
+          {busquedaDatos && (
+            <button
+              onClick={() => setBusquedaDatos('')}
+              className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              title="Limpiar búsqueda"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -115,7 +123,7 @@ export function DataSheetsList() {
       <BarraResumenDatos
         planillasFiltradas={planillasProcesadas}
         totalPlanillasOriginal={planillas.length}
-        hayFiltro={busqueda.trim().length > 0}
+        hayFiltro={busquedaDatos.trim().length > 0}
         cargando={cargando}
       />
 
@@ -123,13 +131,13 @@ export function DataSheetsList() {
       {cargando ? (
         <div className="flex h-48 items-center justify-center space-x-2 text-xs text-gray-500">
           <RefreshCw className="h-5 w-5 animate-spin text-blue-500" />
-          <span>Cargando planillas registradas en Firestore e IndexedDB...</span>
+          <span>Cargando planillas registradas en Firestore...</span>
         </div>
       ) : planillasProcesadas.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center text-xs text-gray-500 dark:border-gray-800">
           <FileSpreadsheet className="mx-auto h-8 w-8 text-gray-400 mb-2" />
           <p className="font-semibold text-gray-700 dark:text-gray-300">
-            {busqueda ? 'No se encontraron planillas coincidentes.' : 'No hay planillas guardadas.'}
+            {busquedaDatos ? 'No se encontraron planillas coincidentes.' : 'No hay planillas guardadas.'}
           </p>
         </div>
       ) : (

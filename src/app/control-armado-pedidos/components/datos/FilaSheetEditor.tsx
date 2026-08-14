@@ -3,6 +3,7 @@
 
 import React from 'react';
 import { FilaArmado } from '../../types/armado';
+import { normalizarFechaYYYYMMDD } from '../../services/firestoreService';
 import { Trash2 } from 'lucide-react';
 
 interface FilaSheetEditorProps {
@@ -25,6 +26,7 @@ export function FilaSheetEditor({
   const numLinea = index + 1;
   const faltaInicio = !f.horaInicio || f.horaInicio.trim() === '';
   const faltaFin = !f.horaFin || f.horaFin.trim() === '';
+  const fechaValor = normalizarFechaYYYYMMDD(f.fecha);
 
   return (
     <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/40">
@@ -36,7 +38,7 @@ export function FilaSheetEditor({
       <td className="px-2 py-1.5">
         <input
           type="date"
-          value={f.fecha || ''}
+          value={fechaValor}
           onChange={(e) => {
             if (e.target.value) {
               handleActualizarFila(f.id, { fecha: e.target.value });
@@ -82,14 +84,33 @@ export function FilaSheetEditor({
         />
       </td>
       <td className="px-2 py-1.5">
-        <input
-          type="text"
-          list="lista-empleados-sugeridos-datos"
-          value={f.empleadoAsignado || f.nuevoEmpleado || empleadoHeader}
-          onChange={(e) => handleActualizarFila(f.id, { empleadoAsignado: e.target.value.toUpperCase() })}
-          onKeyDown={handleEnterBlur}
-          className="w-full rounded border border-gray-300 bg-gray-50 px-1.5 py-1 text-xs uppercase dark:border-gray-700 dark:bg-gray-800"
-        />
+        <div className="flex items-center space-x-1">
+          <input
+            type="text"
+            list="lista-empleados-sugeridos-datos"
+            value={f.empleadoAsignado || f.nuevoEmpleado || empleadoHeader}
+            onChange={(e) => handleActualizarFila(f.id, { empleadoAsignado: e.target.value.toUpperCase() })}
+            onKeyDown={handleEnterBlur}
+            className="w-full rounded border border-gray-300 bg-gray-50 px-1.5 py-1 text-xs uppercase dark:border-gray-700 dark:bg-gray-800"
+          />
+          {f.esIrregular && !f.accionIrregularidad && (
+            <button
+              type="button"
+              onClick={() =>
+                handleActualizarFila(f.id, {
+                  esIrregular: false,
+                  notaIrregularidad: null,
+                  accionIrregularidad: undefined,
+                })
+              }
+              className="flex items-center space-x-0.5 rounded bg-amber-100 px-1.5 py-1 text-[10px] font-bold text-amber-800 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-200 shrink-0 transition-colors"
+              title={`Irregularidad: "${f.notaIrregularidad || 'Sin detalle'}". Clic para normalizar y quitar nota.`}
+            >
+              <span>Nota</span>
+              <span className="text-[9px] text-amber-600 dark:text-amber-400 font-normal">✕</span>
+            </button>
+          )}
+        </div>
       </td>
       <td className="px-2 py-1.5 text-right">
         <button

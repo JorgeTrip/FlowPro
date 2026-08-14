@@ -128,7 +128,8 @@ export function suscribirPlanillasPendientesFirestore(
       onUpdate(pendientes);
     },
     (error) => {
-      console.warn('Error en suscripción tiempo real de planillas pendientes:', error);
+      console.warn('Suscripción tiempo real no disponible, usando consulta directa:', error?.message);
+      obtenerPlanillasPendientesFirestore().then(onUpdate).catch(() => {});
     }
   );
 }

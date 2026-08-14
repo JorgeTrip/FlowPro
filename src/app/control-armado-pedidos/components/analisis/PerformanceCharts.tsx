@@ -1,8 +1,8 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import React from 'react';
-import { RendimientoEmpleado } from '../../types/armado';
+import React, { useState } from 'react';
+import { RendimientoEmpleado, RegistroArmadoDocumento } from '../../types/armado';
 import {
   ResponsiveContainer,
   BarChart,
@@ -13,23 +13,35 @@ import {
   CartesianGrid,
   Legend,
   ReferenceLine,
+  LabelList,
 } from 'recharts';
-
+import { ModalDetallePlanillasBarra } from './ModalDetallePlanillasBarra';
 import { AlertTriangle } from 'lucide-react';
 
 interface PerformanceChartsProps {
   rendimiento: RendimientoEmpleado[];
   promedioEquipo: number;
+  registros: RegistroArmadoDocumento[];
   onVerIrregularidades?: (empleado?: string) => void;
+  onActualizado?: () => void;
 }
 
 export function PerformanceCharts({
   rendimiento,
   promedioEquipo,
+  registros,
   onVerIrregularidades,
+  onActualizado,
 }: PerformanceChartsProps) {
+  const [modalDetalle, setModalDetalle] = useState<{
+    abierta: boolean;
+    titulo: string;
+    subtitulo: string;
+    planillas: RegistroArmadoDocumento[];
+  } | null>(null);
+
   const dataChart = rendimiento.map((r) => ({
-    empleado: r.empleado.split(' ')[0], // Nombre corto
+    empleado: r.empleado.split(' ')[0],
     empleadoCompleto: r.empleado,
     velocidad: r.velocidadArtHs,
     pedidos: r.totalPedidos,
@@ -37,6 +49,18 @@ export function PerformanceCharts({
   }));
 
   const totalIrregularidades = rendimiento.reduce((acc, r) => acc + r.totalIrregularidades, 0);
+
+  const abrirModalEmpleado = (empNombre: string) => {
+    const planillasEmp = registros.filter(
+      (p) => p.empleadoHeader === empNombre || p.filas?.some((f) => (f.empleadoAsignado || f.nuevoEmpleado) === empNombre)
+    );
+    setModalDetalle({
+      abierta: true,
+      titulo: `Planillas de ${empNombre}`,
+      subtitulo: `Detalle de planillas verificadas para este armador`,
+      planillas: planillasEmp,
+    });
+  };
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -47,7 +71,7 @@ export function PerformanceCharts({
         </h3>
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={dataChart} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+            <BarChart data={dataChart} margin={{ top: 20, right: 20, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
               <XAxis dataKey="empleado" stroke="#888888" fontSize={11} />
               <YAxis stroke="#888888" fontSize={11} />
@@ -57,7 +81,9 @@ export function PerformanceCharts({
                   borderColor: '#374151',
                   borderRadius: '0.75rem',
                   color: '#fff',
+                  fontSize: '11px',
                 }}
+                formatter={() => ['Haz clic en la barra para obtener más información', '']}
               />
               <ReferenceLine
                 y={promedioEquipo}
@@ -65,7 +91,16 @@ export function PerformanceCharts({
                 stroke="#3B82F6"
                 strokeDasharray="4 4"
               />
-              <Bar dataKey="velocidad" name="Artículos / hora" fill="#3B82F6" radius={[6, 6, 0, 0]} />
+              <Bar
+                dataKey="velocidad"
+                name="Artículos / hora"
+                fill="#3B82F6"
+                radius={[6, 6, 0, 0]}
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={(entry: any) => abrirModalEmpleado(entry.empleadoCompleto || entry.empleado)}
+              >
+                <LabelList dataKey="velocidad" position="top" formatter={(v: any) => (Number(v) > 0 ? `${v} Art/h` : '')} fill="#3B82F6" fontSize={10} fontWeight="bold" />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -91,7 +126,7 @@ export function PerformanceCharts({
 
         <div className="h-72 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={dataChart} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+            <BarChart data={dataChart} margin={{ top: 20, right: 20, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
               <XAxis dataKey="empleado" stroke="#888888" fontSize={11} />
               <YAxis stroke="#888888" fontSize={11} />
@@ -101,10 +136,21 @@ export function PerformanceCharts({
                   borderColor: '#374151',
                   borderRadius: '0.75rem',
                   color: '#fff',
+                  fontSize: '11px',
                 }}
+                formatter={() => ['Haz clic en la barra para obtener más información', '']}
               />
               <Legend wrapperStyle={{ fontSize: '11px' }} />
-              <Bar dataKey="pedidos" name="Total Pedidos" fill="#10B981" radius={[6, 6, 0, 0]} />
+              <Bar
+                dataKey="pedidos"
+                name="Total Pedidos"
+                fill="#10B981"
+                radius={[6, 6, 0, 0]}
+                className="cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={(entry: any) => abrirModalEmpleado(entry.empleadoCompleto || entry.empleado)}
+              >
+                <LabelList dataKey="pedidos" position="top" formatter={(v: any) => (Number(v) > 0 ? `${v} ped` : '')} fill="#10B981" fontSize={10} fontWeight="bold" />
+              </Bar>
               <Bar
                 dataKey="irregularidades"
                 name="Irregularidades (Click para revisar)"
@@ -116,11 +162,23 @@ export function PerformanceCharts({
                     onVerIrregularidades(entry.empleadoCompleto || entry.empleado);
                   }
                 }}
-              />
+              >
+                <LabelList dataKey="irregularidades" position="top" formatter={(v: any) => (Number(v) > 0 ? `${v} irreg` : '')} fill="#F59E0B" fontSize={10} fontWeight="bold" />
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
+
+      {modalDetalle?.abierta && (
+        <ModalDetallePlanillasBarra
+          titulo={modalDetalle.titulo}
+          subtitulo={modalDetalle.subtitulo}
+          planillas={modalDetalle.planillas}
+          onCerrar={() => setModalDetalle(null)}
+          onActualizado={onActualizado}
+        />
+      )}
     </div>
   );
 }

@@ -3,15 +3,21 @@
 
 import React, { useState } from 'react';
 import { FilaArmado, AccionIrregularidad } from '../../types/armado';
-import { AlertTriangle, UserCheck, UserPlus, EyeOff } from 'lucide-react';
+import { AlertTriangle, UserCheck, UserPlus, EyeOff, CheckCircle2 } from 'lucide-react';
 
 interface IrregularityResolverProps {
   fila: FilaArmado;
   empleadoHeader: string;
   onResolver: (accion: AccionIrregularidad, nuevoEmp?: string) => void;
+  onNormalizar?: () => void;
 }
 
-export function IrregularityResolver({ fila, empleadoHeader, onResolver }: IrregularityResolverProps) {
+export function IrregularityResolver({
+  fila,
+  empleadoHeader,
+  onResolver,
+  onNormalizar,
+}: IrregularityResolverProps) {
   const [nuevoNombre, setNuevoNombre] = useState(fila.nuevoEmpleado || '');
 
   const handleAplicarNuevo = (e?: React.SyntheticEvent) => {
@@ -38,18 +44,19 @@ export function IrregularityResolver({ fila, empleadoHeader, onResolver }: Irreg
         </span>
       </div>
 
-      <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+      <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
         <button
           type="button"
           onClick={() => onResolver('asignar_cabecera')}
           className={`flex items-center justify-center space-x-1.5 rounded-md px-2.5 py-1.5 font-medium transition-all ${
-            !fila.accionIrregularidad || fila.accionIrregularidad === 'asignar_cabecera'
+            fila.accionIrregularidad === 'asignar_cabecera'
               ? 'bg-amber-600 text-white shadow-sm font-semibold'
               : 'bg-white text-amber-900 border border-amber-300 hover:bg-amber-100 dark:bg-gray-800 dark:text-amber-200 dark:border-amber-800'
           }`}
+          title="Asignar este pedido al empleado principal de la cabecera"
         >
           <UserCheck className="h-3.5 w-3.5" />
-          <span>Asignar a {empleadoHeader || 'Empleado de Cabecera'}</span>
+          <span className="truncate">Asignar a {empleadoHeader || 'Cabecera'}</span>
         </button>
 
         <div className="flex space-x-1">
@@ -77,6 +84,18 @@ export function IrregularityResolver({ fila, empleadoHeader, onResolver }: Irreg
           </button>
         </div>
 
+        {onNormalizar && (
+          <button
+            type="button"
+            onClick={onNormalizar}
+            className="flex items-center justify-center space-x-1.5 rounded-md border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 font-medium text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 transition-all"
+            title="Descartar nota y dejar como fila regular normal"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+            <span>Descartar Nota</span>
+          </button>
+        )}
+
         <button
           type="button"
           onClick={() => onResolver('ignorar')}
@@ -85,6 +104,7 @@ export function IrregularityResolver({ fila, empleadoHeader, onResolver }: Irreg
               ? 'bg-red-600 text-white shadow-sm'
               : 'bg-white text-red-700 border border-red-200 hover:bg-red-50 dark:bg-gray-800 dark:text-red-300'
           }`}
+          title="Ignorar esta fila en métricas y reportes"
         >
           <EyeOff className="h-3.5 w-3.5" />
           <span>Ignorar Fila</span>

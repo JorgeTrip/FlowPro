@@ -51,8 +51,12 @@ export function calcularRendimientoPorEmpleado(registros: RegistroArmadoDocument
       actual.articulos += f.cantArticulos || 0;
       actual.minutos += calcularDiferenciaMinutos(f.horaInicio, f.horaFin);
 
-      if (f.esIrregular && !f.accionIrregularidad) {
+      const esIrregularActiva = Boolean(f.esIrregular) && !f.accionIrregularidad && Boolean(f.notaIrregularidad && f.notaIrregularidad.trim());
+      if (esIrregularActiva) {
         actual.irregularidades += 1;
+        console.log(`[DIAG-IRREGULARIDAD] ACTIVA | DocID: ${reg.id} | EmpHeader: "${reg.empleadoHeader}" | FilaID: ${f.id} | Armador: "${emp}" | Nota: "${f.notaIrregularidad}" | Accion: "${f.accionIrregularidad}" | esIrreg: ${f.esIrregular}`);
+      } else if (f.esIrregular || f.notaIrregularidad || f.accionIrregularidad) {
+        console.log(`[DIAG-IRREGULARIDAD] RESUELTA/INACTIVA | DocID: ${reg.id} | EmpHeader: "${reg.empleadoHeader}" | FilaID: ${f.id} | Armador: "${emp}" | Nota: "${f.notaIrregularidad}" | Accion: "${f.accionIrregularidad}" | esIrreg: ${f.esIrregular}`);
       }
       mapa.set(emp, actual);
     });

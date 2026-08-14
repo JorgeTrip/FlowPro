@@ -7,6 +7,7 @@ import { useArmadoStore } from '../../stores/armadoStore';
 import { useGeminiQuotaStore } from '../../stores/useGeminiQuotaStore';
 import { UploadCloud, Loader2 } from 'lucide-react';
 import { verificarDuplicado, guardarPlanillaPendienteFirestore } from '../../services/firestoreService';
+import { optimizarImagenBase64 } from '../../utils/imageUtils';
 import { RegistroArmadoDocumento } from '../../types/armado';
 
 export function BatchDropzone() {
@@ -35,7 +36,6 @@ export function BatchDropzone() {
 
       for (let i = 0; i < acceptedFiles.length; i++) {
         if (useArmadoStore.getState().cancelarScanSolicitado) break;
-
         if (i > 0) await new Promise((resolve) => setTimeout(resolve, 1500));
 
         const file = acceptedFiles[i];
@@ -54,7 +54,7 @@ export function BatchDropzone() {
         let intentosArchivo = 0;
 
         try {
-          const base64 = await fileToBase64(file);
+          const base64 = await optimizarImagenBase64(file);
 
           while (!procesadoExitoso && intentosArchivo < 10) {
             if (useArmadoStore.getState().cancelarScanSolicitado) {
@@ -133,7 +133,6 @@ export function BatchDropzone() {
               })),
             };
 
-            // Al guardar en Firestore, el listener de tiempo real (onSnapshot) actualizará la cola en todas las terminales
             const idGuardado = await guardarPlanillaPendienteFirestore(itemPendiente);
             if (!idGuardado) {
               useArmadoStore.getState().agregarItemPendiente(itemPendiente);
@@ -193,13 +192,4 @@ export function BatchDropzone() {
       </div>
     </div>
   );
-}
-
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (err) => reject(err);
-  });
 }
