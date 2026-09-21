@@ -1,7 +1,7 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 import { create } from 'zustand';
 import { FilaArmado } from '../types/armado';
-import { eliminarPlanillaVerificada } from '../services/firestoreService';
+import { eliminarPlanillaVerificada, guardarPlanillaPendienteFirestore } from '../services/firestoreService';
 import { ArmadoState } from './armadoStoreTypes';
 import { createScanSlice } from './armadoStoreScanSlice';
 
@@ -139,6 +139,17 @@ export const useArmadoStore = create<ArmadoState>()((set, get) => ({
       filas: nuevasFilas,
     };
     set({ itemsPendientes: copia });
+  },
+
+  asignarImagenItemActual: (imagenBase64) => {
+    const { itemsPendientes, itemActualIndex } = get();
+    if (!itemsPendientes[itemActualIndex]) return;
+    const copia = [...itemsPendientes];
+    copia[itemActualIndex] = { ...copia[itemActualIndex], imagenBase64 };
+    set({ itemsPendientes: copia });
+    guardarPlanillaPendienteFirestore(copia[itemActualIndex]).catch((e) =>
+      console.warn('Error guardando imagen en Firestore:', e)
+    );
   },
 
   saltarASiguientePlanilla: () =>

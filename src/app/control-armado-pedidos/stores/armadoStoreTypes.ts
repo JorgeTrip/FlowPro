@@ -74,6 +74,7 @@ export interface ArmadoState {
   removerFilaActual: (filaId: string) => void;
   agregarFilaAItemActual: (nuevaFila?: Partial<FilaArmado>) => void;
   reemplazarFilasItemActual: (filas: FilaArmado[], empleadoHeader?: string) => void;
+  asignarImagenItemActual: (imagenBase64: string) => void;
   saltarASiguientePlanilla: () => void;
   irAPlanillaAnterior: () => void;
   marcarActualComoVerificado: (infoGuardada?: UltimoGuardadoInfo) => void;

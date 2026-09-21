@@ -7,7 +7,8 @@ import { useLogicaVerificacion } from '../../hooks/useLogicaVerificacion';
 import { InteractiveImageViewer } from './InteractiveImageViewer';
 import { TablaVerificacionFilas } from './TablaVerificacionFilas';
 import { BarraAccionesVerificacion } from './BarraAccionesVerificacion';
-import { X, Sparkles, FileJson } from 'lucide-react';
+import { DropzoneImagenPlanilla } from './DropzoneImagenPlanilla';
+import { X, Sparkles } from 'lucide-react';
 
 export function ModalVerificacionPlanilla() {
   const modalVerificacionAbierta = useArmadoStore((state) => state.modalVerificacionAbierta);
@@ -111,20 +112,7 @@ export function ModalVerificacionPlanilla() {
                   onRotacionChange={setRotacionGrados}
                 />
               ) : (
-                <div className="flex flex-1 flex-col items-center justify-center p-6 text-center space-y-4 rounded-xl border border-purple-500/30 bg-purple-950/20 text-purple-200">
-                  <div className="rounded-2xl bg-purple-500/20 p-4 text-purple-300">
-                    <FileJson className="h-10 w-10 animate-bounce" />
-                  </div>
-                  <div className="space-y-1">
-                    <h4 className="font-bold text-sm text-purple-100">Importación Externa (JSON)</h4>
-                    <p className="text-xs text-purple-300">
-                      Esta planilla proviene de la lectura realizada mediante un modelo de IA externo.
-                    </p>
-                  </div>
-                  <p className="text-[11px] text-purple-400 max-w-xs">
-                    No posee una imagen física adjunta. Podés revisar los datos extraídos en la tabla de la derecha y resolver las irregularidades antes de guardar.
-                  </p>
-                </div>
+                <DropzoneImagenPlanilla />
               )}
             </div>
 
