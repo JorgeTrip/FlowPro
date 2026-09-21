@@ -4,13 +4,31 @@
 import React, { useState } from 'react';
 import { useArmadoStore } from '../../stores/armadoStore';
 import { RegistroArmadoDocumento, FilaArmado } from '../../types/armado';
-import { FileJson, Upload, CheckCircle2, AlertCircle } from 'lucide-react';
 import { guardarPlanillaPendienteFirestore } from '../../services/firestoreService';
+import { procesarFechasPlanilla } from '../../utils/fechaUtils';
+import { PROMPT_IA_EXTERNA } from '../../utils/promptsImportacion';
+import { FileJson, Upload, CheckCircle2, AlertCircle, Copy, Check, ExternalLink } from 'lucide-react';
 
+/**
+ * Componente que permite importar planillas a la cola de verificación a partir
+ * de un código JSON estructurado emitido por un modelo de IA externo.
+ * Incluye utilidad para copiar el prompt optimizado con un solo clic.
+ */
 export function ExternalJsonImporter() {
   const [jsonText, setJsonText] = useState('');
+  const [copiado, setCopiado] = useState(false);
   const [errorParse, setErrorParse] = useState<string | null>(null);
   const [exitoMensaje, setExitoMensaje] = useState<string | null>(null);
+
+  const handleCopiarPrompt = async () => {
+    try {
+      await navigator.clipboard.writeText(PROMPT_IA_EXTERNA);
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 3000);
+    } catch (err) {
+      console.error('Error al copiar el prompt al portapapeles:', err);
+    }
+  };
 
   const handleImportarJSON = async () => {
     setErrorParse(null);
@@ -22,19 +40,38 @@ export function ExternalJsonImporter() {
     }
 
     try {
-      const parsed = JSON.parse(jsonText);
-      const planillas: any[] = Array.isArray(parsed) ? parsed : [parsed];
-      if (planillas.length === 0) throw new Error('El JSON no contiene ningún registro de planilla válido.');
+      // Se limpian posibles bloques de formato Markdown generados por la IA
+      let textoLimpio = jsonText.trim();
+      if (textoLimpio.startsWith('```')) {
+        textoLimpio = textoLimpio.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+      }
+
+      const parsed = JSON.parse(textoLimpio);
+      let listaPlanillas: any[] = [];
+
+      if (Array.isArray(parsed)) {
+        listaPlanillas = parsed;
+      } else if (Array.isArray(parsed.planillas)) {
+        listaPlanillas = parsed.planillas;
+      } else if (parsed.filas || parsed.registros) {
+        listaPlanillas = [parsed];
+      } else {
+        throw new Error('El JSON no contiene una lista válida con "planillas" o "filas".');
+      }
+
+      if (listaPlanillas.length === 0) {
+        throw new Error('El JSON no contiene ningún registro de planilla.');
+      }
 
       const hoyStr = new Date().toISOString().split('T')[0];
       let cantCargadas = 0;
 
-      for (let idxP = 0; idxP < planillas.length; idxP++) {
-        const p = planillas[idxP];
-        const empHeader = p.empleadoHeader || p.empleado || 'Empleado Externo';
+      for (let idxP = 0; idxP < listaPlanillas.length; idxP++) {
+        const p = listaPlanillas[idxP];
+        const empHeader = (p.empleadoHeader || p.empleado || 'Empleado Externo').toUpperCase();
         const filasRaw = Array.isArray(p.filas) ? p.filas : Array.isArray(p.registros) ? p.registros : [];
 
-        const filasProcesadas: FilaArmado[] = filasRaw.map((f: any, idxF: number) => ({
+        const filasProcesadas: FilaArmado[] = procesarFechasPlanilla(filasRaw, hoyStr).map((f: any, idxF: number) => ({
           id: f.id || `ext-f-${idxP}-${idxF}-${Date.now()}`,
           fecha: f.fecha || hoyStr,
           horaInicio: f.horaInicio || '',
@@ -86,8 +123,34 @@ export function ExternalJsonImporter() {
             </div>
             <div>
               <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Importación Externa de JSON</h3>
-              <p className="text-[11px] text-gray-500 dark:text-gray-400">Pega estructuras exportadas de otras instancias</p>
+              <p className="text-[11px] text-gray-500 dark:text-gray-400">Pega estructuras generadas por IA externa</p>
             </div>
+          </div>
+
+          <div className="flex items-center space-x-1.5">
+            <button
+              type="button"
+              onClick={handleCopiarPrompt}
+              className={`flex items-center space-x-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold shadow-sm transition-all shrink-0 ${
+                copiado
+                  ? 'border border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
+                  : 'border border-purple-300 bg-purple-50 text-purple-600 hover:bg-purple-100 dark:border-purple-800 dark:bg-purple-950/30 dark:text-purple-400'
+              }`}
+              title="Copiar prompt al portapapeles para usar en Gemini, ChatGPT o Claude"
+            >
+              {copiado ? <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+              <span>{copiado ? '¡Copiado!' : 'Copiar Prompt IA'}</span>
+            </button>
+
+            <a
+              href="https://gemini.google.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center rounded-xl border border-purple-200 bg-purple-50 p-1.5 text-purple-600 hover:bg-purple-100 dark:border-purple-800 dark:bg-purple-950/30 dark:text-purple-400 transition-all"
+              title="Abrir Gemini Web en una nueva pestaña"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
           </div>
         </div>
 
@@ -95,7 +158,7 @@ export function ExternalJsonImporter() {
           <textarea
             value={jsonText}
             onChange={(e) => setJsonText(e.target.value)}
-            placeholder='Pega aquí el código JSON (ej. [{"empleadoHeader": "Juan", "filas": [...]}, ...])'
+            placeholder='Pega aquí el código JSON (ej. {"planillas": [...]})'
             className="h-24 w-full rounded-xl border border-gray-200 bg-gray-50/50 p-3 font-mono text-xs text-gray-800 focus:border-purple-500 focus:outline-none dark:border-gray-800 dark:bg-gray-900/50 dark:text-gray-200"
           />
         </div>
