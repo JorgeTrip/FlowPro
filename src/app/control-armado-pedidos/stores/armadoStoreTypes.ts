@@ -20,6 +20,13 @@ export interface ProgresoScanInfo {
   mensajeEstado?: string;
 }
 
+export interface ArchivoFallidoScan {
+  id: string;
+  nombreArchivo: string;
+  motivo: string;
+  archivo?: File;
+}
+
 export interface ArmadoState {
   itemsPendientes: RegistroArmadoDocumento[];
   itemActualIndex: number;
@@ -33,6 +40,8 @@ export interface ArmadoState {
   progresoScan: ProgresoScanInfo;
   cancelarScanSolicitado: boolean;
   modalVerificacionAbierta: boolean;
+  archivosFallidosScan: ArchivoFallidoScan[];
+  modalFallosScanAbierto: boolean;
 
   setPestanaActiva: (pestana: 'carga' | 'datos' | 'analisis') => void;
   setBusquedaDatos: (busqueda: string) => void;
@@ -50,6 +59,11 @@ export interface ArmadoState {
   finalizarProgresoScan: () => void;
   cancelarEscaneoLote: () => void;
   resetCancelarScan: () => void;
+
+  setArchivosFallidosScan: (archivos: ArchivoFallidoScan[]) => void;
+  agregarArchivoFallidoScan: (archivo: ArchivoFallidoScan) => void;
+  limpiarArchivosFallidosScan: () => void;
+  setModalFallosScanAbierto: (abierto: boolean) => void;
 
   setModalVerificacionAbierta: (abierta: boolean) => void;
   abrirModalVerificacion: (index?: number) => void;

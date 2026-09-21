@@ -1,10 +1,12 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
-import { ProgresoScanInfo } from './armadoStoreTypes';
+import { ProgresoScanInfo, ArchivoFallidoScan } from './armadoStoreTypes';
 import { PROGRESO_SCAN_INICIAL } from './armadoStoreDefaults';
 
 export interface ScanSlice {
   progresoScan: ProgresoScanInfo;
   cancelarScanSolicitado: boolean;
+  archivosFallidosScan: ArchivoFallidoScan[];
+  modalFallosScanAbierto: boolean;
   iniciarProgresoScan: (totalArchivos: number) => void;
   actualizarProgresoScan: (updates: Partial<ProgresoScanInfo>) => void;
   setMinimizadoScan: (minimizado: boolean) => void;
@@ -12,11 +14,17 @@ export interface ScanSlice {
   finalizarProgresoScan: () => void;
   cancelarEscaneoLote: () => void;
   resetCancelarScan: () => void;
+  setArchivosFallidosScan: (archivos: ArchivoFallidoScan[]) => void;
+  agregarArchivoFallidoScan: (archivo: ArchivoFallidoScan) => void;
+  limpiarArchivosFallidosScan: () => void;
+  setModalFallosScanAbierto: (abierto: boolean) => void;
 }
 
 export const createScanSlice = (set: any): ScanSlice => ({
   progresoScan: PROGRESO_SCAN_INICIAL,
   cancelarScanSolicitado: false,
+  archivosFallidosScan: [],
+  modalFallosScanAbierto: false,
 
   iniciarProgresoScan: (totalArchivos) =>
     set({
@@ -42,4 +50,9 @@ export const createScanSlice = (set: any): ScanSlice => ({
       progresoScan: { ...state.progresoScan, activo: false },
     })),
   resetCancelarScan: () => set({ cancelarScanSolicitado: false }),
+  setArchivosFallidosScan: (archivosFallidosScan) => set({ archivosFallidosScan }),
+  agregarArchivoFallidoScan: (archivo) =>
+    set((state: any) => ({ archivosFallidosScan: [...state.archivosFallidosScan, archivo] })),
+  limpiarArchivosFallidosScan: () => set({ archivosFallidosScan: [], modalFallosScanAbierto: false }),
+  setModalFallosScanAbierto: (modalFallosScanAbierto) => set({ modalFallosScanAbierto }),
 });

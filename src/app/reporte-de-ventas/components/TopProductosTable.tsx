@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { exportToExcel } from '../lib/exportUtils';
+import { debeExcluirProducto } from '../lib/filtroProductosUtils';
 
 interface Producto {
     articulo: string;
@@ -19,14 +20,6 @@ export const TopProductosTable = ({ topProductosMasVendidos, topProductosMenosVe
     const [topN, setTopN] = useState<number>(10);
     const [mostrarPorcentajes, setMostrarPorcentajes] = useState<boolean>(true);
     const [excluirAjustes, setExcluirAjustes] = useState<boolean>(false);
-
-    // Determina si un código de artículo debe excluirse (ajustes y variantes)
-    const debeExcluirProducto = (articulo: string): boolean => {
-        const cod = articulo.trim().toUpperCase();
-        if (cod === '50AJU003') return true;
-        if (cod.endsWith('G') || cod.endsWith('C') || cod.endsWith('M')) return true;
-        return false;
-    };
 
     // Datos según el tipo seleccionado
     const datosOriginales = tipoProductos === 'mas' ? topProductosMasVendidos : topProductosMenosVendidos;
@@ -58,13 +51,8 @@ export const TopProductosTable = ({ topProductosMasVendidos, topProductosMenosVe
         return datosProcesados.reduce((acc, item) => acc + item.cantidad, 0);
     }, [datosProcesados]);
 
-    const formatQuantity = (value: number) => {
-        return value.toLocaleString('es-AR');
-    };
-
-    const calcularPorcentaje = (valor: number, total: number) => {
-        return total > 0 ? ((valor / total) * 100).toFixed(1) + '%' : '0%';
-    };
+    const formatQuantity = (value: number) => value.toLocaleString('es-AR');
+    const calcularPorcentaje = (valor: number, total: number) => (total > 0 ? `${((valor / total) * 100).toFixed(1)}%` : '0%');
 
     const exportarDatos = () => {
         const headers = mostrarPorcentajes

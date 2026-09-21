@@ -4,19 +4,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { actualizarPerfilUsuario, cambiarPasswordUsuario } from '@/services/authService';
+import { AVATARES_PREDETERMINADOS } from './avataresPredeterminados';
 import { X, User, Lock, CheckCircle, Loader2, Camera } from 'lucide-react';
 
 interface EditarPerfilModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const AVATARES_PREDETERMINADOS = [
-  'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
-  'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
-  'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=150&q=80',
-  'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=150&q=80',
-];
 
 export function EditarPerfilModal({ isOpen, onClose }: EditarPerfilModalProps) {
   const { user, actualizarDatosUsuario } = useAuthStore();

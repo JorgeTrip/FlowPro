@@ -20,25 +20,6 @@ import { VentasPorVendedorTable } from './VentasPorVendedorTable';
 import { TopProductosTable } from './TopProductosTable';
 import { TopClientesTable } from './TopClientesTable';
 
-// --- Helper Functions ---
-const _formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency',
-    currency: 'ARS',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(value);
-};
-
-const _formatQuantity = (value: number) => {
-  return new Intl.NumberFormat('es-AR').format(value);
-};
-
-// --- Sub-components ---
-
-
-// --- Main Component ---
-
 export function ResultsStep() {
   const { resultados, reset, isGenerating } = useReporteVentasStore();
   const [activeTab, setActiveTab] = useState<'graficos' | 'tablas'>('graficos');

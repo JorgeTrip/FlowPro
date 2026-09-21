@@ -1,86 +1,16 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useGestionFormulasStore } from '@/app/stores/gestionFormulasStore';
 import { useProcesarImportacion } from '../hooks/useProcesarImportacion';
+import { useMapeoColumnas } from '../hooks/useMapeoColumnas';
 import SelectorMapeo from './SelectorMapeo';
 import DataPreviewTable from './DataPreviewTable';
-
-function buscarCoincidenciaColumna(columnas: string[], keywords: string[]): string {
-  for (const kw of keywords) {
-    const exacta = columnas.find((c) => c.toLowerCase() === kw.toLowerCase());
-    if (exacta) return exacta;
-  }
-  for (const kw of keywords) {
-    const parcial = columnas.find((c) => c.toLowerCase().includes(kw.toLowerCase()));
-    if (parcial) return parcial;
-  }
-  return '';
-}
 
 export default function ConfigStep() {
   const store = useGestionFormulasStore();
   const { procesarConfirmacion } = useProcesarImportacion();
-
-  const [mapeoLocal, setMapeoLocal] = useState({
-    formulas: {
-      codigoProducto: '', descripcionProducto: '', codigoComponente: '',
-      descripcionComponente: '', cantidad: '', unidadMedidaComponente: '', contenido: '',
-    },
-    stock: {
-      codigoProducto: '', deposito: '', stockFisico: '', stockReservado: '',
-      unidadMedida: '', cantidadARecibir: '',
-    },
-    consumo: { codigoProducto: '', anio: '', mes: '', cantidadConsumida: '' },
-    stockPT: { codigo: '', descripcion: '', descripcionAdicional: '' },
-    consumoSemi: { codigoProducto: '', anio: '', mes: '', cantidadConsumida: '' },
-  });
-
-  useEffect(() => {
-    const fCols = store.columnasFormulas;
-    const sCols = store.columnasStock;
-    const cCols = store.columnasConsumo;
-    const ptCols = store.columnasStockPT;
-    const csCols = store.columnasRotacionSemiElab;
-
-    setMapeoLocal({
-      formulas: {
-        codigoProducto: buscarCoincidenciaColumna(fCols, ['CÓDIGO TANGO', 'producto', 'codigo producto', 'art_cod']),
-        descripcionProducto: buscarCoincidenciaColumna(fCols, ['DESCRIPCIÓN', 'descripcion', 'desc', 'detalle']),
-        codigoComponente: buscarCoincidenciaColumna(fCols, ['CÓDIGO', 'componente', 'insumo', 'mp_cod']),
-        descripcionComponente: buscarCoincidenciaColumna(fCols, ['ARTÍCULO', 'nombre componente', 'descripcion insumo']),
-        cantidad: buscarCoincidenciaColumna(fCols, ['CANTIDAD', 'cantidad', 'cant']),
-        unidadMedidaComponente: buscarCoincidenciaColumna(fCols, ['UM', 'unidad', 'um']),
-        contenido: buscarCoincidenciaColumna(fCols, ['DESCRIPCIÓN ADICIONAL / CONTENIDO', 'contenido', 'adicional']),
-      },
-      stock: {
-        codigoProducto: buscarCoincidenciaColumna(sCols, ['Código', 'articulo', 'codigo', 'art_cod']),
-        deposito: buscarCoincidenciaColumna(sCols, ['Descripción depósito', 'deposito', 'almacen']),
-        stockFisico: buscarCoincidenciaColumna(sCols, ['Saldo control stock', 'stock', 'fisico', 'cantidad']),
-        stockReservado: buscarCoincidenciaColumna(sCols, ['Cantidad comprometida control stock', 'reservado', 'comprometido']),
-        unidadMedida: buscarCoincidenciaColumna(sCols, ['U.m. control stock', 'um', 'unidad']),
-        cantidadARecibir: buscarCoincidenciaColumna(sCols, ['Cantidad a recibir control stock', 'a recibir', 'pendiente']),
-      },
-      consumo: {
-        codigoProducto: buscarCoincidenciaColumna(cCols, ['CÓDIGO', 'codigo', 'articulo', 'producto']),
-        anio: buscarCoincidenciaColumna(cCols, ['anio', 'año', 'periodo']),
-        mes: buscarCoincidenciaColumna(cCols, ['mes', 'periodo_mes']),
-        cantidadConsumida: buscarCoincidenciaColumna(cCols, ['ROTACIÓN MENSUAL', 'rotacion', 'rotación', 'consumo', 'cantidad']),
-      },
-      stockPT: {
-        codigo: buscarCoincidenciaColumna(ptCols, ['CÓDIGO', 'codigo', 'articulo', 'producto', 'art_cod']),
-        descripcion: buscarCoincidenciaColumna(ptCols, ['DESCRIPCIÓN', 'descripcion', 'desc', 'detalle', 'nombre']),
-        descripcionAdicional: buscarCoincidenciaColumna(ptCols, ['DESCRIPCIÓN ADICIONAL', 'adicional', 'presentacion', 'contenido']),
-      },
-      consumoSemi: {
-        codigoProducto: buscarCoincidenciaColumna(csCols, ['CÓDIGO', 'codigo', 'articulo', 'producto']),
-        anio: buscarCoincidenciaColumna(csCols, ['anio', 'año', 'periodo']),
-        mes: buscarCoincidenciaColumna(csCols, ['mes', 'periodo_mes']),
-        cantidadConsumida: buscarCoincidenciaColumna(csCols, ['ROTACIÓN MENSUAL', 'ROTACION SEMI ELAB', 'rotacion', 'rotación', 'consumo', 'cantidad']),
-      },
-    });
-  }, [store.columnasFormulas, store.columnasStock, store.columnasConsumo, store.columnasStockPT, store.columnasRotacionSemiElab]);
+  const { mapeoLocal, setMapeoLocal } = useMapeoColumnas(store);
 
   const handleConfirmar = async () => {
     store.setConfiguracionMapeo({

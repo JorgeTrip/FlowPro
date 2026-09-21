@@ -7,6 +7,7 @@ import { useArmadoStore } from './stores/armadoStore';
 import { BatchDropzone } from './components/carga/BatchDropzone';
 import { PendingQueueList } from './components/carga/PendingQueueList';
 import { ModalVerificacionPlanilla } from './components/carga/ModalVerificacionPlanilla';
+import { ModalFallosScan } from './components/carga/ModalFallosScan';
 import { DatabaseSyncFooterBar } from './components/carga/DatabaseSyncFooterBar';
 import { DataSheetsList } from './components/datos/DataSheetsList';
 import { BarraResumenDatos } from './components/datos/BarraResumenDatos';
@@ -80,6 +81,7 @@ export default function ControlArmadoPedidosPage() {
         )}
 
         <ModalVerificacionPlanilla />
+        <ModalFallosScan />
         <ScanProgressWidget />
 
         {errorScan && (
