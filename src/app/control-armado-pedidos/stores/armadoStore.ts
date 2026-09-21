@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { FilaArmado } from '../types/armado';
 import { eliminarPlanillaVerificada, guardarPlanillaPendienteFirestore } from '../services/firestoreService';
+import { ordenarPlanillasPendientes } from '../utils/ordenarPlanillas';
 import { ArmadoState } from './armadoStoreTypes';
 import { createScanSlice } from './armadoStoreScanSlice';
 
@@ -32,7 +33,7 @@ export const useArmadoStore = create<ArmadoState>()((set, get) => ({
           mapaFinal.set(i.id, i);
         }
       });
-      const unicos = Array.from(mapaFinal.values());
+      const unicos = ordenarPlanillasPendientes(Array.from(mapaFinal.values()));
       return {
         itemsPendientes: unicos,
         itemActualIndex: Math.min(state.itemActualIndex, Math.max(0, unicos.length - 1)),
@@ -43,7 +44,7 @@ export const useArmadoStore = create<ArmadoState>()((set, get) => ({
   agregarItemPendiente: (item) =>
     set((state) => {
       if (item.id && state.itemsPendientes.some((i) => i.id === item.id)) return state;
-      return { itemsPendientes: [...state.itemsPendientes, item] };
+      return { itemsPendientes: ordenarPlanillasPendientes([...state.itemsPendientes, item]) };
     }),
   eliminarItemPendiente: (id) => {
     eliminarPlanillaVerificada(id).catch((e) => console.warn('Error al eliminar borrador de Firestore:', e));

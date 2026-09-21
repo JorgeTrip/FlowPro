@@ -57,9 +57,16 @@ export function PendingQueueList() {
                   className={`h-4 w-4 ${esSeleccionado ? 'text-blue-600' : 'text-gray-400'}`}
                 />
                 <div>
-                  <p className="text-gray-900 dark:text-gray-100 font-medium">
-                    {item.empleadoHeader || 'Empleado Desconocido'}
-                  </p>
+                  <div className="flex items-center space-x-2">
+                    <p className="text-gray-900 dark:text-gray-100 font-medium">
+                      {item.empleadoHeader || 'Empleado Desconocido'}
+                    </p>
+                    {(!item.imagenBase64 || !item.imagenBase64.trim()) && (
+                      <span className="inline-flex items-center rounded-md border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-300">
+                        ⚠️ sin imagen
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[10px] text-gray-500 dark:text-gray-400">
                     {item.fechaPrimeraFila || item.fechaPlanilla || 'Sin fecha'} • {item.filas.length} filas
                   </p>
