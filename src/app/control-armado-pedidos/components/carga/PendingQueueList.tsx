@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { useArmadoStore } from '../../stores/armadoStore';
-import { Trash2, FileText, ExternalLink } from 'lucide-react';
+import { Trash2, FileText, ExternalLink, User } from 'lucide-react';
 
 export function PendingQueueList() {
   const { itemsPendientes, itemActualIndex, abrirModalVerificacion, eliminarItemPendiente } =
@@ -14,6 +14,19 @@ export function PendingQueueList() {
   React.useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  const grupos = React.useMemo(() => {
+    const mapa = new Map<string, { operador: string; items: { item: typeof itemsPendientes[0]; idxOriginal: number }[] }>();
+    itemsPendientes.forEach((item, idx) => {
+      const nombre = item.empleadoHeader?.trim() || 'Empleado Desconocido';
+      const clave = nombre.toUpperCase();
+      if (!mapa.has(clave)) {
+        mapa.set(clave, { operador: nombre, items: [] });
+      }
+      mapa.get(clave)!.items.push({ item, idxOriginal: idx });
+    });
+    return Array.from(mapa.values());
+  }, [itemsPendientes]);
 
   if (!isMounted || !itemsPendientes.length) return null;
 
@@ -28,81 +41,101 @@ export function PendingQueueList() {
         </span>
       </div>
 
-      <div className="space-y-2">
-        {itemsPendientes.map((item, idx) => {
-          const esSeleccionado = idx === itemActualIndex;
-          const tieneIrregulares = item.filas.some((f) => f.esIrregular);
-
-          return (
-            <div
-              key={item.id || idx}
-              onClick={() => abrirModalVerificacion(idx)}
-              className={`group flex cursor-pointer items-center justify-between rounded-lg p-3 text-xs transition-all border ${
-                esSeleccionado
-                  ? 'border-blue-500 bg-blue-50/70 dark:border-blue-500 dark:bg-blue-950/30 font-semibold shadow-sm'
-                  : 'border-gray-150 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50'
-              }`}
-            >
-              <div className="flex items-center space-x-3">
-                <span
-                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                    esSeleccionado
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
-                  }`}
-                >
-                  #{idx + 1}
-                </span>
-                <FileText
-                  className={`h-4 w-4 ${esSeleccionado ? 'text-blue-600' : 'text-gray-400'}`}
-                />
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <p className="text-gray-900 dark:text-gray-100 font-medium">
-                      {item.empleadoHeader || 'Empleado Desconocido'}
-                    </p>
-                    {(!item.imagenBase64 || !item.imagenBase64.trim()) && (
-                      <span className="inline-flex items-center rounded-md border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-300">
-                        ⚠️ sin imagen
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                    {item.fechaPrimeraFila || item.fechaPlanilla || 'Sin fecha'} • {item.filas.length} filas
-                  </p>
-                </div>
-              </div>
-
+      <div className="space-y-4">
+        {grupos.map((grupo) => (
+          <div key={grupo.operador} className="space-y-2">
+            <div className="flex items-center justify-between border-b border-gray-150 pb-1.5 pt-2 first:pt-0 dark:border-gray-800">
               <div className="flex items-center space-x-2">
-                {tieneIrregulares && (
-                  <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
-                    Irregular
-                  </span>
-                )}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    abrirModalVerificacion(idx);
-                  }}
-                  className="flex items-center space-x-1 rounded bg-blue-600/10 px-2 py-1 text-[11px] font-medium text-blue-700 hover:bg-blue-600/20 dark:bg-blue-500/20 dark:text-blue-300"
-                >
-                  <span>Verificar</span>
-                  <ExternalLink className="h-3 w-3" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (item.id) eliminarItemPendiente(item.id);
-                  }}
-                  className="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Eliminar de la cola"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
+                  <User className="h-3 w-3" />
+                </div>
+                <span className="text-xs font-bold uppercase tracking-wide text-gray-800 dark:text-gray-200">
+                  {grupo.operador}
+                </span>
               </div>
+              <span className="rounded-full border border-blue-200/60 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:border-blue-800/50 dark:bg-blue-950/40 dark:text-blue-300">
+                {grupo.items.length} {grupo.items.length === 1 ? 'planilla cargada' : 'planillas cargadas'}
+              </span>
             </div>
-          );
-        })}
+
+            <div className="space-y-2">
+              {grupo.items.map(({ item, idxOriginal }) => {
+                const esSeleccionado = idxOriginal === itemActualIndex;
+                const tieneIrregulares = item.filas.some((f) => f.esIrregular);
+
+                return (
+                  <div
+                    key={item.id || idxOriginal}
+                    onClick={() => abrirModalVerificacion(idxOriginal)}
+                    className={`group flex cursor-pointer items-center justify-between rounded-lg p-3 text-xs transition-all border ${
+                      esSeleccionado
+                        ? 'border-blue-500 bg-blue-50/70 dark:border-blue-500 dark:bg-blue-950/30 font-semibold shadow-sm'
+                        : 'border-gray-150 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <span
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                          esSeleccionado
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                        }`}
+                      >
+                        #{idxOriginal + 1}
+                      </span>
+                      <FileText
+                        className={`h-4 w-4 ${esSeleccionado ? 'text-blue-600' : 'text-gray-400'}`}
+                      />
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <p className="text-gray-900 dark:text-gray-100 font-medium">
+                            {item.empleadoHeader || 'Empleado Desconocido'}
+                          </p>
+                          {(!item.imagenBase64 || !item.imagenBase64.trim()) && (
+                            <span className="inline-flex items-center rounded-md border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-300">
+                              ⚠️ sin imagen
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                          {item.fechaPrimeraFila || item.fechaPlanilla || 'Sin fecha'} • {item.filas.length} filas
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      {tieneIrregulares && (
+                        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
+                          Irregular
+                        </span>
+                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          abrirModalVerificacion(idxOriginal);
+                        }}
+                        className="flex items-center space-x-1 rounded bg-blue-600/10 px-2 py-1 text-[11px] font-medium text-blue-700 hover:bg-blue-600/20 dark:bg-blue-500/20 dark:text-blue-300"
+                      >
+                        <span>Verificar</span>
+                        <ExternalLink className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (item.id) eliminarItemPendiente(item.id);
+                        }}
+                        className="p-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Eliminar de la cola"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
