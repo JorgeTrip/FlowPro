@@ -44,7 +44,7 @@ export function PendingQueueList() {
       <div className="space-y-4">
         {grupos.map((grupo) => (
           <div key={grupo.operador} className="space-y-2">
-            <div className="flex items-center justify-between border-b border-gray-150 pb-1.5 pt-2 first:pt-0 dark:border-gray-800">
+            <div className="flex items-center justify-between border-b border-gray-200 pb-2 pt-3 first:pt-1 dark:border-gray-600">
               <div className="flex items-center space-x-2">
                 <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
                   <User className="h-3 w-3" />
@@ -89,7 +89,7 @@ export function PendingQueueList() {
                       <div>
                         <div className="flex items-center space-x-2">
                           <p className="text-gray-900 dark:text-gray-100 font-medium">
-                            {item.empleadoHeader || 'Empleado Desconocido'}
+                            {item.fechaPrimeraFila || item.fechaPlanilla || 'Sin fecha'}
                           </p>
                           {(!item.imagenBase64 || !item.imagenBase64.trim()) && (
                             <span className="inline-flex items-center rounded-md border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-300">
@@ -98,7 +98,8 @@ export function PendingQueueList() {
                           )}
                         </div>
                         <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                          {item.fechaPrimeraFila || item.fechaPlanilla || 'Sin fecha'} • {item.filas.length} filas
+                          {item.filas.length} {item.filas.length === 1 ? 'fila' : 'filas'}
+                          {item.horaInicioPrimeraFila ? ` • Inicio: ${item.horaInicioPrimeraFila} hs` : ''}
                         </p>
                       </div>
                     </div>
