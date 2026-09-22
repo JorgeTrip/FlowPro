@@ -40,6 +40,7 @@ export interface ArmadoState {
   progresoScan: ProgresoScanInfo;
   cancelarScanSolicitado: boolean;
   modalVerificacionAbierta: boolean;
+  cargandoPendientes: boolean;
   archivosFallidosScan: ArchivoFallidoScan[];
   modalFallosScanAbierto: boolean;
 
@@ -50,6 +51,7 @@ export interface ArmadoState {
   eliminarItemPendiente: (id: string) => void;
   setItemActualIndex: (index: number) => void;
   setCargandoScan: (cargando: boolean) => void;
+  setCargandoPendientes: (cargando: boolean) => void;
   setErrorScan: (error: string | null) => void;
   setAlertaDuplicado: (alerta: string | null) => void;
   iniciarProgresoScan: (totalArchivos: number) => void;

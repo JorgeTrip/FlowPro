@@ -4,9 +4,10 @@
 import React from 'react';
 import { useArmadoStore } from '../../stores/armadoStore';
 import { Trash2, FileText, ExternalLink, User } from 'lucide-react';
+import { PendingQueueSkeleton } from './PendingQueueSkeleton';
 
 export function PendingQueueList() {
-  const { itemsPendientes, itemActualIndex, abrirModalVerificacion, eliminarItemPendiente } =
+  const { itemsPendientes, cargandoPendientes, itemActualIndex, abrirModalVerificacion, eliminarItemPendiente } =
     useArmadoStore();
 
   const [isMounted, setIsMounted] = React.useState(false);
@@ -28,7 +29,9 @@ export function PendingQueueList() {
     return Array.from(mapa.values());
   }, [itemsPendientes]);
 
-  if (!isMounted || !itemsPendientes.length) return null;
+  if (!isMounted) return null;
+  if (cargandoPendientes) return <PendingQueueSkeleton />;
+  if (!itemsPendientes.length) return null;
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-[#1C1C1E]">

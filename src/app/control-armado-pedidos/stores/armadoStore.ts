@@ -17,6 +17,7 @@ export const useArmadoStore = create<ArmadoState>()((set, get) => ({
   busquedaDatos: '',
   ultimaGuardadaInfo: null,
   modalVerificacionAbierta: false,
+  cargandoPendientes: true,
   ...createScanSlice(set),
 
   setPestanaActiva: (pestanaActiva) => set({ pestanaActiva }),
@@ -36,6 +37,7 @@ export const useArmadoStore = create<ArmadoState>()((set, get) => ({
       const unicos = ordenarPlanillasPendientes(Array.from(mapaFinal.values()));
       return {
         itemsPendientes: unicos,
+        cargandoPendientes: false,
         itemActualIndex: Math.min(state.itemActualIndex, Math.max(0, unicos.length - 1)),
         cantVerificadasLote: unicos.length === 0 ? 0 : state.cantVerificadasLote,
         modalVerificacionAbierta: unicos.length === 0 ? false : state.modalVerificacionAbierta,
@@ -44,7 +46,7 @@ export const useArmadoStore = create<ArmadoState>()((set, get) => ({
   agregarItemPendiente: (item) =>
     set((state) => {
       if (item.id && state.itemsPendientes.some((i) => i.id === item.id)) return state;
-      return { itemsPendientes: ordenarPlanillasPendientes([...state.itemsPendientes, item]) };
+      return { itemsPendientes: ordenarPlanillasPendientes([...state.itemsPendientes, item]), cargandoPendientes: false };
     }),
   eliminarItemPendiente: (id) => {
     eliminarPlanillaVerificada(id).catch((e) => console.warn('Error al eliminar borrador de Firestore:', e));
@@ -60,6 +62,7 @@ export const useArmadoStore = create<ArmadoState>()((set, get) => ({
   },
   setItemActualIndex: (itemActualIndex) => set({ itemActualIndex }),
   setCargandoScan: (cargandoScan) => set({ cargandoScan }),
+  setCargandoPendientes: (cargandoPendientes) => set({ cargandoPendientes }),
   setErrorScan: (errorScan) => set({ errorScan }),
   setAlertaDuplicado: (alertaDuplicado) => set({ alertaDuplicado }),
   setModalVerificacionAbierta: (modalVerificacionAbierta) => set({ modalVerificacionAbierta }),
@@ -154,15 +157,9 @@ export const useArmadoStore = create<ArmadoState>()((set, get) => ({
   },
 
   saltarASiguientePlanilla: () =>
-    set((state) => ({
-      itemActualIndex: state.itemsPendientes.length > 0 ? (state.itemActualIndex + 1) % state.itemsPendientes.length : 0,
-    })),
-
+    set((state) => ({ itemActualIndex: state.itemsPendientes.length > 0 ? (state.itemActualIndex + 1) % state.itemsPendientes.length : 0 })),
   irAPlanillaAnterior: () =>
-    set((state) => ({
-      itemActualIndex:
-        state.itemsPendientes.length > 0 ? (state.itemActualIndex - 1 + state.itemsPendientes.length) % state.itemsPendientes.length : 0,
-    })),
+    set((state) => ({ itemActualIndex: state.itemsPendientes.length > 0 ? (state.itemActualIndex - 1 + state.itemsPendientes.length) % state.itemsPendientes.length : 0 })),
 
   marcarActualComoVerificado: (infoGuardada) => {
     const { itemsPendientes, itemActualIndex, cantVerificadasLote } = get();
