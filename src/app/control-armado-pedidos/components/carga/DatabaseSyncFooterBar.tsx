@@ -73,20 +73,24 @@ export function DatabaseSyncFooterBar() {
           <div className="flex items-center space-x-1.5 pl-2">
             <FileText className="h-3.5 w-3.5 text-blue-500" />
             <span>Planillas:</span>
-            <strong className="text-gray-900 dark:text-white font-bold">{cargando ? '...' : totalPlanillas}</strong>
+            <strong className="text-gray-900 dark:text-white font-bold">
+              {cargando ? <span className="inline-block h-3 w-6 animate-pulse rounded bg-gray-200 dark:bg-gray-700 align-middle" /> : totalPlanillas}
+            </strong>
           </div>
 
           <div className="flex items-center space-x-1.5 pl-3">
             <Package className="h-3.5 w-3.5 text-indigo-500" />
             <span>Pedidos:</span>
-            <strong className="text-gray-900 dark:text-white font-bold">{cargando ? '...' : totalFilas}</strong>
+            <strong className="text-gray-900 dark:text-white font-bold">
+              {cargando ? <span className="inline-block h-3 w-7 animate-pulse rounded bg-gray-200 dark:bg-gray-700 align-middle" /> : totalFilas}
+            </strong>
           </div>
 
           <div className="flex items-center space-x-1.5 pl-3">
             <Hash className="h-3.5 w-3.5 text-emerald-500" />
             <span>Artículos:</span>
             <strong suppressHydrationWarning className="text-gray-900 dark:text-white font-bold">
-              {cargando || !montado ? '...' : totalArticulos.toLocaleString('es-AR')}
+              {cargando || !montado ? <span className="inline-block h-3 w-10 animate-pulse rounded bg-gray-200 dark:bg-gray-700 align-middle" /> : totalArticulos.toLocaleString('es-AR')}
             </strong>
           </div>
 
@@ -94,7 +98,7 @@ export function DatabaseSyncFooterBar() {
             <Calendar className="h-3.5 w-3.5 shrink-0" />
             <span>Fechas:</span>
             <strong suppressHydrationWarning className="text-gray-900 dark:text-sky-300 font-bold whitespace-nowrap">
-              {cargando || !montado ? '...' : rangoFechasTexto}
+              {cargando || !montado ? <span className="inline-block h-3 w-14 animate-pulse rounded bg-gray-200 dark:bg-gray-700 align-middle" /> : rangoFechasTexto}
             </strong>
           </div>
 
@@ -102,8 +106,11 @@ export function DatabaseSyncFooterBar() {
             <Clock className="h-3.5 w-3.5 shrink-0" />
             <span>Última carga:</span>
             <strong suppressHydrationWarning className="text-gray-900 dark:text-amber-300 font-bold whitespace-nowrap">
-              {cargando || !montado ? '...' : fechaHoraTexto}
-              {ultimoRegistro?.empleadoHeader ? ` (${ultimoRegistro.empleadoHeader})` : ''}
+              {cargando || !montado ? (
+                <span className="inline-block h-3 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700 align-middle" />
+              ) : (
+                `${fechaHoraTexto}${ultimoRegistro?.empleadoHeader ? ` (${ultimoRegistro.empleadoHeader})` : ''}`
+              )}
             </strong>
           </div>
         </div>

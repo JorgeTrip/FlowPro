@@ -25,21 +25,26 @@ import { ScanProgressWidget } from './components/carga/ScanProgressWidget';
 import { GeminiQuotaWidget } from './components/carga/GeminiQuotaWidget';
 import { ExternalJsonImporter } from './components/carga/ExternalJsonImporter';
 import { IrregularitiesModal } from './components/analisis/IrregularitiesModal';
+import { AnalisisSkeleton } from './components/analisis/AnalisisSkeleton';
 
 export default function ControlArmadoPedidosPage() {
   const { pestanaActiva, setPestanaActiva, alertaDuplicado, errorScan, itemsPendientes } = useArmadoStore();
   const [registrosVerificados, setRegistrosVerificados] = useState<RegistroArmadoDocumento[]>([]);
   const [filtros, setFiltros] = useState<FiltrosAnalisis>({ rango: 'todos' });
   const [isMounted, setIsMounted] = useState(false);
+  const [cargandoAnalisis, setCargandoAnalisis] = useState(false);
   const [modalIrregularidadesAbierta, setModalIrregularidadesAbierta] = useState(false);
   const [empFiltroModal, setEmpFiltroModal] = useState<string | null>(null);
 
   const cargarDatosAnalisis = useCallback(() => {
     if (pestanaActiva === 'analisis') {
-      obtenerRegistrosVerificados(filtros).then((data) => {
-        setRegistrosVerificados(data);
-        normalizarDatosHistoricosFirestore(data);
-      });
+      setCargandoAnalisis(true);
+      obtenerRegistrosVerificados(filtros)
+        .then((data) => {
+          setRegistrosVerificados(data);
+          normalizarDatosHistoricosFirestore(data);
+        })
+        .finally(() => setCargandoAnalisis(false));
     }
   }, [pestanaActiva, filtros]);
 
@@ -90,7 +95,6 @@ export default function ControlArmadoPedidosPage() {
             <span>{errorScan}</span>
           </div>
         )}
-
         {alertaDuplicado && (
           <div className="flex items-center space-x-2 rounded-xl border border-amber-300 bg-amber-50 p-4 text-xs font-semibold text-amber-800 shadow-md dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-300">
             <AlertCircle className="h-5 w-5 shrink-0 text-amber-600" />
@@ -161,26 +165,24 @@ export default function ControlArmadoPedidosPage() {
 
         {pestanaActiva === 'analisis' && (
           <div className="space-y-6">
-            <DashboardFilters
-              filtros={filtros}
-              empleadosDisponibles={empleadosList}
-              registrosCompletos={registrosVerificados}
-              onCambiarFiltros={setFiltros}
-            />
-            <BarraResumenDatos
-              planillasFiltradas={registrosVerificados}
-              hayFiltro={filtros.rango !== 'todos' || !!filtros.empleado}
-            />
-            <KPICards metricas={metricas} />
-            <PerformanceCharts
-              rendimiento={rendimiento}
-              promedioEquipo={metricas.velocidadPromedioEq}
-              registros={registrosVerificados}
-              onVerIrregularidades={handleAbrirIrregularidades}
-              onActualizado={cargarDatosAnalisis}
-            />
-            <MonthlyPerformanceCharts registros={registrosVerificados} onActualizado={cargarDatosAnalisis} />
-            <AnalyticsTable rendimiento={rendimiento} registros={registrosVerificados} />
+            <DashboardFilters filtros={filtros} empleadosDisponibles={empleadosList} registrosCompletos={registrosVerificados} onCambiarFiltros={setFiltros} />
+            {cargandoAnalisis ? (
+              <AnalisisSkeleton />
+            ) : (
+              <>
+                <BarraResumenDatos planillasFiltradas={registrosVerificados} hayFiltro={filtros.rango !== 'todos' || !!filtros.empleado} />
+                <KPICards metricas={metricas} />
+                <PerformanceCharts
+                  rendimiento={rendimiento}
+                  promedioEquipo={metricas.velocidadPromedioEq}
+                  registros={registrosVerificados}
+                  onVerIrregularidades={handleAbrirIrregularidades}
+                  onActualizado={cargarDatosAnalisis}
+                />
+                <MonthlyPerformanceCharts registros={registrosVerificados} onActualizado={cargarDatosAnalisis} />
+                <AnalyticsTable rendimiento={rendimiento} registros={registrosVerificados} />
+              </>
+            )}
           </div>
         )}
       </div>

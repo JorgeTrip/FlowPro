@@ -8,6 +8,7 @@ import { useArmadoStore } from '../../stores/armadoStore';
 import { SheetEditorModal } from './SheetEditorModal';
 import { ImageLightboxModal } from './ImageLightboxModal';
 import { SheetCard } from './SheetCard';
+import { DataSheetsSkeleton } from './DataSheetsSkeleton';
 import { BarraResumenDatos } from './BarraResumenDatos';
 import { generarVariacionesBusquedaBD, coincideFechaConBusquedaFlexible } from '../../utils/calcularRangoFechasDatos';
 import { Search, FileSpreadsheet, RefreshCw, ArrowUpDown, X } from 'lucide-react';
@@ -150,10 +151,7 @@ export function DataSheetsList() {
 
       {/* Contenido de Planillas */}
       {cargando ? (
-        <div className="flex h-48 items-center justify-center space-x-2 text-xs text-gray-500">
-          <RefreshCw className="h-5 w-5 animate-spin text-blue-500" />
-          <span>Cargando planillas registradas en Firestore...</span>
-        </div>
+        <DataSheetsSkeleton />
       ) : planillasProcesadas.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center text-xs text-gray-500 dark:border-gray-800">
           <FileSpreadsheet className="mx-auto h-8 w-8 text-gray-400 mb-2" />

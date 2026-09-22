@@ -7,7 +7,7 @@ import { obtenerImagenLocal } from '../../services/localImageStore';
 import { optimizarImagenBase64 } from '../../utils/imageUtils';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Edit3, Trash2, User, RefreshCw, ZoomIn, ImageOff, FileText, Clock, FileJson } from 'lucide-react';
+import { Edit3, Trash2, User, ZoomIn, ImageOff, FileText, Clock, FileJson } from 'lucide-react';
 
 interface SheetCardProps {
   p: RegistroArmadoDocumento;
@@ -75,7 +75,7 @@ export function SheetCard({ p, onEditar, onEliminar, onVerImagen }: SheetCardPro
         {/* Thumbnail de la Planilla */}
         <div className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-100 dark:border-gray-800 dark:bg-gray-900 group">
           {cargandoImg ? (
-            <RefreshCw className="h-5 w-5 animate-spin text-gray-400" />
+            <div className="h-full w-full animate-pulse bg-gray-200 dark:bg-gray-800" />
           ) : imagenBase64 ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}

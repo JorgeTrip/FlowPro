@@ -71,11 +71,13 @@ export function BarraResumenDatos({
             <FileText className="h-3.5 w-3.5 text-blue-500" />
             <span>Planillas:</span>
             <strong className="text-gray-900 dark:text-white font-bold">
-              {cargando
-                ? '...'
-                : hayFiltro
-                ? `${totalPlanillas} de ${totalOriginal}`
-                : totalPlanillas}
+              {cargando ? (
+                <span className="inline-block h-3 w-6 animate-pulse rounded bg-gray-200 dark:bg-gray-700 align-middle" />
+              ) : hayFiltro ? (
+                `${totalPlanillas} de ${totalOriginal}`
+              ) : (
+                totalPlanillas
+              )}
             </strong>
           </div>
 
@@ -83,7 +85,11 @@ export function BarraResumenDatos({
             <Package className="h-3.5 w-3.5 text-indigo-500" />
             <span>Pedidos:</span>
             <strong className="text-gray-900 dark:text-white font-bold">
-              {cargando ? '...' : totalFilas}
+              {cargando ? (
+                <span className="inline-block h-3 w-7 animate-pulse rounded bg-gray-200 dark:bg-gray-700 align-middle" />
+              ) : (
+                totalFilas
+              )}
             </strong>
           </div>
 
@@ -91,7 +97,11 @@ export function BarraResumenDatos({
             <Hash className="h-3.5 w-3.5 text-emerald-500" />
             <span>Artículos:</span>
             <strong suppressHydrationWarning className="text-gray-900 dark:text-white font-bold">
-              {cargando || !montado ? '...' : totalArticulos.toLocaleString('es-AR')}
+              {cargando || !montado ? (
+                <span className="inline-block h-3 w-10 animate-pulse rounded bg-gray-200 dark:bg-gray-700 align-middle" />
+              ) : (
+                totalArticulos.toLocaleString('es-AR')
+              )}
             </strong>
           </div>
 
@@ -99,7 +109,11 @@ export function BarraResumenDatos({
             <Calendar className="h-3.5 w-3.5 shrink-0" />
             <span>Fechas:</span>
             <strong suppressHydrationWarning className="text-gray-900 dark:text-sky-300 font-bold whitespace-nowrap">
-              {cargando || !montado ? '...' : rangoFechasTexto}
+              {cargando || !montado ? (
+                <span className="inline-block h-3 w-14 animate-pulse rounded bg-gray-200 dark:bg-gray-700 align-middle" />
+              ) : (
+                rangoFechasTexto
+              )}
             </strong>
           </div>
 
@@ -107,8 +121,11 @@ export function BarraResumenDatos({
             <Clock className="h-3.5 w-3.5 shrink-0" />
             <span>Última carga:</span>
             <strong suppressHydrationWarning className="text-gray-900 dark:text-amber-300 font-bold whitespace-nowrap">
-              {cargando || !montado ? '...' : fechaHoraTexto}
-              {ultimaCargada?.empleadoHeader ? ` (${ultimaCargada.empleadoHeader})` : ''}
+              {cargando || !montado ? (
+                <span className="inline-block h-3 w-16 animate-pulse rounded bg-gray-200 dark:bg-gray-700 align-middle" />
+              ) : (
+                `${fechaHoraTexto}${ultimaCargada?.empleadoHeader ? ` (${ultimaCargada.empleadoHeader})` : ''}`
+              )}
             </strong>
           </div>
         </div>
