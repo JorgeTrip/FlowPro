@@ -30,6 +30,7 @@ Estructura JSON estricta (un objeto por imagen adjunta, en el mismo orden en que
 {
   "planillas": [
     {
+      "nombreArchivo": "Nombre original del archivo de la imagen (ej: IMG_1234.jpg, foto1.png) o null si no se conoce",
       "empleadoHeader": "Nombre del empleado escrito en el encabezado superior (ej: GABRIEL) o null si falta",
       "filas": [
         {

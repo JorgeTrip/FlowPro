@@ -3,20 +3,38 @@
 
 import React, { useState } from 'react';
 import { useImportadorJsonExterno } from '../../hooks/useImportadorJsonExterno';
+import { useProcesarLoteScan } from '../../hooks/useProcesarLoteScan';
+import { HeaderImportadorJson } from './HeaderImportadorJson';
 import { WizardImportacionJson } from './WizardImportacionJson';
+import { MiniDropzoneImagenesJson } from './MiniDropzoneImagenesJson';
+import { ModalFotosNoAsignadas } from './ModalFotosNoAsignadas';
 import { PROMPT_IA_EXTERNA } from '../../utils/promptsImportacion';
-import { FileJson, Upload, CheckCircle2, AlertCircle, Copy, Check, ExternalLink, Wand2 } from 'lucide-react';
+import { Upload, CheckCircle2, AlertCircle, Wand2 } from 'lucide-react';
 
 /**
  * Componente que permite importar planillas a la cola de verificación a partir
- * de un código JSON estructurado emitido por un modelo de IA externo.
- * Ofrece modo directo para usuarios avanzados y un Wizard interactivo paso a paso.
+ * de un código JSON estructurado emitido por un modelo de IA externo y asociar
+ * automáticamente las imágenes coincidentes por nombre de archivo.
  */
 export function ExternalJsonImporter() {
   const [jsonText, setJsonText] = useState('');
   const [copiado, setCopiado] = useState(false);
   const [wizardAbierto, setWizardAbierto] = useState(false);
-  const { cargando, errorParse, exitoMensaje, importarTextoJson } = useImportadorJsonExterno();
+  const [archivosFotos, setArchivosFotos] = useState<File[]>([]);
+
+  const {
+    cargando,
+    errorParse,
+    exitoMensaje,
+    archivosSobrantes,
+    cantFotosAsignadas,
+    modalSobrantesAbierto,
+    setModalSobrantesAbierto,
+    importarTextoJson,
+    asignarFotosAPlanillasPendientes,
+  } = useImportadorJsonExterno();
+
+  const { procesarArchivos } = useProcesarLoteScan();
 
   const handleCopiarPrompt = async () => {
     try {
@@ -28,10 +46,34 @@ export function ExternalJsonImporter() {
     }
   };
 
-  const handleEjecutarImportacion = async () => {
-    const res = await importarTextoJson(jsonText);
-    if (res.exito) setJsonText('');
+  const handleEjecutarAccion = async () => {
+    if (jsonText.trim()) {
+      const res = await importarTextoJson(jsonText, archivosFotos);
+      if (res.exito) {
+        setJsonText('');
+        setArchivosFotos([]);
+      }
+    } else if (archivosFotos.length > 0) {
+      const res = await asignarFotosAPlanillasPendientes(archivosFotos);
+      if (res.exito) {
+        setArchivosFotos([]);
+      }
+    }
   };
+
+  const handleEscanearSobrantes = (sobrantes: File[]) => {
+    procesarArchivos(sobrantes);
+    setModalSobrantesAbierto(false);
+  };
+
+  const botonDeshabilitado = cargando || (!jsonText.trim() && archivosFotos.length === 0);
+  const textoBoton = cargando
+    ? 'Procesando...'
+    : jsonText.trim()
+    ? archivosFotos.length > 0
+      ? `Importar JSON y asociar ${archivosFotos.length} fotos`
+      : 'Importar a Cola de Verificación'
+    : `Asignar ${archivosFotos.length} fotos a pendientes sin imagen`;
 
   return (
     <div className="flex h-full min-h-[265px] flex-col justify-between rounded-2xl border border-purple-200 bg-white p-5 shadow-xl dark:border-purple-900/40 dark:bg-[#1C1C1E]">
@@ -40,45 +82,19 @@ export function ExternalJsonImporter() {
         onClose={() => setWizardAbierto(false)}
       />
 
+      <ModalFotosNoAsignadas
+        isOpen={modalSobrantesAbierto}
+        onClose={() => setModalSobrantesAbierto(false)}
+        cantAsignadas={cantFotosAsignadas}
+        archivosSobrantes={archivosSobrantes}
+        onEscanearSobrantes={handleEscanearSobrantes}
+      />
+
       <div>
-        {/* Cabecera */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-purple-100 pb-3 dark:border-purple-900/40">
-          <div className="flex items-center space-x-2">
-            <div className="rounded-lg bg-purple-500/10 p-2 text-purple-600 dark:text-purple-400">
-              <FileJson className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">Importación Externa de JSON</h3>
-              <p className="text-[11px] text-gray-500 dark:text-gray-400">Pega estructuras generadas por IA externa</p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-1.5">
-            <button
-              type="button"
-              onClick={handleCopiarPrompt}
-              className={`flex items-center space-x-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold shadow-sm transition-all shrink-0 ${
-                copiado
-                  ? 'border border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
-                  : 'border border-purple-300 bg-purple-50 text-purple-600 hover:bg-purple-100 dark:border-purple-800 dark:bg-purple-950/30 dark:text-purple-400'
-              }`}
-              title="Copiar prompt al portapapeles"
-            >
-              {copiado ? <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-              <span>{copiado ? '¡Copiado!' : 'Copiar Prompt IA'}</span>
-            </button>
-
-            <a
-              href="https://gemini.google.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center rounded-xl border border-purple-200 bg-purple-50 p-1.5 text-purple-600 hover:bg-purple-100 dark:border-purple-800 dark:bg-purple-950/30 dark:text-purple-400 transition-all"
-              title="Abrir Gemini Web"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-            </a>
-          </div>
-        </div>
+        <HeaderImportadorJson
+          copiado={copiado}
+          onCopiarPrompt={handleCopiarPrompt}
+        />
 
         {/* Botón Destacado: Wizard Paso a Paso */}
         <div className="mt-3">
@@ -114,6 +130,15 @@ export function ExternalJsonImporter() {
           />
         </div>
 
+        {/* Mini Dropzone para Imágenes */}
+        <div className="mt-2.5">
+          <MiniDropzoneImagenesJson
+            archivos={archivosFotos}
+            onArchivosChange={setArchivosFotos}
+            compacto
+          />
+        </div>
+
         {errorParse && (
           <div className="mt-2 flex items-center space-x-1.5 text-xs text-red-600 dark:text-red-400 font-medium">
             <AlertCircle className="h-4 w-4 shrink-0" />
@@ -129,14 +154,14 @@ export function ExternalJsonImporter() {
         )}
       </div>
 
-      {/* Botón de Importación Directa */}
+      {/* Botón de Ejecución Directa */}
       <button
-        onClick={handleEjecutarImportacion}
-        disabled={cargando || !jsonText.trim()}
+        onClick={handleEjecutarAccion}
+        disabled={botonDeshabilitado}
         className="mt-3 flex w-full items-center justify-center space-x-2 rounded-xl bg-purple-600 px-4 py-2 text-xs font-semibold text-white shadow-md transition-all hover:bg-purple-700 active:scale-[0.99] disabled:opacity-50 dark:bg-purple-600 dark:hover:bg-purple-500"
       >
         <Upload className="h-4 w-4" />
-        <span>{cargando ? 'Importando...' : 'Importar a Cola de Verificación'}</span>
+        <span>{textoBoton}</span>
       </button>
     </div>
   );
