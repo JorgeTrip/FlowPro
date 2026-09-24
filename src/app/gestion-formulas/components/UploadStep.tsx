@@ -111,7 +111,7 @@ export default function UploadStep() {
             <FileUpload title="3. Consumo Mensual *" file={store.archivoConsumo} onFileLoad={(f, d) => { store.setArchivoConsumo(f); store.setDatosCrudosConsumo(d.data, d.columns, d.previewData); }} />
             <FileUpload title="4. Maestro PT (STOCK PT)" file={store.archivoStockPT} onFileLoad={(f, d) => { store.setArchivoStockPT(f); store.setDatosCrudosStockPT(d.data, d.columns, d.previewData); }} />
             <FileUpload
-              title="5. Pedidos de Compra (Obligatorio) *"
+              title="5. Pedidos de Compra *"
               file={archivoPedidosLocal || (store.datosCrudosPedidosCompra.length > 0 ? new File([], `${store.datosCrudosPedidosCompra.length} pedidos cargados`) : null)}
               onFileLoad={async (f) => {
                 setArchivoPedidosLocal(f);

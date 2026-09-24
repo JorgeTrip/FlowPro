@@ -2,7 +2,6 @@
 'use client';
 
 import { useState } from 'react';
-import { SplitButton } from '@/app/components/shared/SplitButton';
 
 interface VinculadorFuenteProps {
   titulo: string;
@@ -11,14 +10,12 @@ interface VinculadorFuenteProps {
   onGuardarUrl: (url: string) => void;
   onCambiarEnlace: () => void;
   onBorrarUrl?: () => void;
-  onSincronizar: () => void;
-  isSincronizando: boolean;
-  error: string | null;
   statusComponent?: React.ReactNode;
 }
 
 /**
  * Componente modular que representa la UI de vinculación para una planilla de Google Drive.
+ * Permite agregar, modificar y borrar el enlace a la hoja de cálculo.
  */
 export function VinculadorFuente({
   titulo,
@@ -27,9 +24,6 @@ export function VinculadorFuente({
   onGuardarUrl,
   onCambiarEnlace,
   onBorrarUrl,
-  onSincronizar,
-  isSincronizando,
-  error,
   statusComponent,
 }: VinculadorFuenteProps) {
   const [mostrarInput, setMostrarInput] = useState(false);
@@ -60,9 +54,13 @@ export function VinculadorFuente({
   };
 
   return (
-    <div className="p-4 rounded-lg bg-gray-50 dark:bg-[#2C2C2E]/40 border border-gray-200 dark:border-gray-700">
-      <h4 className="text-sm font-bold text-gray-800 dark:text-white mb-1">{titulo}</h4>
-      <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">{descripcion}</p>
+    <div className="p-4 rounded-lg bg-gray-50 dark:bg-[#2C2C2E]/40 border border-gray-200 dark:border-gray-700/60 shadow-xs">
+      <div className="flex items-start justify-between">
+        <div>
+          <h4 className="text-sm font-bold text-gray-800 dark:text-white mb-0.5">{titulo}</h4>
+          <p className="text-xs text-gray-600 dark:text-gray-400 mb-2.5">{descripcion}</p>
+        </div>
+      </div>
 
       {mostrarInput ? (
         <div className="space-y-2">
@@ -93,28 +91,30 @@ export function VinculadorFuente({
         <div className="space-y-2">
           <div className="flex items-center space-x-2 text-xs text-gray-600 dark:text-gray-400">
             <span className="font-semibold">Enlace:</span>
-            <span className="truncate max-w-xs">{urlGuardada}</span>
+            <span className="truncate max-w-xs sm:max-w-md font-mono text-[11px] text-gray-500 dark:text-gray-400">
+              {urlGuardada}
+            </span>
           </div>
-          <SplitButton
-            textoPrincipal="Sincronizar"
-            onPrincipalClick={onSincronizar}
-            isLoading={isSincronizando}
-            opciones={[
-              {
-                label: 'Cambiar enlace 🔗',
-                onClick: handleCambiar,
-              },
-              {
-                label: 'Borrar enlace 🗑️',
-                onClick: handleBorrar,
-              },
-            ]}
-          />
+          <div className="flex items-center gap-2 pt-0.5">
+            <button
+              onClick={handleCambiar}
+              className="px-3 py-1.5 rounded-md bg-white dark:bg-[#1C1C1E] hover:bg-gray-100 dark:hover:bg-[#2C2C2E] text-gray-700 dark:text-gray-300 text-xs font-semibold transition-all cursor-pointer border border-gray-300 dark:border-gray-700 shadow-2xs"
+            >
+              Modificar enlace 🔗
+            </button>
+            <button
+              onClick={handleBorrar}
+              title="Eliminar enlace"
+              className="px-2.5 py-1.5 rounded-md text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 text-xs font-semibold transition-all cursor-pointer"
+            >
+              Borrar 🗑️
+            </button>
+          </div>
         </div>
       ) : (
         <button
           onClick={() => setMostrarInput(true)}
-          className="px-3 py-1.5 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-semibold transition-all cursor-pointer"
+          className="px-3 py-1.5 rounded-md bg-white dark:bg-[#1C1C1E] hover:bg-gray-100 dark:hover:bg-[#2C2C2E] border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-sm font-semibold transition-all cursor-pointer shadow-2xs"
         >
           + Vincular enlace
         </button>
@@ -123,12 +123,6 @@ export function VinculadorFuente({
       {statusComponent && (
         <div className="mt-3">
           {statusComponent}
-        </div>
-      )}
-
-      {error && (
-        <div className="mt-2 p-2 bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded text-xs">
-          {error}
         </div>
       )}
     </div>
