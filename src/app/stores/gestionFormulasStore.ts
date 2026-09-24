@@ -22,7 +22,8 @@ export interface GestionFormulasState {
   formulasClasificadas: { nueva: Formula[]; modificada: Formula[]; sin_cambios: Formula[] } | null;
   resultadosMRP: ResultadosMRPFinal | null; cargandoCalculo: boolean;
   datosCrudosPedidosCompra: import('@/app/gestion-formulas/lib/evaluarPedidosCompraPendientes').RegistroFilaCompra[];
-  setDatosCrudosPedidosCompra: (datos: import('@/app/gestion-formulas/lib/evaluarPedidosCompraPendientes').RegistroFilaCompra[]) => void;
+  columnasPedidosCompra: string[]; previewPedidosCompra: any[];
+  setDatosCrudosPedidosCompra: (datos: import('@/app/gestion-formulas/lib/evaluarPedidosCompraPendientes').RegistroFilaCompra[], columnas?: string[], preview?: any[]) => void;
   setArchivoProductos: (file: File | null) => void; setArchivoFormulas: (file: File | null) => void; setArchivoStock: (file: File | null) => void; setArchivoConsumo: (file: File | null) => void; setArchivoStockPT: (file: File | null) => void;
   setDatosCrudosProductos: (data: any[], cols: string[], preview: any[]) => void; setDatosCrudosFormulas: (data: any[], cols: string[], preview: any[]) => void; setDatosCrudosStock: (data: any[], cols: string[], preview: any[]) => void; setDatosCrudosConsumo: (data: any[], cols: string[], preview: any[]) => void; setDatosCrudosStockPT: (data: any[], cols: string[], preview: any[]) => void; setDatosCrudosRotacionSemiElab: (data: any[], cols: string[], preview: any[]) => void;
   setStep: (step: number) => void; setPestañaActiva: (pest: 'propios' | 'tercerizados') => void; setProductos: (productos: Producto[]) => void; setFormulas: (formulas: Formula[]) => void; setStocks: (stocks: StockPorDeposito[]) => void; setConsumos: (consumos: ConsumoMensual[]) => void; setStockPT: (stockPT: ProductoTerminadoMaestro[]) => void; setConfiguracionMapeo: (mapeo: Partial<ConfiguracionMapeoFormulas>) => void; setIsLoading: (isLoading: boolean) => void; setError: (error: string | null) => void; setFormulasClasificadas: (clasificadas: any) => void;
@@ -41,9 +42,9 @@ const estadoInicial = {
   columnasProductos: [], columnasFormulas: [], columnasStock: [], columnasConsumo: [], columnasStockPT: [], columnasRotacionSemiElab: [],
   previewProductos: [], previewFormulas: [], previewStock: [], previewConsumo: [], previewStockPT: [], previewRotacionSemiElab: [],
   step: 1, pestañaActiva: 'propios' as const,
-  configuracionMapeo: { productos: null, formulas: null, stock: null, consumo: null, stockPT: null },
+  configuracionMapeo: { productos: null, formulas: null, stock: null, consumo: null, stockPT: null, pedidosCompra: null },
   isLoading: false, error: null, formulasClasificadas: null, resultadosMRP: null, cargandoCalculo: false,
-  datosCrudosPedidosCompra: [],
+  datosCrudosPedidosCompra: [], columnasPedidosCompra: [], previewPedidosCompra: [],
   urlGoogleDriveFormulas: null, urlGoogleDriveStock: null, urlGoogleDrivePedidosCompra: null, mesesProyeccionTransferencia: 2, mesesProyeccionCompra: 3,
   modoMacro: false, analisisSemielaborados: false,
 };
@@ -52,7 +53,11 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
   persist(
     (set, get) => ({
       ...estadoInicial,
-      setDatosCrudosPedidosCompra: (datosCrudosPedidosCompra) => set({ datosCrudosPedidosCompra }),
+      setDatosCrudosPedidosCompra: (datosCrudosPedidosCompra, cols, prev) => set((s) => ({
+        datosCrudosPedidosCompra,
+        columnasPedidosCompra: cols && cols.length > 0 ? cols : s.columnasPedidosCompra,
+        previewPedidosCompra: prev && prev.length > 0 ? prev : s.previewPedidosCompra,
+      })),
       setArchivoProductos: (archivoProductos) => set({ archivoProductos }),
       setArchivoFormulas: (archivoFormulas) => set({ archivoFormulas }),
       setArchivoStock: (archivoStock) => set({ archivoStock }),
@@ -164,6 +169,8 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
         mesesProyeccionCompra: state.mesesProyeccionCompra,
         modoMacro: state.modoMacro,
         analisisSemielaborados: state.analisisSemielaborados,
+        columnasPedidosCompra: state.columnasPedidosCompra,
+        previewPedidosCompra: state.previewPedidosCompra,
       }),
     }
   )

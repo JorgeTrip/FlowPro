@@ -2,12 +2,26 @@
 import * as XLSX from 'xlsx';
 import {
   RegistroFilaCompra,
+  IndicesMapeoCompra,
   mapearFilasCompra,
 } from './evaluarPedidosCompraPendientes';
 
-/**
- * Normaliza nombres de solapas eliminando tildes y pasando a minúsculas
- */
+export interface ResultadoLecturaPedidosCompra {
+  registros: RegistroFilaCompra[];
+  columnas: string[];
+  previewData: any[];
+}
+
+export function getColLetter(idx: number): string {
+  let letter = '';
+  let temp = idx;
+  while (temp >= 0) {
+    letter = String.fromCharCode((temp % 26) + 65) + letter;
+    temp = Math.floor(temp / 26) - 1;
+  }
+  return letter;
+}
+
 function normalizarNombreSolapa(nombre: string): string {
   return nombre
     .toLowerCase()
@@ -20,7 +34,10 @@ function normalizarNombreSolapa(nombre: string): string {
  * Lee un archivo Excel (local o descargado de Drive) y procesa las solapas
  * 'Solicitud de compras' y 'Solicitud Hierbas'
  */
-export async function procesarLibroPedidosCompra(file: File): Promise<RegistroFilaCompra[]> {
+export async function procesarLibroPedidosCompra(
+  file: File,
+  indices?: IndicesMapeoCompra
+): Promise<ResultadoLecturaPedidosCompra> {
   const arrayBuffer = await file.arrayBuffer();
   const workbook = XLSX.read(arrayBuffer, { type: 'array' });
 
@@ -30,8 +47,9 @@ export async function procesarLibroPedidosCompra(file: File): Promise<RegistroFi
   }
 
   const resultados: RegistroFilaCompra[] = [];
+  let columnasDetectadas: string[] = [];
+  const previewData: any[] = [];
 
-  // Buscar solapas por nombre o recurrir a las 2 primeras hojas
   const encontrarSolapa = (keywords: string[]): string | undefined => {
     return nombresHojas.find((nombre) => {
       const normal = normalizarNombreSolapa(nombre);
@@ -50,16 +68,52 @@ export async function procesarLibroPedidosCompra(file: File): Promise<RegistroFi
   if (solapaCompras && workbook.Sheets[solapaCompras]) {
     const ws = workbook.Sheets[solapaCompras];
     const filas: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
-    const registrosCompras = mapearFilasCompra(filas, 'Solicitud de compras');
-    resultados.push(...registrosCompras);
+
+    let headerIdx = -1;
+    for (let r = 0; r < Math.min(5, filas.length); r++) {
+      const fila = filas[r];
+      if (Array.isArray(fila)) {
+        const celdasTexto = fila.filter((c) => typeof c === 'string' && c.trim().length > 0);
+        if (celdasTexto.length >= 3) {
+          headerIdx = r;
+          break;
+        }
+      }
+    }
+
+    if (headerIdx >= 0) {
+      columnasDetectadas = (filas[headerIdx] || []).map((col: any, i: number) => {
+        const t = String(col || '').trim();
+        return t || `Columna ${getColLetter(i)}`;
+      });
+      for (let r = headerIdx + 1; r < Math.min(headerIdx + 11, filas.length); r++) {
+        const obj: Record<string, any> = {};
+        columnasDetectadas.forEach((col, idx) => {
+          obj[col] = filas[r]?.[idx] ?? '';
+        });
+        previewData.push(obj);
+      }
+      const registrosCompras = mapearFilasCompra(filas.slice(headerIdx + 1), 'Solicitud de compras', indices);
+      resultados.push(...registrosCompras);
+    } else {
+      const registrosCompras = mapearFilasCompra(filas, 'Solicitud de compras', indices);
+      resultados.push(...registrosCompras);
+    }
   }
 
   if (solapaHierbas && solapaHierbas !== solapaCompras && workbook.Sheets[solapaHierbas]) {
     const ws = workbook.Sheets[solapaHierbas];
     const filas: any[][] = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
-    const registrosHierbas = mapearFilasCompra(filas, 'Solicitud Hierbas');
+    const registrosHierbas = mapearFilasCompra(filas, 'Solicitud Hierbas', indices);
     resultados.push(...registrosHierbas);
   }
 
-  return resultados;
+  if (columnasDetectadas.length === 0) {
+    columnasDetectadas = [
+      'A - Fecha Solicitud', 'B', 'C', 'D - Código Insumo',
+      'E', 'F - Cantidad Solicitada', 'V - Cantidad Recibida'
+    ];
+  }
+
+  return { registros: resultados, columnas: columnasDetectadas, previewData };
 }

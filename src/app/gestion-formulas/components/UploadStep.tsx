@@ -64,8 +64,10 @@ export default function UploadStep() {
 
       // Si el consolidado además contiene solapas de pedidos de compras, las procesamos
       try {
-        const registrosPedidos = await procesarLibroPedidosCompra(file);
-        if (registrosPedidos.length > 0) store.setDatosCrudosPedidosCompra(registrosPedidos);
+        const resPedidos = await procesarLibroPedidosCompra(file);
+        if (resPedidos.registros.length > 0) {
+          store.setDatosCrudosPedidosCompra(resPedidos.registros, resPedidos.columnas, resPedidos.previewData);
+        }
       } catch { /* pedidos de compra se cargan habitualmente por separado */ }
     } catch (err: any) {
       store.setError(`Error al leer las solapas: ${err.message || err}`);
@@ -117,8 +119,8 @@ export default function UploadStep() {
                 setArchivoPedidosLocal(f);
                 store.setIsLoading(true); store.setError(null);
                 try {
-                  const regs = await procesarLibroPedidosCompra(f);
-                  store.setDatosCrudosPedidosCompra(regs);
+                  const res = await procesarLibroPedidosCompra(f);
+                  store.setDatosCrudosPedidosCompra(res.registros, res.columnas, res.previewData);
                 } catch (err: any) {
                   store.setError(`Error en pedidos de compra: ${err.message || err}`);
                 } finally {

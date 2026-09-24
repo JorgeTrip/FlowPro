@@ -150,8 +150,8 @@ export function useGoogleDriveSync() {
     try {
       const archivo = await descargarDesdeDrive(url);
       const { procesarLibroPedidosCompra } = await import('../lib/lectorPedidosCompra');
-      const registros = await procesarLibroPedidosCompra(archivo);
-      store.setDatosCrudosPedidosCompra(registros);
+      const resultado = await procesarLibroPedidosCompra(archivo);
+      store.setDatosCrudosPedidosCompra(resultado.registros, resultado.columnas, resultado.previewData);
     } catch (err: any) {
       setErrorSincronizacion(err.message); store.setError(err.message);
     } finally {

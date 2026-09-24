@@ -135,31 +135,44 @@ export function evaluarPedidosProducto(
 /**
  * Transforma una matriz de datos crudos (ej. leídos de Excel/XLSX) a registros estructurados
  */
+export interface IndicesMapeoCompra {
+  idxFecha?: number;
+  idxCodigo?: number;
+  idxCantSol?: number;
+  idxCantRec?: number;
+}
+
 export function mapearFilasCompra(
   filas: any[][],
-  hojaOrigen: 'Solicitud de compras' | 'Solicitud Hierbas'
+  hojaOrigen: 'Solicitud de compras' | 'Solicitud Hierbas',
+  indices?: IndicesMapeoCompra
 ): RegistroFilaCompra[] {
   const resultado: RegistroFilaCompra[] = [];
+  const iFec = indices?.idxFecha ?? 0;
+  const iCod = indices?.idxCodigo ?? 3;
+  const iSol = indices?.idxCantSol ?? 5;
+  const iRec = indices?.idxCantRec ?? 21;
 
   for (const fila of filas) {
-    if (!Array.isArray(fila) || fila.length < 6) continue;
+    if (!Array.isArray(fila) || fila.length <= Math.max(iFec, iCod, iSol)) continue;
 
-    // Col A: Fecha (índice 0)
-    const fechaParsed = parsearFechaExcel(fila[0]);
+    // Fecha
+    const fechaParsed = parsearFechaExcel(fila[iFec]);
     if (!fechaParsed) continue;
 
-    // Col D: Código (índice 3)
-    const codigo = String(fila[3] || '').trim();
+    // Código
+    const codigo = String(fila[iCod] || '').trim();
     if (!codigo) continue;
 
-    // Col F: Cantidad Solicitada (índice 5)
-    const cantSol = typeof fila[5] === 'number' ? fila[5] : parseFloat(String(fila[5] || '0').replace(',', '.'));
+    // Cantidad Solicitada
+    const cantSol = typeof fila[iSol] === 'number' ? fila[iSol] : parseFloat(String(fila[iSol] || '0').replace(',', '.'));
     if (isNaN(cantSol) || cantSol <= 0) continue;
 
-    // Col V: Cantidad Recibida (índice 21)
-    const tieneRec = tieneRecepcionEfectiva(fila[21]);
+    // Cantidad Recibida
+    const valRec = fila[iRec];
+    const tieneRec = tieneRecepcionEfectiva(valRec);
     const cantRec = tieneRec
-      ? (typeof fila[21] === 'number' ? fila[21] : parseFloat(String(fila[21]).replace(',', '.')))
+      ? (typeof valRec === 'number' ? valRec : parseFloat(String(valRec).replace(',', '.')))
       : null;
 
     resultado.push({
