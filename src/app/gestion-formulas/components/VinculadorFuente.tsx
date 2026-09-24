@@ -10,6 +10,7 @@ interface VinculadorFuenteProps {
   urlGuardada: string | null;
   onGuardarUrl: (url: string) => void;
   onCambiarEnlace: () => void;
+  onBorrarUrl?: () => void;
   onSincronizar: () => void;
   isSincronizando: boolean;
   error: string | null;
@@ -25,6 +26,7 @@ export function VinculadorFuente({
   urlGuardada,
   onGuardarUrl,
   onCambiarEnlace,
+  onBorrarUrl,
   onSincronizar,
   isSincronizando,
   error,
@@ -45,6 +47,16 @@ export function VinculadorFuente({
     setMostrarInput(true);
     setInputUrl(urlGuardada || '');
     onCambiarEnlace();
+  };
+
+  const handleBorrar = () => {
+    if (onBorrarUrl) {
+      onBorrarUrl();
+    } else {
+      onGuardarUrl('');
+    }
+    setMostrarInput(false);
+    setInputUrl('');
   };
 
   return (
@@ -91,6 +103,10 @@ export function VinculadorFuente({
               {
                 label: 'Cambiar enlace 🔗',
                 onClick: handleCambiar,
+              },
+              {
+                label: 'Borrar enlace 🗑️',
+                onClick: handleBorrar,
               },
             ]}
           />

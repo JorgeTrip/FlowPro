@@ -3,6 +3,7 @@
 
 import React from 'react';
 import { ResultadoTercerizadosMRP } from '../lib/types';
+import { BadgePedidosMultiples } from './BadgePedidosMultiples';
 
 interface TablaProductosTercerizadosProps {
   resultadosFiltradosTercerizados: ResultadoTercerizadosMRP[];
@@ -61,6 +62,8 @@ export function TablaProductosTercerizados({
           {/* Acciones de Transferencia/Compra */}
           <th className={`${clsAccionHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>{"Transf. PT (ER->CABA)"}</th>
           <th className={`${clsAccionHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>Compra PT</th>
+          <th className={`${clsNormalHeader} px-2.5 py-2 text-center border-r border-gray-150 dark:border-gray-800`}>Fec. Últ. Pedido</th>
+          <th className={`${clsNormalHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>Cant. Pedida</th>
           <th onClick={() => solicitarOrdenTercerizados('criticidad')} className={`${clsNormalHeader} pl-2.5 pr-8 py-2 cursor-pointer`}>Criticidad{getIndT('criticidad')}</th>
         </tr>
       </thead>
@@ -81,6 +84,23 @@ export function TablaProductosTercerizados({
             
             <td className={`${clsAccionCell} px-2.5 py-2 text-right font-mono`}>{(fila.movimientoSugerido.transferencia ?? 0).toFixed(1)}</td>
             <td className={`${clsAccionCell} px-2.5 py-2 text-right font-mono font-semibold`}>{(fila.movimientoSugerido.compra ?? 0).toFixed(1)}</td>
+            <td className="px-2.5 py-2 text-center font-mono text-[10px]">
+              {fila.pedidoCompraPendiente?.fechaUltimaSolicitud || '-'}
+            </td>
+            <td className="px-2.5 py-2 text-right font-mono text-[10px] whitespace-nowrap">
+              {fila.pedidoCompraPendiente?.cantidadSolicitadaUltima !== undefined && fila.pedidoCompraPendiente?.cantidadSolicitadaUltima !== null ? (
+                <div className="inline-flex items-center justify-end">
+                  <span>{fila.pedidoCompraPendiente.cantidadSolicitadaUltima.toLocaleString()}</span>
+                  <BadgePedidosMultiples
+                    totalPedidos={fila.pedidoCompraPendiente.totalPedidosPendientes}
+                    fechaUltima={fila.pedidoCompraPendiente.fechaUltimaSolicitud}
+                    cantidadUltima={fila.pedidoCompraPendiente.cantidadSolicitadaUltima}
+                  />
+                </div>
+              ) : (
+                '-'
+              )}
+            </td>
             <td className="px-2.5 py-2 text-center"><BadgeCriticidad criticidad={fila.criticidad} /></td>
           </tr>
         ))}

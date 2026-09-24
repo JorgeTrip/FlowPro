@@ -21,11 +21,14 @@ export interface GestionFormulasState {
   step: number; pestañaActiva: 'propios' | 'tercerizados'; configuracionMapeo: ConfiguracionMapeoFormulas; isLoading: boolean; error: string | null;
   formulasClasificadas: { nueva: Formula[]; modificada: Formula[]; sin_cambios: Formula[] } | null;
   resultadosMRP: ResultadosMRPFinal | null; cargandoCalculo: boolean;
+  datosCrudosPedidosCompra: import('@/app/gestion-formulas/lib/evaluarPedidosCompraPendientes').RegistroFilaCompra[];
+  setDatosCrudosPedidosCompra: (datos: import('@/app/gestion-formulas/lib/evaluarPedidosCompraPendientes').RegistroFilaCompra[]) => void;
   setArchivoProductos: (file: File | null) => void; setArchivoFormulas: (file: File | null) => void; setArchivoStock: (file: File | null) => void; setArchivoConsumo: (file: File | null) => void; setArchivoStockPT: (file: File | null) => void;
   setDatosCrudosProductos: (data: any[], cols: string[], preview: any[]) => void; setDatosCrudosFormulas: (data: any[], cols: string[], preview: any[]) => void; setDatosCrudosStock: (data: any[], cols: string[], preview: any[]) => void; setDatosCrudosConsumo: (data: any[], cols: string[], preview: any[]) => void; setDatosCrudosStockPT: (data: any[], cols: string[], preview: any[]) => void; setDatosCrudosRotacionSemiElab: (data: any[], cols: string[], preview: any[]) => void;
   setStep: (step: number) => void; setPestañaActiva: (pest: 'propios' | 'tercerizados') => void; setProductos: (productos: Producto[]) => void; setFormulas: (formulas: Formula[]) => void; setStocks: (stocks: StockPorDeposito[]) => void; setConsumos: (consumos: ConsumoMensual[]) => void; setStockPT: (stockPT: ProductoTerminadoMaestro[]) => void; setConfiguracionMapeo: (mapeo: Partial<ConfiguracionMapeoFormulas>) => void; setIsLoading: (isLoading: boolean) => void; setError: (error: string | null) => void; setFormulasClasificadas: (clasificadas: any) => void;
   ejecutarCalculoMRP: (mesesTransferencia?: number, mesesCompra?: number, lineasFiltradas?: string[]) => Promise<void>; guardarImportacionConfirmada: () => void; limpiarDatos: () => void; reset: () => void;
-  urlGoogleDriveFormulas: string | null; urlGoogleDriveStock: string | null; setUrlGoogleDriveFormulas: (url: string | null) => void; setUrlGoogleDriveStock: (url: string | null) => void;
+  urlGoogleDriveFormulas: string | null; urlGoogleDriveStock: string | null; urlGoogleDrivePedidosCompra: string | null;
+  setUrlGoogleDriveFormulas: (url: string | null) => void; setUrlGoogleDriveStock: (url: string | null) => void; setUrlGoogleDrivePedidosCompra: (url: string | null) => void;
   mesesProyeccionTransferencia: number; mesesProyeccionCompra: number; setMesesProyeccionTransferencia: (meses: number) => void; setMesesProyeccionCompra: (meses: number) => void;
   modoMacro: boolean; toggleModoMacro: () => void;
   analisisSemielaborados: boolean; toggleAnalisisSemielaborados: () => void;
@@ -40,7 +43,8 @@ const estadoInicial = {
   step: 1, pestañaActiva: 'propios' as const,
   configuracionMapeo: { productos: null, formulas: null, stock: null, consumo: null, stockPT: null },
   isLoading: false, error: null, formulasClasificadas: null, resultadosMRP: null, cargandoCalculo: false,
-  urlGoogleDriveFormulas: null, urlGoogleDriveStock: null, mesesProyeccionTransferencia: 2, mesesProyeccionCompra: 3,
+  datosCrudosPedidosCompra: [],
+  urlGoogleDriveFormulas: null, urlGoogleDriveStock: null, urlGoogleDrivePedidosCompra: null, mesesProyeccionTransferencia: 2, mesesProyeccionCompra: 3,
   modoMacro: false, analisisSemielaborados: false,
 };
 
@@ -48,6 +52,7 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
   persist(
     (set, get) => ({
       ...estadoInicial,
+      setDatosCrudosPedidosCompra: (datosCrudosPedidosCompra) => set({ datosCrudosPedidosCompra }),
       setArchivoProductos: (archivoProductos) => set({ archivoProductos }),
       setArchivoFormulas: (archivoFormulas) => set({ archivoFormulas }),
       setArchivoStock: (archivoStock) => set({ archivoStock }),
@@ -72,6 +77,7 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
       setFormulasClasificadas: (formulasClasificadas) => set({ formulasClasificadas }),
       setUrlGoogleDriveFormulas: (urlGoogleDriveFormulas) => set({ urlGoogleDriveFormulas }),
       setUrlGoogleDriveStock: (urlGoogleDriveStock) => set({ urlGoogleDriveStock }),
+      setUrlGoogleDrivePedidosCompra: (urlGoogleDrivePedidosCompra) => set({ urlGoogleDrivePedidosCompra }),
       setMesesProyeccionTransferencia: (mesesProyeccionTransferencia) => set({ mesesProyeccionTransferencia }),
       setMesesProyeccionCompra: (mesesProyeccionCompra) => set({ mesesProyeccionCompra }),
       toggleModoMacro: () => set((state) => ({ modoMacro: !state.modoMacro })),
@@ -80,7 +86,7 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
       ejecutarCalculoMRP: async (mesesTransferencia, mesesCompra, lineasFiltradas) => {
         set({ cargandoCalculo: true, error: null });
         try {
-          const { productos, formulas, stocks, consumos, stockPT, mesesProyeccionTransferencia, mesesProyeccionCompra, modoMacro, analisisSemielaborados } = get();
+          const { productos, formulas, stocks, consumos, stockPT, mesesProyeccionTransferencia, mesesProyeccionCompra, modoMacro, analisisSemielaborados, datosCrudosPedidosCompra } = get();
           const mT = mesesTransferencia !== undefined ? mesesTransferencia : mesesProyeccionTransferencia;
           const mC = mesesCompra !== undefined ? mesesCompra : mesesProyeccionCompra;
 
@@ -100,7 +106,8 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
             reglasPrefijos,
             modoMacro,
             analisisSemielaborados,
-            lineasFiltradas || []
+            lineasFiltradas || [],
+            datosCrudosPedidosCompra || []
           );
           set({ resultadosMRP: resultados, cargandoCalculo: false });
         } catch (err: any) {
@@ -130,6 +137,7 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
         productos: s.productos,
         urlGoogleDriveFormulas: s.urlGoogleDriveFormulas,
         urlGoogleDriveStock: s.urlGoogleDriveStock,
+        urlGoogleDrivePedidosCompra: s.urlGoogleDrivePedidosCompra,
         mesesProyeccionTransferencia: s.mesesProyeccionTransferencia,
         mesesProyeccionCompra: s.mesesProyeccionCompra,
         modoMacro: s.modoMacro,
@@ -151,6 +159,7 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
         resultadosMRP: state.resultadosMRP,
         urlGoogleDriveFormulas: state.urlGoogleDriveFormulas,
         urlGoogleDriveStock: state.urlGoogleDriveStock,
+        urlGoogleDrivePedidosCompra: state.urlGoogleDrivePedidosCompra,
         mesesProyeccionTransferencia: state.mesesProyeccionTransferencia,
         mesesProyeccionCompra: state.mesesProyeccionCompra,
         modoMacro: state.modoMacro,

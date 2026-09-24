@@ -4,6 +4,7 @@
 import React from 'react';
 import { ResultadoMRP } from '../lib/types';
 import { Tooltip } from './ComponentesAuxiliares';
+import { BadgePedidosMultiples } from './BadgePedidosMultiples';
 
 interface TablaProductosPropiosProps {
   resultadosFiltradosPropios: ResultadoMRP[];
@@ -96,6 +97,8 @@ export function TablaProductosPropios({
           <th className={`${clsAccionHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>Producir PT E.R.</th>
           <th className={`${clsAccionHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>Compra MP</th>
           <th onClick={() => solicitarOrdenPropios('cantidadSugerida')} className={`${clsBlueHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer`}>Cantidad necesaria MP{getIndP('cantidadSugerida')}</th>
+          <th className={`${clsNormalHeader} px-2.5 py-2 text-center border-r border-gray-150 dark:border-gray-800`}>Fec. Últ. Pedido</th>
+          <th className={`${clsNormalHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>Cant. Pedida</th>
           <th onClick={() => solicitarOrdenPropios('criticidad')} className={`${clsNormalHeader} pl-2.5 pr-8 py-2 cursor-pointer`}>Criticidad{getIndP('criticidad')}</th>
         </tr>
       </thead>
@@ -150,6 +153,23 @@ export function TablaProductosPropios({
             <td className={`${clsAccionCell} px-2.5 py-2 text-right font-mono font-semibold`}>{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{(p.produccionExistenteER ?? 0).toFixed(1)}</div>)}</td>
             <td className={`${clsAccionCell} px-2.5 py-2 text-right font-mono`}>{(fila.movimientoSugerido.compra ?? 0).toFixed(1)}</td>
             <td className={`${clsBlueCell} px-2.5 py-2 text-right font-semibold font-mono`}>{(fila.cantidadSugerida ?? 0).toFixed(1)}</td>
+            <td className="px-2.5 py-2 text-center font-mono text-[10px]">
+              {fila.pedidoCompraPendiente?.fechaUltimaSolicitud || '-'}
+            </td>
+            <td className="px-2.5 py-2 text-right font-mono text-[10px] whitespace-nowrap">
+              {fila.pedidoCompraPendiente?.cantidadSolicitadaUltima !== undefined && fila.pedidoCompraPendiente?.cantidadSolicitadaUltima !== null ? (
+                <div className="inline-flex items-center justify-end">
+                  <span>{fila.pedidoCompraPendiente.cantidadSolicitadaUltima.toLocaleString()}</span>
+                  <BadgePedidosMultiples
+                    totalPedidos={fila.pedidoCompraPendiente.totalPedidosPendientes}
+                    fechaUltima={fila.pedidoCompraPendiente.fechaUltimaSolicitud}
+                    cantidadUltima={fila.pedidoCompraPendiente.cantidadSolicitadaUltima}
+                  />
+                </div>
+              ) : (
+                '-'
+              )}
+            </td>
             <td className="px-2.5 py-2 text-center"><BadgeCriticidad criticidad={fila.criticidad} /></td>
           </tr>
         ))}

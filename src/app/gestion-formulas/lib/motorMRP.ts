@@ -10,6 +10,8 @@ import {
 } from './types';
 import { calcularMRPPropios } from './mrpPropios';
 import { calcularMRPTercerizados } from './mrpTercerizados';
+import { evaluarPedidosProducto } from './evaluarPedidosCompraPendientes';
+import type { RegistroFilaCompra } from './evaluarPedidosCompraPendientes';
 
 /**
  * Calcula los requerimientos de Material Requirements Planning (MRP) para productos propios
@@ -34,7 +36,8 @@ export function calcularRequerimientosMRP(
   reglasPrefijos: ReglaPrefijo[] = [],
   modoMacro: boolean = false,
   analisisSemielaborados: boolean = false,
-  lineasFiltradas: string[] = []
+  lineasFiltradas: string[] = [],
+  pedidosCompra: RegistroFilaCompra[] = []
 ): ResultadosMRPFinal {
   const recetasActivas = formulas.filter((f) => f.estado === 'activa');
   const recetasActivasCodigos = new Set(recetasActivas.map((f) => f.codigoProducto));
@@ -64,5 +67,14 @@ export function calcularRequerimientosMRP(
     modoMacro
   );
 
-  return { propios, tercerizados };
+  return {
+    propios: propios.map((item) => {
+      const pedido = evaluarPedidosProducto(item.codigoMP, item.criticidad, pedidosCompra);
+      return { ...item, pedidoCompraPendiente: pedido };
+    }),
+    tercerizados: tercerizados.map((item) => {
+      const pedido = evaluarPedidosProducto(item.codigoPT, item.criticidad, pedidosCompra);
+      return { ...item, pedidoCompraPendiente: pedido };
+    }),
+  };
 }

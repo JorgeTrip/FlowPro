@@ -19,6 +19,7 @@ export function GoogleDriveSection() {
     errorSincronizacion,
     sincronizarFormulas,
     sincronizarStock,
+    sincronizarPedidosCompra,
     sincronizarTodo,
     limpiarEstado,
   } = useGoogleDriveSync();
@@ -32,6 +33,7 @@ export function GoogleDriveSection() {
     store.datosCrudosStock.length > 0 &&
     store.datosCrudosConsumo.length > 0 &&
     store.datosCrudosStockPT.length > 0 &&
+    store.datosCrudosPedidosCompra.length > 0 &&
     tienePrefijos;
 
   // Indicadores de carga en tiempo real para Fórmulas
@@ -40,6 +42,15 @@ export function GoogleDriveSection() {
     <div className="flex items-center space-x-2 text-xs font-semibold text-green-700 dark:text-green-400 bg-green-500/10 border border-green-500/20 px-2.5 py-1.5 rounded-lg shadow-sm">
       <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
       <span>✓ {formulasCargadas.toLocaleString()} recetas cargadas correctamente</span>
+    </div>
+  ) : null;
+
+  // Indicador de carga para Pedidos de Compra
+  const pedidosCargados = store.datosCrudosPedidosCompra.length;
+  const statusPedidosCompra = pedidosCargados > 0 ? (
+    <div className="flex items-center space-x-2 text-xs font-semibold text-green-700 dark:text-green-400 bg-green-500/10 border border-green-500/20 px-2.5 py-1.5 rounded-lg shadow-sm">
+      <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
+      <span>✓ {pedidosCargados.toLocaleString()} solicitudes de compra cargadas</span>
     </div>
   ) : null;
 
@@ -118,7 +129,23 @@ export function GoogleDriveSection() {
           statusComponent={statusStock}
         />
 
-        {store.urlGoogleDriveFormulas && store.urlGoogleDriveStock && (
+        <VinculadorFuente
+          titulo="Pedidos de Compra (Obligatorio)"
+          descripcion="Hojas: Solicitud de compras y Solicitud Hierbas"
+          urlGuardada={store.urlGoogleDrivePedidosCompra}
+          onGuardarUrl={store.setUrlGoogleDrivePedidosCompra}
+          onCambiarEnlace={limpiarEstado}
+          onBorrarUrl={() => {
+            store.setUrlGoogleDrivePedidosCompra(null);
+            store.setDatosCrudosPedidosCompra([]);
+          }}
+          onSincronizar={sincronizarPedidosCompra}
+          isSincronizando={isSincronizando && fuenteSincronizando === 'pedidosCompra'}
+          error={fuenteSincronizando === 'pedidosCompra' ? errorSincronizacion : null}
+          statusComponent={statusPedidosCompra}
+        />
+
+        {store.urlGoogleDriveFormulas && store.urlGoogleDriveStock && store.urlGoogleDrivePedidosCompra && (
           <div className="space-y-3 pt-2">
             <button
               onClick={sincronizarTodo}

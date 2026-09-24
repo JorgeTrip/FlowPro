@@ -1,70 +1,7 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 
-/**
- * ==========================================
- * SECCIÓN 1: MODELOS DE DATOS PRINCIPALES (BOM)
- * ==========================================
- */
-
-/**
- * Representa un producto del catálogo, que puede ser tanto una materia prima (MP),
- * un producto semielaborado (SE) o un producto terminado (PT).
- */
-export interface Producto {
-  /** Código único del producto (código Tango o código de barras) */
-  codigo: string;
-  /** Nombre o descripción detallada del artículo */
-  descripcion: string;
-  /** Unidad de Medida (ej: "kg", "u", "l", "m") */
-  unidadMedida: string;
-  /** Nivel de existencias mínimo a partir del cual se debe emitir un pedido de reposición */
-  puntoPedido: number;
-  /** Categoría a la que pertenece el producto para facilitar filtrados (ej: "Hierbas", "Envases") */
-  categoria?: string;
-  /** Costo unitario estimado para análisis de costo de fórmulas */
-  costo?: number;
-  /** Contenido o presentación del producto terminado (ej: X 1 KG, X 1/2 KG) */
-  contenido?: string;
-}
-
-/**
- * Representa un insumo o componente dentro de una receta o fórmula.
- */
-export interface ComponenteFormula {
-  /** Código del producto componente (materia prima o semielaborado) */
-  codigoComponente: string;
-  /** Descripción del componente para rápida lectura visual en UI sin necesidad de un join manual */
-  descripcion: string;
-  /** Cantidad neta requerida del componente para la base de la fórmula */
-  cantidad: number;
-  /** Unidad de medida del componente (debe ser compatible con el catálogo de productos) */
-  unidadMedida: string;
-}
-
-/**
- * Representa una Receta o Estructura de Producto (Bill of Materials - BOM).
- * Define qué componentes componen a un producto terminado o semielaborado.
- */
-export interface Formula {
-  /** Código del producto principal (el que se fabrica, habitualmente PT o SE) */
-  codigoProducto: string;
-  /** Descripción del producto resultante de la fórmula */
-  descripcion: string;
-  /** Listado de insumos y materiales requeridos para su elaboración */
-  componentes: ComponenteFormula[];
-  /** Unidad de medida del producto resultante */
-  unidadMedida: string;
-  /** Cantidad base producida con esta receta (generalmente 1, 100 o 1000 unidades) */
-  rendimiento: number;
-  /** Número incremental de la versión de la receta */
-  version: number;
-  /** Estado del ciclo de vida de esta versión */
-  estado: 'activa' | 'obsoleta' | 'borrador';
-  /** Fecha de creación o importación del registro (ISO String) */
-  fechaCreacion: string;
-  /** Contenido o presentación del producto (ej: X 1 KG, X 1/2 KG) */
-  contenido?: string;
-}
+// Re-exportación de modelos principales (BOM)
+export type { Producto, ComponenteFormula, Formula } from './typesBom';
 
 /**
  * ==========================================
@@ -199,6 +136,8 @@ export interface DesgloseProducto {
 /**
  * Representa el cálculo de requerimiento sugerido de una materia prima.
  */
+import type { EstadoPedidoCompraPendiente } from './evaluarPedidosCompraPendientes';
+
 export interface ResultadoMRP {
   codigoMP: string;
   descripcionMP: string;
@@ -208,17 +147,15 @@ export interface ResultadoMRP {
   cantidadSugerida: number;
   movimientoSugerido: {
     tipo: 'sin_accion' | 'transferencia' | 'compra' | 'combinado';
-    transferencia?: number; // ER -> CABA
-    transferenciaCabaEr?: number; // CABA -> ER
+    transferencia?: number;
+    transferenciaCabaEr?: number;
     compra?: number;
   };
   criticidad: 'alta' | 'media' | 'baja';
   productosUsados: DesgloseProducto[];
+  pedidoCompraPendiente?: EstadoPedidoCompraPendiente | null;
 }
 
-/**
- * Representa la propuesta de abastecimiento de un producto terminado tercerizado.
- */
 export interface ResultadoTercerizadosMRP {
   codigoPT: string;
   descripcionPT: string;
@@ -233,19 +170,14 @@ export interface ResultadoTercerizadosMRP {
   };
   criticidad: 'alta' | 'media' | 'baja';
   linea?: string;
+  pedidoCompraPendiente?: EstadoPedidoCompraPendiente | null;
 }
 
-/**
- * Agrupa los resultados consolidados de productos propios y tercerizados.
- */
 export interface ResultadosMRPFinal {
   propios: ResultadoMRP[];
   tercerizados: ResultadoTercerizadosMRP[];
 }
 
-/**
- * Representa una regla de asociación para prefijos de códigos de productos terminados.
- */
 export interface ReglaPrefijo {
   id: string;
   prefijo: string;
@@ -253,5 +185,3 @@ export interface ReglaPrefijo {
   sitioFabricacion: 'CABA' | 'ENTRE RIOS' | 'CABA + ENTRE RIOS' | 'TERC. CABA' | 'TERC. ENTRE RIOS' | 'TERC. CON PROV. MP';
   descripcion?: string;
 }
-
-

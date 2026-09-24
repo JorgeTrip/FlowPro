@@ -12,7 +12,7 @@ export function useGoogleDriveSync() {
   });
   const [isSincronizando, setIsSincronizando] = useState(false);
   const [errorSincronizacion, setErrorSincronizacion] = useState<string | null>(null);
-  const [fuenteSincronizando, setFuenteSincronizando] = useState<'formulas' | 'stock' | null>(null);
+  const [fuenteSincronizando, setFuenteSincronizando] = useState<'formulas' | 'stock' | 'pedidosCompra' | null>(null);
 
   const extraerIdDeUrl = (url: string): string | null => {
     const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/) || url.match(/[?&]id=([a-zA-Z0-9-_]+)/);
@@ -134,6 +134,22 @@ export function useGoogleDriveSync() {
     }
   };
 
+  const sincronizarPedidosCompra = async () => {
+    const url = store.urlGoogleDrivePedidosCompra;
+    if (!url) return setErrorSincronizacion('No hay enlace de Drive configurado para pedidos de compra');
+    setIsSincronizando(true); setFuenteSincronizando('pedidosCompra'); setErrorSincronizacion(null);
+    try {
+      const archivo = await descargarDesdeDrive(url);
+      const { procesarLibroPedidosCompra } = await import('../lib/lectorPedidosCompra');
+      const registros = await procesarLibroPedidosCompra(archivo);
+      store.setDatosCrudosPedidosCompra(registros);
+    } catch (err: any) {
+      setErrorSincronizacion(err.message); store.setError(err.message);
+    } finally {
+      setIsSincronizando(false); setFuenteSincronizando(null);
+    }
+  };
+
   const handleCambioSolapa = async (destino: 'formulas' | 'stock' | 'consumo' | 'stockPT', hoja: string) => {
     setSolapasSeleccionadas((prev) => ({ ...prev, [destino]: hoja }));
     if (archivoConsolidadoDrive && hoja) {
@@ -150,7 +166,12 @@ export function useGoogleDriveSync() {
     errorSincronizacion,
     sincronizarFormulas,
     sincronizarStock,
-    sincronizarTodo: async () => { await sincronizarFormulas(); await sincronizarStock(); },
+    sincronizarPedidosCompra,
+    sincronizarTodo: async () => {
+      await sincronizarFormulas();
+      await sincronizarStock();
+      await sincronizarPedidosCompra();
+    },
     handleCambioSolapa,
     limpiarEstado: () => {
       setHojasDisponibles([]); setArchivoConsolidadoDrive(null);
