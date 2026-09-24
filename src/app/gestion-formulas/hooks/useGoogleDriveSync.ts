@@ -23,7 +23,16 @@ export function useGoogleDriveSync() {
     const id = extraerIdDeUrl(url);
     if (!id) throw new Error('No se pudo extraer el ID del enlace de Google Drive');
     const response = await fetch(`/api/proxy-drive?id=${id}`);
-    if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
+    if (!response.ok) {
+      let mensaje = `Error ${response.status}: ${response.statusText}`;
+      try {
+        const json = await response.json();
+        if (json?.error) mensaje = json.error;
+      } catch {
+        // Fallback al texto de status
+      }
+      throw new Error(mensaje);
+    }
     const buffer = await response.arrayBuffer();
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     return new File([blob], 'planilla_drive.xlsx', { type: blob.type });

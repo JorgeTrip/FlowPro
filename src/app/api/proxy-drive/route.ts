@@ -22,9 +22,9 @@ export async function GET(request: Request) {
       },
     });
 
-    // 2. Si falla (404/403/400), intentar como archivo Excel binario subido directamente a Drive
+    // 2. Si falla (404/403/401/400), intentar como archivo Excel binario subido directamente a Drive
     if (!respuesta.ok) {
-      console.log(`[Proxy Drive] Falló exportación xlsx (${respuesta.status}), intentando uc?export=download`);
+      console.log(`[Proxy Drive] Falló exportación xlsx (${respuesta.status}) para ID ${id}, intentando uc?export=download`);
       url = `https://drive.google.com/uc?export=download&id=${id}`;
       respuesta = await fetch(url, {
         headers: {
@@ -34,35 +34,34 @@ export async function GET(request: Request) {
     }
 
     if (!respuesta.ok) {
-      console.log(`[Proxy Drive] Error al acceder: ${respuesta.status} ${respuesta.statusText}`);
+      console.error(`[Proxy Drive] Error al acceder al archivo ${id}: ${respuesta.status} ${respuesta.statusText}`);
       return NextResponse.json(
-        { error: `No se pudo acceder al archivo (${respuesta.status}). Verifica que el enlace sea público (Cualquiera con el enlace puede ver).` },
+        {
+          error: `No se pudo acceder al archivo en Google Drive (${respuesta.status}). Verifica los permisos: en Google Drive debe estar configurado como 'Cualquier persona que tenga el vínculo' (Lector).`,
+        },
         { status: respuesta.status }
       );
     }
 
-    const contentType = respuesta.headers.get('content-type');
-    console.log(`[Proxy Drive] Content-Type recibido: ${contentType}`);
-
+    const contentType = respuesta.headers.get('content-type') || '';
     const buffer = await respuesta.arrayBuffer();
-    console.log(`[Proxy Drive] Tamaño del buffer: ${buffer.byteLength} bytes`);
 
-    // Validar que el archivo sea un Excel válido (magic bytes)
+    // Validar que el archivo sea un Excel válido (magic bytes ZIP para .xlsx o Compound File para .xls)
     const header = new Uint8Array(buffer.slice(0, 4));
-    const isZip = header[0] === 0x50 && header[1] === 0x4B; // PK (ZIP header)
+    const isZip = header[0] === 0x50 && header[1] === 0x4B; // PK (XLSX ZIP)
+    const isOldXls = header[0] === 0xD0 && header[1] === 0xCF; // OLE2 (XLS binario)
     
-    if (!isZip) {
-      console.error('[Proxy Drive] El archivo no parece ser un ZIP/Excel válido');
-      // Si es HTML, devolver el contenido para diagnóstico
+    if (!isZip && !isOldXls) {
       const text = new TextDecoder().decode(buffer.slice(0, 500));
-      console.log('[Proxy Drive] Primeros 500 bytes:', text);
-      
+      console.error(`[Proxy Drive] El contenido descargado para ${id} no es Excel. Primeros 500 bytes:\n`, text);
+
+      const requiereLogin = text.includes('accounts.google.com') || text.includes('ServiceLogin') || text.includes('Sign in');
+      const mensaje = requiereLogin
+        ? `La planilla de Google Drive (ID: ${id}) requiere inicio de sesión. Por favor, abre la planilla en Google Drive, pulsa 'Compartir' y cambia el 'Acceso general' a 'Cualquier persona que tenga el vínculo' con rol de Lector.`
+        : `El archivo descargado no es una planilla Excel válida (tipo: ${contentType}). Verifica que el enlace corresponda a una Google Sheet o archivo .xlsx válido.`;
+
       return NextResponse.json(
-        { 
-          error: 'El archivo descargado no es un Excel válido. Puede que el enlace requiera autenticación o no sea público.',
-          contentType,
-          preview: text.substring(0, 200),
-        },
+        { error: mensaje, id, contentType },
         { status: 400 }
       );
     }
