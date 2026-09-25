@@ -9,7 +9,7 @@ interface PrefijosState {
   agregarRegla: (regla: Omit<ReglaPrefijo, 'id'>) => void;
   eliminarRegla: (id: string) => void;
   modificarRegla: (id: string, updates: Partial<ReglaPrefijo>) => void;
-  importarReglas: (reglas: ReglaPrefijo[]) => { exito: boolean; mensaje: string };
+  importarReglas: (reglas: any[]) => { exito: boolean; mensaje: string };
   limpiarReglas: () => void;
   reset: () => void;
 }

@@ -1,36 +1,16 @@
 // © 2025 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useReporteVentasStore, ExcelRow } from '@/app/stores/reporteVentasStore';
-// import { Venta } from '../lib/types';
 import DataPreviewTable from './DataPreviewTable';
-
-// Icono de tilde para confirmación visual
-const CheckIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="ml-2 h-5 w-5 flex-shrink-0 text-green-500" viewBox="0 0 20 20" fill="currentColor">
-    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-  </svg>
-);
-
-const SelectAsignacion = ({ label, columnas, value, onChange }: { label: string, columnas: string[], value: string, onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void }) => (
-  <div>
-    <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-      {label}
-      {value && <CheckIcon />}
-    </label>
-    <select
-      value={value}
-      onChange={onChange}
-      className="mt-1 block w-full rounded-md border-gray-300 bg-white py-2 pl-3 pr-10 text-base shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white sm:text-sm"
-    >
-      <option value="">Seleccionar columna...</option>
-      {columnas.map(col => (
-        <option key={col} value={col}>{col}</option>
-      ))}
-    </select>
-  </div>
-);
+import { SelectAsignacion } from './config/SelectAsignacion';
+import { SeccionMapeoNomina } from './config/SeccionMapeoNomina';
+import {
+  detectarMapeoAutomaticoVentas,
+  detectarMapeoAutomaticoNomina,
+  MapeoVentas,
+} from '../services/detectorColumnasVentas';
 
 export function ConfigStep() {
   const {
@@ -46,7 +26,7 @@ export function ConfigStep() {
     generarReporte,
   } = useReporteVentasStore();
 
-  const [mapeo, setMapeo] = useState({
+  const [mapeo, setMapeo] = useState<MapeoVentas>({
     Periodo: '',
     Fecha: '',
     TipoComprobante: '',
@@ -67,10 +47,8 @@ export function ConfigStep() {
   });
 
   const [isInitialMapping, setIsInitialMapping] = useState(true);
-
   const [isReady, setIsReady] = useState(false);
 
-  // Estado del mapeo de la nómina de clientes (Cód. cliente y Vendedor)
   const [nominaMapeoLocal, setNominaMapeoLocal] = useState({
     RazonSocial: '',
     Vendedor: '',
@@ -79,208 +57,57 @@ export function ConfigStep() {
 
   useEffect(() => {
     if (ventasColumnas.length > 0 && isInitialMapping) {
-      console.log('Ejecutando mapeo automático con columnas:', ventasColumnas);
-
-      // Crear el mapeo automático directamente
-      const automaticMapping = {
-        Periodo: '',
-        Fecha: '',
-        TipoComprobante: '',
-        NroComprobante: '',
-        ReferenciaVendedor: '',
-        Articulo: '',
-        Descripcion: '',
-        Cantidad: '',
-        Cliente: '',
-        RazonSocial: '',
-        TotalCIVA: '',
-        DescripcionZona: '',
-        DescRubro: '',
-        Direccion: '',
-        PrecioUnitario: '',
-        Total: '',
-        DirectoIndirecto: ''
-      };
-
-      const usedColumns = new Set<string>();
-
-      // Crear un mapa de todas las posibles coincidencias con su especificidad
-      const createMatchMap = () => {
-        const matches: Array<{ field: string, column: string, specificity: number }> = [];
-
-        const fieldMappings = [
-          { field: 'Fecha', keywords: ['fecha'] },
-          { field: 'Articulo', keywords: ['articulo', 'artículo', 'cod', 'cód', 'sku'] },
-          { field: 'Descripcion', keywords: ['descripcion', 'descripción'] },
-          { field: 'Cantidad', keywords: ['cantidad', 'cant'] },
-          { field: 'Cliente', keywords: ['razon social', 'razón social', 'razon', 'razón', 'cliente'] },
-          { field: 'ReferenciaVendedor', keywords: ['vendedor', 'referencia'] },
-          { field: 'DescripcionZona', keywords: ['descripcion zona', 'descripción zona', 'zona'] },
-          { field: 'DescRubro', keywords: ['desc rubro', 'descripcion rubro', 'descripción rubro', 'rubro'] },
-          { field: 'Periodo', keywords: ['periodo', 'período'] },
-          { field: 'TipoComprobante', keywords: ['tipo', 'comprobante'] },
-          { field: 'NroComprobante', keywords: ['numero', 'nro'] },
-          { field: 'RazonSocial', keywords: ['razon social', 'razón social'] },
-          { field: 'Direccion', keywords: ['direccion', 'dirección'] },
-          { field: 'PrecioUnitario', keywords: ['precio unitario', 'unitario'] },
-          { field: 'Total', keywords: ['total'] },
-          { field: 'TotalCIVA', keywords: ['total c/iva', 'total con iva', 'total coniva'] },
-          { field: 'DirectoIndirecto', keywords: ['directo', 'indirecto'] }
-        ];
-
-        fieldMappings.forEach(({ field, keywords }) => {
-          keywords.forEach((keyword, keywordIndex) => {
-            ventasColumnas.forEach(column => {
-              const columnLower = column.toLowerCase();
-              const keywordLower = keyword.toLowerCase();
-
-              if (columnLower.includes(keywordLower)) {
-                // Calcular especificidad: coincidencia exacta > coincidencia de palabras completas > coincidencia parcial
-                let specificity = 0;
-
-                if (columnLower === keywordLower) {
-                  specificity = 1000; // Coincidencia exacta
-                } else if (columnLower.split(' ').includes(keywordLower) || keywordLower.split(' ').every(word => columnLower.includes(word))) {
-                  specificity = 500 + (keyword.split(' ').length * 10); // Coincidencia de palabras completas, más específico si tiene más palabras
-                } else {
-                  specificity = 100; // Coincidencia parcial
-                }
-
-                // Penalizar por orden de keyword (primeras keywords tienen prioridad)
-                specificity -= keywordIndex;
-
-                // Reglas específicas para ReferenciaVendedor:
-                // - Priorizar el nombre del vendedor (columna "vendedor" o que incluya "nombre")
-                // - Penalizar columnas de código: contienen "cod", "cód", "codigo", "id", "nro"
-                if (field === 'ReferenciaVendedor') {
-                  const isExactVendedor = columnLower.trim() === 'vendedor';
-                  const seemsName = columnLower.includes('nombre');
-                  const seemsCode = /\b(cod|cód|codigo|código|id|nro)\b/.test(columnLower);
-
-                  if (isExactVendedor) specificity += 600;
-                  if (seemsName) specificity += 350;
-                  if (seemsCode) specificity -= 500;
-                }
-
-                matches.push({ field, column, specificity });
-              }
-            });
-          });
-        });
-
-        // Ordenar por especificidad descendente
-        return matches.sort((a, b) => b.specificity - a.specificity);
-      };
-
-      const allMatches = createMatchMap();
-      console.log('Todas las coincidencias encontradas:', allMatches);
-
-      // Asignar las mejores coincidencias disponibles
-      const assignedFields = new Set<string>();
-
-      allMatches.forEach(match => {
-        if (!usedColumns.has(match.column) && !assignedFields.has(match.field)) {
-          if (!automaticMapping[match.field as keyof typeof automaticMapping] || automaticMapping[match.field as keyof typeof automaticMapping] === '') {
-            console.log(`Asignando ${match.field} -> ${match.column} (especificidad: ${match.specificity})`);
-            (automaticMapping as Record<string, string>)[match.field] = match.column;
-            usedColumns.add(match.column);
-            assignedFields.add(match.field);
-          }
-        }
-      });
-
-      console.log('Mapeo final después de asignación automática:', automaticMapping);
-      console.log('Campo Cliente específicamente:', automaticMapping.Cliente);
-
-      // Aplicar el mapeo automático de una sola vez
+      const automaticMapping = detectarMapeoAutomaticoVentas(ventasColumnas);
       setMapeo(automaticMapping);
       setIsInitialMapping(false);
     }
   }, [ventasColumnas, isInitialMapping]);
 
-  // Auto-detección de columnas de la nómina de clientes
   useEffect(() => {
     if (nominaColumnas.length > 0 && isNominaInitialMapping) {
-      const autoNominaMapeo = { RazonSocial: '', Vendedor: '' };
-
-      // Buscar la columna de razón social
-      const razonSocialMatch = nominaColumnas.find(col =>
-        col.toLowerCase().includes('razón social') ||
-        col.toLowerCase().includes('razon social') ||
-        col.toLowerCase() === 'razón social'
-      );
-      if (razonSocialMatch) autoNominaMapeo.RazonSocial = razonSocialMatch;
-
-      // Buscar la columna de vendedor
-      const vendedorMatch = nominaColumnas.find(col =>
-        col.toLowerCase() === 'vendedor'
-      );
-      if (vendedorMatch) autoNominaMapeo.Vendedor = vendedorMatch;
-
-      console.log('Mapeo automático de nómina:', autoNominaMapeo);
+      const autoNominaMapeo = detectarMapeoAutomaticoNomina(nominaColumnas);
       setNominaMapeoLocal(autoNominaMapeo);
       setIsNominaInitialMapping(false);
     }
   }, [nominaColumnas, isNominaInitialMapping]);
 
   useEffect(() => {
-    console.log('Estado actual completo del mapeo:', mapeo);
-    const isMapeoReady = mapeo.Fecha && mapeo.Fecha !== '' &&
-      mapeo.Articulo && mapeo.Articulo !== '' &&
-      mapeo.Descripcion && mapeo.Descripcion !== '' &&
-      mapeo.Cantidad && mapeo.Cantidad !== '' &&
-      mapeo.Cliente && mapeo.Cliente !== '' &&
-      mapeo.ReferenciaVendedor && mapeo.ReferenciaVendedor !== '' &&
-      mapeo.DescripcionZona && mapeo.DescripcionZona !== '' &&
-      mapeo.DescRubro && mapeo.DescRubro !== '' &&
-      mapeo.Total && mapeo.Total !== '' &&
-      mapeo.TotalCIVA && mapeo.TotalCIVA !== '';
-    console.log('Validando mapeo completo:', {
-      Fecha: mapeo.Fecha,
-      Articulo: mapeo.Articulo,
-      Descripcion: mapeo.Descripcion,
-      Cantidad: mapeo.Cantidad,
-      Cliente: mapeo.Cliente,
-      ReferenciaVendedor: mapeo.ReferenciaVendedor,
-      DescripcionZona: mapeo.DescripcionZona,
-      DescRubro: mapeo.DescRubro,
-      Total: mapeo.Total,
-      TotalCIVA: mapeo.TotalCIVA,
-      isReady: !!isMapeoReady
-    });
+    const isMapeoReady =
+      mapeo.Fecha &&
+      mapeo.Articulo &&
+      mapeo.Descripcion &&
+      mapeo.Cantidad &&
+      mapeo.Cliente &&
+      mapeo.ReferenciaVendedor &&
+      mapeo.DescripcionZona &&
+      mapeo.DescRubro &&
+      mapeo.Total &&
+      mapeo.TotalCIVA;
     setIsReady(!!isMapeoReady);
   }, [mapeo]);
 
-  const handleMapeoChange = (field: string, value: string) => {
+  const handleMapeoChange = (field: keyof MapeoVentas, value: string) => {
     const newValue = value === 'Seleccionar columna...' ? '' : value;
-
-    setMapeo(prev => {
+    setMapeo((prev) => {
       const newMapeo = { ...prev };
-
-      // Si se está asignando un valor que ya está en uso, limpiar el campo anterior
       if (newValue) {
-        Object.keys(newMapeo).forEach(key => {
-          if (key !== field && (newMapeo as Record<string, string>)[key] === newValue) {
-            (newMapeo as Record<string, string>)[key] = '';
+        Object.keys(newMapeo).forEach((key) => {
+          if (key !== field && newMapeo[key as keyof MapeoVentas] === newValue) {
+            newMapeo[key as keyof MapeoVentas] = '';
           }
         });
       }
-
-      // Asignar el nuevo valor
-      (newMapeo as Record<string, string>)[field] = newValue;
-
+      newMapeo[field] = newValue;
       return newMapeo;
     });
   };
 
   const handleAnalizar = () => {
     if (!isReady) return;
-    // Guardamos el mapeo de ventas y el de la nómina juntos en la configuración
     setConfiguracion({
       mapeo,
-      nominaMapeo: nominaMapeoLocal.RazonSocial && nominaMapeoLocal.Vendedor
-        ? nominaMapeoLocal
-        : undefined,
+      nominaMapeo:
+        nominaMapeoLocal.RazonSocial && nominaMapeoLocal.Vendedor ? nominaMapeoLocal : undefined,
     });
     generarReporte();
   };
@@ -288,11 +115,15 @@ export function ConfigStep() {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-700 dark:bg-gray-800">
       <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Paso 2: Configurar Reporte</h3>
-      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">Asigne las columnas de su archivo de ventas a los campos requeridos.</p>
+      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        Asigne las columnas de su archivo de ventas a los campos requeridos.
+      </p>
 
       <div className="mt-8 space-y-8">
         <div className="rounded-md border border-gray-300 p-6 dark:border-gray-600">
-          <h4 className="text-lg font-medium text-gray-800 dark:text-gray-200">Archivo de Ventas: <span className="font-normal text-gray-600 dark:text-gray-400">{ventasFile?.name}</span></h4>
+          <h4 className="text-lg font-medium text-gray-800 dark:text-gray-200">
+            Archivo de Ventas: <span className="font-normal text-gray-600 dark:text-gray-400">{ventasFile?.name}</span>
+          </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
             <div>
               {ventasFile && ventasPreviewData.length > 0 && (
@@ -319,57 +150,18 @@ export function ConfigStep() {
           </div>
         </div>
 
-        {/* Mapeo de columnas de la nómina de clientes */}
         {nominaFile && (
-          <div className="rounded-md border border-gray-300 p-6 dark:border-gray-600">
-            <h4 className="text-lg font-medium text-gray-800 dark:text-gray-200">
-              Nómina de Clientes: <span className="font-normal text-gray-600 dark:text-gray-400">{nominaFile.name}</span>
-            </h4>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-              📋 <strong>{nominaData.length}</strong> registros. Asigne las columnas para el cruce de vendedores.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
-              <div>
-                {nominaPreviewData.length > 0 && (
-                  <DataPreviewTable
-                    title="Previsualización de Nómina"
-                    previewData={nominaPreviewData as ExcelRow[]}
-                    columns={nominaColumnas}
-                    highlightedColumns={[nominaMapeoLocal.RazonSocial, nominaMapeoLocal.Vendedor].filter(Boolean)}
-                  />
-                )}
-              </div>
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <SelectAsignacion
-                  label="Razón Social (para cruce)"
-                  columnas={nominaColumnas}
-                  value={nominaMapeoLocal.RazonSocial || ''}
-                  onChange={(e) => setNominaMapeoLocal(prev => ({ ...prev, RazonSocial: e.target.value === 'Seleccionar columna...' ? '' : e.target.value }))}
-                />
-                <SelectAsignacion
-                  label="Vendedor"
-                  columnas={nominaColumnas}
-                  value={nominaMapeoLocal.Vendedor || ''}
-                  onChange={(e) => setNominaMapeoLocal(prev => ({ ...prev, Vendedor: e.target.value === 'Seleccionar columna...' ? '' : e.target.value }))}
-                />
-              </div>
-            </div>
-
-            {nominaMapeoLocal.RazonSocial && nominaMapeoLocal.Vendedor ? (
-              <p className="mt-3 text-xs text-green-600 dark:text-green-400">
-                ✅ Al generar el reporte, se reasignarán las ventas al vendedor real según esta nómina.
-              </p>
-            ) : (
-              <p className="mt-3 text-xs text-yellow-600 dark:text-yellow-400">
-                ⚠️ Asigne ambas columnas para activar la reasignación de vendedores.
-              </p>
-            )}
-          </div>
+          <SeccionMapeoNomina
+            nominaFile={nominaFile}
+            nominaData={nominaData as ExcelRow[]}
+            nominaColumnas={nominaColumnas}
+            nominaPreviewData={nominaPreviewData as ExcelRow[]}
+            nominaMapeoLocal={nominaMapeoLocal}
+            setNominaMapeoLocal={setNominaMapeoLocal}
+          />
         )}
       </div>
 
-      {/* Mensaje de estado del mapeo */}
       <div className="mt-6">
         {isReady ? (
           <div className="flex items-center rounded-md bg-green-50 p-4 dark:bg-green-900/20">

@@ -30,11 +30,14 @@ export function agregarHojaTercerizados(
     { header: descCompra, key: 'comprar' },
     { header: descTransf, key: 'transferir' },
     { header: 'CRITICIDAD', key: 'criticidad' },
+    { header: 'FEC. ÚLT. PEDIDO', key: 'fechaUltimoPedido' },
+    { header: 'CANT. PEDIDA', key: 'cantidadPedida' },
   ];
+  
   // Formatear los headers con los colores correspondientes de la app
   const headerRow = wsT.getRow(1);
   headerRow.height = 40;
-  for (let c = 1; c <= 8; c++) {
+  for (let c = 1; c <= 10; c++) {
     const cell = headerRow.getCell(c);
     cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
     cell.border = borderFino;
@@ -42,7 +45,7 @@ export function agregarHojaTercerizados(
     let fillBg = 'FFF8F9FA'; // Gris default
     let fontColor = 'FF5F6368'; // Gris oscuro
 
-    const esGrisExcel = [1, 2, 5].includes(c);
+    const esGrisExcel = [1, 2, 5, 9, 10].includes(c);
     const esVerdeER = c === 3;
     const esVioletaCABA = c === 4;
     const esAmarillo = [6, 7].includes(c);
@@ -76,6 +79,8 @@ export function agregarHojaTercerizados(
       comprar: r.movimientoSugerido.compra ?? 0,
       transferir: r.movimientoSugerido.transferencia ?? 0,
       criticidad: r.criticidad.toUpperCase(),
+      fechaUltimoPedido: r.pedidoCompraPendiente?.fechaUltimaSolicitud || '-',
+      cantidadPedida: r.pedidoCompraPendiente?.cantidadSolicitadaUltima ?? null,
     });
 
     const row = wsT.getRow(filaActualT);
@@ -89,16 +94,18 @@ export function agregarHojaTercerizados(
       { horizontal: 'right' as const, vertical: 'middle' as const },
       { horizontal: 'right' as const, vertical: 'middle' as const },
       { horizontal: 'right' as const, vertical: 'middle' as const },
-      { horizontal: 'center' as const, vertical: 'middle' as const }
+      { horizontal: 'center' as const, vertical: 'middle' as const },
+      { horizontal: 'center' as const, vertical: 'middle' as const },
+      { horizontal: 'right' as const, vertical: 'middle' as const }
     ];
 
-    for (let c = 1; c <= 8; c++) {
+    for (let c = 1; c <= 10; c++) {
       const cell = row.getCell(c);
       
       let cellBg = idx % 2 === 0 ? 'FFFFFFFF' : 'FFF9F9F9'; // Gris/Blanco default
       let cellFontColor = 'FF000000';
 
-      const esGrisExcel = [1, 2, 5].includes(c);
+      const esGrisExcel = [1, 2, 5, 9, 10].includes(c);
       const esVerdeER = c === 3;
       const esVioletaCABA = c === 4;
       const esAmarillo = [6, 7].includes(c);
@@ -123,7 +130,7 @@ export function agregarHojaTercerizados(
       cell.alignment = alignConfigsT[c - 1];
       cell.font = { name: 'Segoe UI', size: 9, color: { argb: cellFontColor } };
 
-      if (c === 3 || c === 4 || c === 5 || c === 6 || c === 7) {
+      if (c === 3 || c === 4 || c === 5 || c === 6 || c === 7 || c === 10) {
         cell.numFmt = '#,##0.0';
       }
 
@@ -149,6 +156,6 @@ export function agregarHojaTercerizados(
   });
 
   if (filaActualT > 2) {
-    aplicarBordesExternos(wsT, filaActualT - 1, 8);
+    aplicarBordesExternos(wsT, filaActualT - 1, 10);
   }
 }
