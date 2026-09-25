@@ -1,7 +1,8 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { usePrefijosStore } from '@/app/stores/prefijosStore';
 import { ReglaPrefijo } from '@/app/gestion-formulas/lib/types';
+import { auth } from '@/lib/firebase';
 import {
   exportarPrefijosJSON,
   exportarPrefijosExcel,
@@ -10,12 +11,32 @@ import {
 import { parsearArchivoReglasPrefijo } from '../services/importadorPrefijos';
 
 export function usePrefijosUI() {
-  const { reglas, agregarRegla, eliminarRegla, modificarRegla, importarReglas, limpiarReglas } = usePrefijosStore();
+  const {
+    reglas,
+    cargandoNube,
+    errorNube,
+    iniciarSuscripcionNube,
+    agregarRegla,
+    eliminarRegla,
+    modificarRegla,
+    importarReglas,
+    limpiarReglas,
+  } = usePrefijosStore();
+
   const [busqueda, setBusqueda] = useState('');
   const [modalAbierto, setModalAbierto] = useState(false);
   const [reglaEnEdicion, setReglaEnEdicion] = useState<ReglaPrefijo | null>(null);
   const [procesando, setProcesando] = useState(false);
   const [mensajeNotificacion, setMensajeNotificacion] = useState<{ tipo: 'exito' | 'error'; texto: string } | null>(null);
+
+  // Inicia la suscripción reactiva a Firestore al montar la vista
+  useEffect(() => {
+    const emailUsuario = auth.currentUser?.email || undefined;
+    const desuscribir = iniciarSuscripcionNube(emailUsuario);
+    return () => {
+      desuscribir();
+    };
+  }, [iniciarSuscripcionNube]);
 
   const mostrarMensaje = (tipo: 'exito' | 'error', texto: string) => {
     setMensajeNotificacion({ tipo, texto });
@@ -143,6 +164,8 @@ export function usePrefijosUI() {
     busqueda,
     setBusqueda,
     reglasFiltradas,
+    cargandoNube,
+    errorNube,
     modalAbierto,
     reglaEnEdicion,
     procesando,

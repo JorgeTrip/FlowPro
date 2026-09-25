@@ -1,10 +1,12 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 import React from 'react';
 import { ReglaPrefijo } from '@/app/gestion-formulas/lib/types';
+import { EsqueletoTablaPrefijos } from './EsqueletoTablaPrefijos';
 
 interface TablaPrefijosProps {
   ui: {
     reglasFiltradas: ReglaPrefijo[];
+    cargandoNube?: boolean;
     abrirModalEditar: (regla: ReglaPrefijo) => void;
     confirmarEliminar: (id: string) => void;
     procesando: boolean;
@@ -29,6 +31,11 @@ function BadgeSitio({ sitio }: { sitio: ReglaPrefijo['sitioFabricacion'] }) {
 }
 
 export function TablaPrefijos({ ui }: TablaPrefijosProps) {
+  // Loader Esqueleto durante la carga o sincronización inicial de la nube
+  if (ui.cargandoNube && ui.reglasFiltradas.length === 0) {
+    return <EsqueletoTablaPrefijos />;
+  }
+
   if (ui.reglasFiltradas.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-12 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-gray-800 text-center">

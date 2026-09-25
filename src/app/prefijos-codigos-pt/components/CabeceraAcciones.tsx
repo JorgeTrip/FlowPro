@@ -7,6 +7,7 @@ interface CabeceraAccionesProps {
   ui: {
     busqueda: string;
     setBusqueda: (v: string) => void;
+    cargandoNube?: boolean;
     abrirModalCrear: () => void;
     exportarAJSON: () => void;
     exportarAExcel: () => void;
@@ -44,9 +45,15 @@ export function CabeceraAcciones({ ui }: CabeceraAccionesProps) {
     <div className="flex flex-col md:flex-row items-center justify-between p-4 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-gray-800 gap-4 shadow-sm">
       {/* Buscador */}
       <div className="flex flex-col w-full md:w-auto">
-        <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">
-          Buscar Prefijos o Líneas
-        </span>
+        <div className="flex items-center justify-between mb-1 gap-2">
+          <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+            Buscar Prefijos o Líneas
+          </span>
+          <span className="inline-flex items-center space-x-1 text-[10px] font-medium text-blue-600 dark:text-blue-400">
+            <span className={ui.cargandoNube ? 'animate-spin' : ''}>☁️</span>
+            <span>{ui.cargandoNube ? 'Sincronizando...' : 'Firestore'}</span>
+          </span>
+        </div>
         <div className="relative">
           <input
             type="text"
