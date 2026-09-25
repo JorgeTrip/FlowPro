@@ -2,6 +2,14 @@
 
 export type AccionIrregularidad = 'asignar_cabecera' | 'asignar_nuevo' | 'ignorar';
 
+export type TipoTareaFila = 'armado' | 'atencion_cliente' | 'produccion' | 'otros';
+
+export interface DesgloseOtrasTareas {
+  atencionClienteHs: number;
+  produccionHs: number;
+  otrosHs: number;
+}
+
 export interface FilaArmado {
   id: string;
   fecha: string; // YYYY-MM-DD por fila
@@ -13,6 +21,8 @@ export interface FilaArmado {
   empleadoAsignado?: string;
   accionIrregularidad?: AccionIrregularidad;
   nuevoEmpleado?: string;
+  tipoTarea?: TipoTareaFila;
+  detalleOtraTarea?: string;
 }
 
 export interface PlanillaScanResult {
@@ -55,7 +65,11 @@ export interface RendimientoEmpleado {
   empleado: string;
   totalPedidos: number;
   totalArticulos: number;
-  horasTrabajadas: number;
+  horasTrabajadas: number; // Mantenido por compatibilidad (= horasTotales)
+  horasArmado: number;
+  horasOtrasTareas: number;
+  horasTotales: number;
+  desgloseOtrasTareas: DesgloseOtrasTareas;
   velocidadArtHs: number;
   tiempoMedioMin: number;
   totalIrregularidades: number;

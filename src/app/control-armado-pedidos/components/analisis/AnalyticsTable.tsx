@@ -110,31 +110,50 @@ export function AnalyticsTable({ rendimiento, registros }: AnalyticsTableProps) 
         <table className="w-full text-left text-xs text-gray-700 dark:text-gray-300">
           <thead className="border-b bg-gray-50 text-[11px] uppercase tracking-wider text-gray-500 dark:bg-gray-800 dark:text-gray-400">
             <tr>
-              <th className="px-4 py-3">Armador</th>
-              <th className="px-4 py-3 text-center">Pedidos</th>
-              <th className="px-4 py-3 text-center">Artículos</th>
-              <th className="px-4 py-3 text-center">Horas Trab.</th>
-              <th className="px-4 py-3 text-center">Velocidad (Art/hs)</th>
-              <th className="px-4 py-3 text-center">Min / Pedido</th>
-              <th className="px-4 py-3 text-center">Irregularidades</th>
+              <th className="px-3 py-3">Armador</th>
+              <th className="px-3 py-3 text-center">Pedidos</th>
+              <th className="px-3 py-3 text-center">Artículos</th>
+              <th className="px-3 py-3 text-center">Hs. Armado</th>
+              <th className="px-3 py-3 text-center">Hs. Otras</th>
+              <th className="px-3 py-3 text-center">Hs. Totales</th>
+              <th className="px-3 py-3 text-center">Velocidad (Art/hs)</th>
+              <th className="px-3 py-3 text-center">Min / Pedido</th>
+              <th className="px-3 py-3 text-center">Irregularidades</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
             {rendimientoFiltrado.length > 0 ? (
               rendimientoFiltrado.map((r, idx) => (
                 <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/40">
-                  <td className="flex items-center space-x-2 px-4 py-3 font-semibold text-gray-900 dark:text-gray-100">
-                    <User className="h-4 w-4 text-blue-500" />
-                    <span>{r.empleado}</span>
+                  <td className="flex items-center space-x-2 px-3 py-3 font-semibold text-gray-900 dark:text-gray-100">
+                    <User className="h-4 w-4 text-blue-500 shrink-0" />
+                    <span className="truncate max-w-[120px]">{r.empleado}</span>
                   </td>
-                  <td className="px-4 py-3 text-center">{r.totalPedidos}</td>
-                  <td className="px-4 py-3 text-center font-medium">{r.totalArticulos}</td>
-                  <td className="px-4 py-3 text-center">{r.horasTrabajadas} hs</td>
-                  <td className="px-4 py-3 text-center font-bold text-blue-600 dark:text-blue-400">
+                  <td className="px-3 py-3 text-center">{r.totalPedidos}</td>
+                  <td className="px-3 py-3 text-center font-medium">{r.totalArticulos}</td>
+                  <td className="px-3 py-3 text-center font-semibold text-gray-800 dark:text-gray-200">
+                    {r.horasArmado ?? r.horasTrabajadas} hs
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    {(r.horasOtrasTareas || 0) > 0 ? (
+                      <span
+                        className="rounded bg-blue-100 px-1.5 py-0.5 font-bold text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 cursor-help"
+                        title={`Desglose: Atención Cliente: ${r.desgloseOtrasTareas?.atencionClienteHs || 0} hs | Producción: ${r.desgloseOtrasTareas?.produccionHs || 0} hs | Otros: ${r.desgloseOtrasTareas?.otrosHs || 0} hs`}
+                      >
+                        {r.horasOtrasTareas} hs
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">0 hs</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-3 text-center font-bold text-gray-900 dark:text-gray-100">
+                    {r.horasTotales ?? r.horasTrabajadas} hs
+                  </td>
+                  <td className="px-3 py-3 text-center font-bold text-blue-600 dark:text-blue-400" title="Calculada exclusivamente sobre horas de armado">
                     {r.velocidadArtHs} Art/hs
                   </td>
-                  <td className="px-4 py-3 text-center">{r.tiempoMedioMin} min</td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-3 py-3 text-center">{r.tiempoMedioMin} min</td>
+                  <td className="px-3 py-3 text-center">
                     {r.totalIrregularidades > 0 ? (
                       <span className="rounded bg-amber-100 px-2 py-0.5 font-bold text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
                         {r.totalIrregularidades}
@@ -147,7 +166,7 @@ export function AnalyticsTable({ rendimiento, registros }: AnalyticsTableProps) 
               ))
             ) : (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                <td colSpan={9} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                   No se encontraron armadores con los filtros seleccionados.
                 </td>
               </tr>

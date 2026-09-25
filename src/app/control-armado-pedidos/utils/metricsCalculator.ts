@@ -1,6 +1,6 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
-import { RegistroArmadoDocumento, MetricasKpi, RendimientoEmpleado } from '../types/armado';
-import * as XLSX from 'xlsx';
+import type { RegistroArmadoDocumento, MetricasKpi, RendimientoEmpleado } from '../types/armado.ts';
+import { exportarAXLSX as exportarXLSXBase, exportarIrregularidadesAXLSX } from './exportadorMetricasXLSX.ts';
 
 export function calcularDiferenciaMinutos(inicio: string, fin: string): number {
   if (!inicio || !fin) return 0;
@@ -16,20 +16,21 @@ export function calcularDiferenciaMinutos(inicio: string, fin: string): number {
 export function calcularMetricasGlobales(registros: RegistroArmadoDocumento[]): MetricasKpi {
   let totalPedidos = 0;
   let totalArticulos = 0;
-  let totalMinutos = 0;
+  let totalMinutosArmado = 0;
 
   registros.forEach((reg) => {
     reg.filas?.forEach((f) => {
       if (f.accionIrregularidad === 'ignorar') return;
+      if (f.tipoTarea && f.tipoTarea !== 'armado') return;
       totalPedidos += 1;
       totalArticulos += f.cantArticulos || 0;
-      totalMinutos += calcularDiferenciaMinutos(f.horaInicio, f.horaFin);
+      totalMinutosArmado += calcularDiferenciaMinutos(f.horaInicio, f.horaFin);
     });
   });
 
-  const totalHoras = totalMinutos / 60;
+  const totalHoras = totalMinutosArmado / 60;
   const velocidadPromedioEq = totalHoras > 0 ? Math.round(totalArticulos / totalHoras) : 0;
-  const tiempoMedioPedidoMin = totalPedidos > 0 ? Math.round((totalMinutos / totalPedidos) * 10) / 10 : 0;
+  const tiempoMedioPedidoMin = totalPedidos > 0 ? Math.round((totalMinutosArmado / totalPedidos) * 10) / 10 : 0;
 
   return {
     totalPedidos,
@@ -39,40 +40,89 @@ export function calcularMetricasGlobales(registros: RegistroArmadoDocumento[]): 
   };
 }
 
+interface AcumuladorEmpleado {
+  pedidosArmado: number;
+  articulos: number;
+  minutosArmado: number;
+  minutosAtencionCliente: number;
+  minutosProduccion: number;
+  minutosOtros: number;
+  irregularidades: number;
+}
+
 export function calcularRendimientoPorEmpleado(registros: RegistroArmadoDocumento[]): RendimientoEmpleado[] {
-  const mapa = new Map<string, { pedidos: number; articulos: number; minutos: number; irregularidades: number }>();
+  const mapa = new Map<string, AcumuladorEmpleado>();
 
   registros.forEach((reg) => {
     reg.filas?.forEach((f) => {
       if (f.accionIrregularidad === 'ignorar') return;
       const emp = f.empleadoAsignado || f.nuevoEmpleado || reg.empleadoHeader;
-      const actual = mapa.get(emp) || { pedidos: 0, articulos: 0, minutos: 0, irregularidades: 0 };
-      actual.pedidos += 1;
-      actual.articulos += f.cantArticulos || 0;
-      actual.minutos += calcularDiferenciaMinutos(f.horaInicio, f.horaFin);
+      const actual = mapa.get(emp) || {
+        pedidosArmado: 0,
+        articulos: 0,
+        minutosArmado: 0,
+        minutosAtencionCliente: 0,
+        minutosProduccion: 0,
+        minutosOtros: 0,
+        irregularidades: 0,
+      };
 
-      const esIrregularActiva = Boolean(f.esIrregular) && !f.accionIrregularidad && Boolean(f.notaIrregularidad && f.notaIrregularidad.trim());
+      const minutos = calcularDiferenciaMinutos(f.horaInicio, f.horaFin);
+
+      if (f.tipoTarea === 'atencion_cliente') {
+        actual.minutosAtencionCliente += minutos;
+      } else if (f.tipoTarea === 'produccion') {
+        actual.minutosProduccion += minutos;
+      } else if (f.tipoTarea === 'otros') {
+        actual.minutosOtros += minutos;
+      } else {
+        // Armado regular por defecto
+        actual.pedidosArmado += 1;
+        actual.articulos += f.cantArticulos || 0;
+        actual.minutosArmado += minutos;
+      }
+
+      const esIrregularActiva =
+        Boolean(f.esIrregular) &&
+        !f.accionIrregularidad &&
+        (!f.tipoTarea || f.tipoTarea === 'armado') &&
+        Boolean(f.notaIrregularidad && f.notaIrregularidad.trim());
+
       if (esIrregularActiva) {
         actual.irregularidades += 1;
-        console.log(`[DIAG-IRREGULARIDAD] ACTIVA | DocID: ${reg.id} | EmpHeader: "${reg.empleadoHeader}" | FilaID: ${f.id} | Armador: "${emp}" | Nota: "${f.notaIrregularidad}" | Accion: "${f.accionIrregularidad}" | esIrreg: ${f.esIrregular}`);
-      } else if (f.esIrregular || f.notaIrregularidad || f.accionIrregularidad) {
-        console.log(`[DIAG-IRREGULARIDAD] RESUELTA/INACTIVA | DocID: ${reg.id} | EmpHeader: "${reg.empleadoHeader}" | FilaID: ${f.id} | Armador: "${emp}" | Nota: "${f.notaIrregularidad}" | Accion: "${f.accionIrregularidad}" | esIrreg: ${f.esIrregular}`);
       }
+
       mapa.set(emp, actual);
     });
   });
 
   const resultado: RendimientoEmpleado[] = [];
   mapa.forEach((val, emp) => {
-    const horasTrabajadas = Math.round((val.minutos / 60) * 10) / 10;
-    const velocidadArtHs = horasTrabajadas > 0 ? Math.round(val.articulos / horasTrabajadas) : 0;
-    const tiempoMedioMin = val.pedidos > 0 ? Math.round((val.minutos / val.pedidos) * 10) / 10 : 0;
+    const horasArmado = Math.round((val.minutosArmado / 60) * 10) / 10;
+    const atencionClienteHs = Math.round((val.minutosAtencionCliente / 60) * 10) / 10;
+    const produccionHs = Math.round((val.minutosProduccion / 60) * 10) / 10;
+    const otrosHs = Math.round((val.minutosOtros / 60) * 10) / 10;
+
+    const horasOtrasTareas = Math.round((atencionClienteHs + produccionHs + otrosHs) * 10) / 10;
+    const horasTotales = Math.round((horasArmado + horasOtrasTareas) * 10) / 10;
+
+    // Velocidad calculada exclusivamente sobre horas de armado
+    const velocidadArtHs = horasArmado > 0 ? Math.round(val.articulos / horasArmado) : 0;
+    const tiempoMedioMin = val.pedidosArmado > 0 ? Math.round((val.minutosArmado / val.pedidosArmado) * 10) / 10 : 0;
 
     resultado.push({
       empleado: emp,
-      totalPedidos: val.pedidos,
+      totalPedidos: val.pedidosArmado,
       totalArticulos: val.articulos,
-      horasTrabajadas,
+      horasTrabajadas: horasTotales,
+      horasArmado,
+      horasOtrasTareas,
+      horasTotales,
+      desgloseOtrasTareas: {
+        atencionClienteHs,
+        produccionHs,
+        otrosHs,
+      },
       velocidadArtHs,
       tiempoMedioMin,
       totalIrregularidades: val.irregularidades,
@@ -83,74 +133,7 @@ export function calcularRendimientoPorEmpleado(registros: RegistroArmadoDocument
 }
 
 export function exportarAXLSX(registros: RegistroArmadoDocumento[]): void {
-  const rend = calcularRendimientoPorEmpleado(registros);
-
-  const resumenData = rend.map((r) => ({
-    'Armador': r.empleado,
-    'Total Pedidos': r.totalPedidos,
-    'Total Artículos': r.totalArticulos,
-    'Horas Trabajadas': r.horasTrabajadas,
-    'Velocidad (Art/hs)': r.velocidadArtHs,
-    'Min / Pedido': r.tiempoMedioMin,
-    'Irregularidades': r.totalIrregularidades,
-  }));
-
-  const detalleFilas: any[] = [];
-  registros.forEach((reg) => {
-    reg.filas?.forEach((f) => {
-      if (f.accionIrregularidad === 'ignorar') return;
-      const esIrregularActiva = Boolean(f.esIrregular) && !f.accionIrregularidad;
-      detalleFilas.push({
-        'Empleado Cabecera': reg.empleadoHeader,
-        'Armador Asignado': f.empleadoAsignado || f.nuevoEmpleado || reg.empleadoHeader,
-        'Fecha': f.fecha,
-        'Hora Inicio': f.horaInicio,
-        'Hora Fin': f.horaFin,
-        'Cant. Artículos': f.cantArticulos,
-        'Es Irregular': esIrregularActiva ? 'SÍ' : 'NO',
-        'Nota Irregularidad': f.notaIrregularidad || '-',
-      });
-    });
-  });
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumenData), 'Resumen por Armador');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detalleFilas), 'Detalle de Pedidos');
-
-  const hoyStr = new Date().toISOString().split('T')[0];
-  XLSX.writeFile(wb, `flowpro_control_armado_${hoyStr}.xlsx`);
+  exportarXLSXBase(registros, calcularRendimientoPorEmpleado);
 }
 
-export function exportarIrregularidadesAXLSX(registros: RegistroArmadoDocumento[], empleadoFiltro?: string): void {
-  const irregularidadesFiltradas: any[] = [];
-
-  registros.forEach((reg) => {
-    reg.filas?.forEach((f) => {
-      if (f.accionIrregularidad === 'ignorar') return;
-      const esIrregularActiva = Boolean(f.esIrregular) && !f.accionIrregularidad;
-      if (esIrregularActiva) {
-        const armador = f.empleadoAsignado || f.nuevoEmpleado || reg.empleadoHeader;
-        if (!empleadoFiltro || armador === empleadoFiltro || reg.empleadoHeader === empleadoFiltro) {
-          irregularidadesFiltradas.push({
-            'Empleado Cabecera': reg.empleadoHeader,
-            'Armador Asignado': armador,
-            'Fecha': f.fecha,
-            'Hora Inicio': f.horaInicio,
-            'Hora Fin': f.horaFin,
-            'Cant. Artículos': f.cantArticulos,
-            'Nota Irregularidad': f.notaIrregularidad || 'Marca sin detalle',
-            'Archivo Origen': reg.nombreArchivoOriginal || 'Escaneo directo',
-            'Fecha Registro': reg.verificadoEn ? new Date(reg.verificadoEn).toLocaleString() : reg.creadoEn,
-          });
-        }
-      }
-    });
-  });
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(irregularidadesFiltradas), 'Irregularidades');
-
-  const hoyStr = new Date().toISOString().split('T')[0];
-  const sufijoEmp = empleadoFiltro ? `_${empleadoFiltro.replace(/\s+/g, '_')}` : '';
-  XLSX.writeFile(wb, `flowpro_irregularidades${sufijoEmp}_${hoyStr}.xlsx`);
-}
+export { exportarIrregularidadesAXLSX };

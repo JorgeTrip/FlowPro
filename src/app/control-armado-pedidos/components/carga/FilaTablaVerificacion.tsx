@@ -5,8 +5,8 @@ import React from 'react';
 import { RegistroArmadoDocumento, FilaArmado } from '../../types/armado';
 import { IrregularityResolver } from './IrregularityResolver';
 import { AlertTriangle, Trash2 } from 'lucide-react';
-
 import { normalizarFechaYYYYMMDD } from '../../services/firestoreService';
+import { formatearEtiquetaTarea } from '../../utils/detectorTareasAlternativas';
 
 interface FilaTablaVerificacionProps {
   fila: FilaArmado;
@@ -99,11 +99,25 @@ export function FilaTablaVerificacion({
         </td>
         <td className="px-1.5 py-2 font-medium">
           <div className="flex items-center space-x-1" title={armador}>
-            <span className="truncate max-w-[140px] block">{armador}</span>
+            <span className="truncate max-w-[120px] block">{armador}</span>
             {esIrregular && (
               <span className="flex items-center space-x-0.5 rounded bg-amber-200 px-1 py-0.5 text-[9px] font-bold text-amber-900 dark:bg-amber-900/80 dark:text-amber-200 shrink-0">
                 <AlertTriangle className="h-3 w-3" />
                 <span>Nota</span>
+              </span>
+            )}
+            {fila.tipoTarea && fila.tipoTarea !== 'armado' && (
+              <span
+                className={`flex items-center space-x-0.5 rounded px-1.5 py-0.5 text-[9px] font-bold shrink-0 ${
+                  fila.tipoTarea === 'atencion_cliente'
+                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200'
+                    : fila.tipoTarea === 'produccion'
+                    ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/60 dark:text-indigo-200'
+                    : 'bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-200'
+                }`}
+                title={formatearEtiquetaTarea(fila.tipoTarea, fila.detalleOtraTarea)}
+              >
+                <span>{formatearEtiquetaTarea(fila.tipoTarea, fila.detalleOtraTarea)}</span>
               </span>
             )}
           </div>
@@ -139,6 +153,16 @@ export function FilaTablaVerificacion({
                   notaIrregularidad: null,
                   accionIrregularidad: undefined,
                   nuevoEmpleado: undefined,
+                  tipoTarea: 'armado',
+                  detalleOtraTarea: undefined,
+                })
+              }
+              onDerivarTarea={(tipo, detalle) =>
+                actualizarFilaActual(fila.id, {
+                  tipoTarea: tipo,
+                  detalleOtraTarea: detalle,
+                  esIrregular: false,
+                  empleadoAsignado: actual.empleadoHeader,
                 })
               }
             />

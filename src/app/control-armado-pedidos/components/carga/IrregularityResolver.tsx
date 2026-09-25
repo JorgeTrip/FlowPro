@@ -1,15 +1,18 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 'use client';
 
-import React, { useState } from 'react';
-import { FilaArmado, AccionIrregularidad } from '../../types/armado';
+import React, { useState, useMemo } from 'react';
+import { FilaArmado, AccionIrregularidad, TipoTareaFila } from '../../types/armado';
 import { AlertTriangle, UserCheck, UserPlus, EyeOff, CheckCircle2 } from 'lucide-react';
+import { detectarSugerenciaTarea } from '../../utils/detectorTareasAlternativas';
+import { SelectorDerivacionTarea } from './SelectorDerivacionTarea';
 
 interface IrregularityResolverProps {
   fila: FilaArmado;
   empleadoHeader: string;
   onResolver: (accion: AccionIrregularidad, nuevoEmp?: string) => void;
   onNormalizar?: () => void;
+  onDerivarTarea?: (tipo: TipoTareaFila, detalle?: string) => void;
 }
 
 export function IrregularityResolver({
@@ -17,8 +20,13 @@ export function IrregularityResolver({
   empleadoHeader,
   onResolver,
   onNormalizar,
+  onDerivarTarea,
 }: IrregularityResolverProps) {
   const [nuevoNombre, setNuevoNombre] = useState(fila.nuevoEmpleado || '');
+
+  const sugerencia = useMemo(() => {
+    return detectarSugerenciaTarea(fila.notaIrregularidad);
+  }, [fila.notaIrregularidad]);
 
   const handleAplicarNuevo = (e?: React.SyntheticEvent) => {
     if (e && 'blur' in e.target && typeof (e.target as any).blur === 'function') {
@@ -110,6 +118,14 @@ export function IrregularityResolver({
           <span>Ignorar Fila</span>
         </button>
       </div>
+
+      {onDerivarTarea && (
+        <SelectorDerivacionTarea
+          sugerencia={sugerencia}
+          tipoActual={fila.tipoTarea}
+          onDerivar={onDerivarTarea}
+        />
+      )}
     </div>
   );
 }
