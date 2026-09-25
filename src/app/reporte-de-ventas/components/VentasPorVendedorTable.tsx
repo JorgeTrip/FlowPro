@@ -1,630 +1,196 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { ClipboardDocumentIcon, ClipboardDocumentCheckIcon } from '@heroicons/react/24/outline';
-import ExcelJS from 'exceljs';
-import { saveAs } from 'file-saver';
-import { MultiSelectDropdown } from './shared/ControlPanel';
+import { exportarExcelVendedor } from './vendedor/exportadorExcelVendedor';
+import {
+  procesarDatosTablaVendedor,
+  calcularTotalesVendedorComparativo,
+} from './vendedor/procesadorDatosVendedor';
+import { ControlesTablaVendedor } from './vendedor/ControlesTablaVendedor';
+import { CuerpoTablaVendedorAcumulado } from './vendedor/CuerpoTablaVendedorAcumulado';
+import { CuerpoTablaVendedorComparativo } from './vendedor/CuerpoTablaVendedorComparativo';
+import { FilaVendedorAcumulado, FilaVendedorComparativo } from './vendedor/types';
 
 interface VentasPorVendedorTableProps {
-    ventasPorVendedor: { resultado: Record<string, Record<string, { A: number; X: number; AX: number }>> };
-    cantidadesPorVendedor: { resultado: Record<string, Record<string, { A: number; X: number; AX: number }>> };
-    vendedorDebugLog?: string[];
+  ventasPorVendedor: { resultado: Record<string, Record<string, { A: number; X: number; AX: number }>> };
+  cantidadesPorVendedor: { resultado: Record<string, Record<string, { A: number; X: number; AX: number }>> };
+  vendedorDebugLog?: string[];
 }
 
-// Tipos internos para el procesamiento de datos
-interface FilaVendedorAcumulado {
-    vendedor: string;
-    importeA: number;
-    importeX: number;
-    cantidadA: number;
-    cantidadX: number;
-    total: number;
-    totalCantidad: number;
-}
+export const VentasPorVendedorTable: React.FC<VentasPorVendedorTableProps> = ({
+  ventasPorVendedor,
+  cantidadesPorVendedor,
+  vendedorDebugLog,
+}) => {
+  const [mostrarCantidad, setMostrarCantidad] = useState<boolean>(false);
+  const [mostrarTotales, setMostrarTotales] = useState<boolean>(true);
+  const [ordenAscendente, setOrdenAscendente] = useState<boolean>(false);
+  const [vendedoresSeleccionados, setVendedoresSeleccionados] = useState<string[]>([]);
+  const [mesesSeleccionados, setMesesSeleccionados] = useState<string[]>([]);
+  const [modoVista, setModoVista] = useState<'acumulado' | 'comparativo'>('acumulado');
+  const [mostrarVariacion, setMostrarVariacion] = useState<boolean>(true);
+  const [copied, setCopied] = useState(false);
 
-interface MesDato {
-    importeA: number;
-    importeX: number;
-    cantidadA: number;
-    cantidadX: number;
-    totalImporte: number;
-    totalCantidad: number;
-}
+  const meses = useMemo(
+    () => [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+    ],
+    []
+  );
 
-interface FilaVendedorComparativo {
-    vendedor: string;
-    totalGlobalImporte: number;
-    totalGlobalCantidad: number;
-    meses: Record<string, MesDato>;
-}
+  const mesesConDatos = useMemo(() => {
+    const months = new Set<string>();
+    Object.entries(ventasPorVendedor.resultado).forEach(([mes, vendedores]) => {
+      if (Object.values(vendedores).some((v) => v.AX !== 0)) months.add(mes);
+    });
+    Object.entries(cantidadesPorVendedor.resultado).forEach(([mes, vendedores]) => {
+      if (Object.values(vendedores).some((v) => v.AX !== 0)) months.add(mes);
+    });
+    return Array.from(months);
+  }, [ventasPorVendedor, cantidadesPorVendedor]);
 
-export const VentasPorVendedorTable = ({ ventasPorVendedor, cantidadesPorVendedor, vendedorDebugLog }: VentasPorVendedorTableProps) => {
-    const [mostrarCantidad, setMostrarCantidad] = useState<boolean>(false);
-    const [mostrarTotales, setMostrarTotales] = useState<boolean>(true);
-    const [ordenAscendente, setOrdenAscendente] = useState<boolean>(false);
-    const [vendedoresSeleccionados, setVendedoresSeleccionados] = useState<string[]>([]);
-    const [mesesSeleccionados, setMesesSeleccionados] = useState<string[]>([]);
-    const [modoVista, setModoVista] = useState<'acumulado' | 'comparativo'>('acumulado');
-    const [mostrarVariacion, setMostrarVariacion] = useState<boolean>(true);
-    const [copied, setCopied] = useState(false);
+  const todosLosVendedores = useMemo(() => {
+    const vendedores = new Set<string>();
+    Object.entries(ventasPorVendedor.resultado).forEach(([, subvendedores]) => {
+      Object.keys(subvendedores).forEach((subvendedor) => {
+        vendedores.add(subvendedor || 'Sin vendedor');
+      });
+    });
+    return Array.from(vendedores);
+  }, [ventasPorVendedor]);
 
-    const meses = useMemo(() => [
-        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ], []);
+  const vendedoresInicializados = useRef(false);
+  const mesesInicializados = useRef(false);
 
-    // Obtener todos los meses disponibles
-    const mesesConDatos = useMemo(() => {
-        const months = new Set<string>();
+  useEffect(() => {
+    if (!vendedoresInicializados.current && todosLosVendedores.length > 0) {
+      setVendedoresSeleccionados(todosLosVendedores);
+      vendedoresInicializados.current = true;
+    }
+  }, [todosLosVendedores]);
 
-        Object.entries(ventasPorVendedor.resultado).forEach(([mes, vendedores]) => {
-            const hasData = Object.values(vendedores).some(v => v.AX !== 0);
-            if (hasData) months.add(mes);
-        });
+  useEffect(() => {
+    if (!mesesInicializados.current && mesesConDatos.length > 0) {
+      setMesesSeleccionados(mesesConDatos);
+      mesesInicializados.current = true;
+    }
+  }, [mesesConDatos]);
 
-        Object.entries(cantidadesPorVendedor.resultado).forEach(([mes, vendedores]) => {
-            const hasData = Object.values(vendedores).some(v => v.AX !== 0);
-            if (hasData) months.add(mes);
-        });
+  const handleCopyLog = useCallback(async () => {
+    if (!vendedorDebugLog?.length) return;
+    try {
+      await navigator.clipboard.writeText(vendedorDebugLog.join('\n'));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      console.error('Error al copiar al portapapeles');
+    }
+  }, [vendedorDebugLog]);
 
-        return Array.from(months);
-    }, [ventasPorVendedor, cantidadesPorVendedor]);
-
-    // Obtener todos los vendedores disponibles
-    const todosLosVendedores = useMemo(() => {
-        const vendedores = new Set<string>();
-        Object.entries(ventasPorVendedor.resultado).forEach(([_, subvendedores]) => {
-            Object.keys(subvendedores).forEach(subvendedor => {
-                vendedores.add(subvendedor || 'Sin vendedor');
-            });
-        });
-        return Array.from(vendedores);
-    }, [ventasPorVendedor]);
-
-    // Flags para evitar reinicializar tras "Ninguno"/"Limpiar" — solo se ejecuta la primera vez
-    const vendedoresInicializados = useRef(false);
-    const mesesInicializados = useRef(false);
-
-    useEffect(() => {
-        if (!vendedoresInicializados.current && todosLosVendedores.length > 0) {
-            setVendedoresSeleccionados(todosLosVendedores);
-            vendedoresInicializados.current = true;
-        }
-    }, [todosLosVendedores]);
-
-    useEffect(() => {
-        if (!mesesInicializados.current && mesesConDatos.length > 0) {
-            setMesesSeleccionados(mesesConDatos);
-            mesesInicializados.current = true;
-        }
-    }, [mesesConDatos]);
-
-    const handleCopyLog = useCallback(async () => {
-        if (!vendedorDebugLog?.length) return;
-        try {
-            await navigator.clipboard.writeText(vendedorDebugLog.join('\n'));
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        } catch {
-            console.error('Error al copiar al portapapeles');
-        }
-    }, [vendedorDebugLog]);
-
-
-
-    // Procesar y filtrar datos
-    const datosProcesados = useMemo(() => {
-        if (modoVista === 'acumulado') {
-            const mapaAgrupado: Record<string, FilaVendedorAcumulado> = {};
-
-            mesesSeleccionados.forEach(mes => {
-                const subvendedores = ventasPorVendedor.resultado[mes] || {};
-                Object.entries(subvendedores).forEach(([_subvendedor, data]) => {
-                    const nombreVendedor = _subvendedor || 'Sin vendedor';
-
-                    if (vendedoresSeleccionados.includes(nombreVendedor)) {
-                        if (!mapaAgrupado[nombreVendedor]) {
-                            mapaAgrupado[nombreVendedor] = {
-                                vendedor: nombreVendedor,
-                                importeA: 0, importeX: 0, cantidadA: 0, cantidadX: 0, total: 0, totalCantidad: 0
-                            };
-                        }
-
-                        const cantidades = cantidadesPorVendedor.resultado[mes]?.[_subvendedor] || { A: 0, X: 0 };
-                        mapaAgrupado[nombreVendedor].importeA += data.A || 0;
-                        mapaAgrupado[nombreVendedor].importeX += data.X || 0;
-                        mapaAgrupado[nombreVendedor].cantidadA += cantidades.A || 0;
-                        mapaAgrupado[nombreVendedor].cantidadX += cantidades.X || 0;
-                        mapaAgrupado[nombreVendedor].total += (data.A || 0) + (data.X || 0);
-                        mapaAgrupado[nombreVendedor].totalCantidad += (cantidades.A || 0) + (cantidades.X || 0);
-                    }
-                });
-            });
-
-            const datos = Object.values(mapaAgrupado);
-            datos.sort((a, b) => {
-                const valorA = mostrarCantidad ? a.totalCantidad : a.total;
-                const valorB = mostrarCantidad ? b.totalCantidad : b.total;
-                return ordenAscendente ? valorA - valorB : valorB - valorA;
-            });
-            return datos;
-        } else {
-            // Modo Comparativo
-            const mapaComparativo: Record<string, FilaVendedorComparativo> = {};
-
-            vendedoresSeleccionados.forEach(vendedor => {
-                mapaComparativo[vendedor] = {
-                    vendedor,
-                    totalGlobalImporte: 0,
-                    totalGlobalCantidad: 0,
-                    meses: {}
-                };
-
-                mesesSeleccionados.forEach(mes => {
-                    const dataImp = ventasPorVendedor.resultado[mes]?.[vendedor] || { A: 0, X: 0 };
-                    const dataCant = cantidadesPorVendedor.resultado[mes]?.[vendedor] || { A: 0, X: 0 };
-
-                    const importeTotal = (dataImp.A || 0) + (dataImp.X || 0);
-                    const cantidadTotal = (dataCant.A || 0) + (dataCant.X || 0);
-
-                    mapaComparativo[vendedor].meses[mes] = {
-                        importeA: dataImp.A || 0,
-                        importeX: dataImp.X || 0,
-                        cantidadA: dataCant.A || 0,
-                        cantidadX: dataCant.X || 0,
-                        totalImporte: importeTotal,
-                        totalCantidad: cantidadTotal
-                    };
-
-                    mapaComparativo[vendedor].totalGlobalImporte += importeTotal;
-                    mapaComparativo[vendedor].totalGlobalCantidad += cantidadTotal;
-                });
-            });
-
-            const datos = Object.values(mapaComparativo).filter(d =>
-                mostrarCantidad ? d.totalGlobalCantidad > 0 : d.totalGlobalImporte > 0
-            );
-
-            datos.sort((a, b) => {
-                const valorA = mostrarCantidad ? a.totalGlobalCantidad : a.totalGlobalImporte;
-                const valorB = mostrarCantidad ? b.totalGlobalCantidad : b.totalGlobalImporte;
-                return ordenAscendente ? valorA - valorB : valorB - valorA;
-            });
-            return datos;
-        }
-    }, [ventasPorVendedor, cantidadesPorVendedor, vendedoresSeleccionados, mesesSeleccionados, mostrarCantidad, ordenAscendente, modoVista]);
-
-    const totalesAcumulados = useMemo(() => {
-        if (modoVista !== 'acumulado') return null;
-        return (datosProcesados as FilaVendedorAcumulado[]).reduce((acc, item) => ({
-            importeA: acc.importeA + item.importeA,
-            importeX: acc.importeX + item.importeX,
-            cantidadA: acc.cantidadA + item.cantidadA,
-            cantidadX: acc.cantidadX + item.cantidadX,
-            total: acc.total + item.total,
-            totalCantidad: acc.totalCantidad + item.totalCantidad
-        }), { importeA: 0, importeX: 0, cantidadA: 0, cantidadX: 0, total: 0, totalCantidad: 0 });
-    }, [datosProcesados, modoVista]);
-
-    const totalesComparativos = useMemo(() => {
-        if (modoVista !== 'comparativo') return null;
-
-        const totales = {
-            totalGlobalImporte: 0,
-            totalGlobalCantidad: 0,
-            meses: {} as Record<string, MesDato>
-        };
-
-        mesesSeleccionados.forEach(mes => {
-            totales.meses[mes] = { importeA: 0, importeX: 0, cantidadA: 0, cantidadX: 0, totalImporte: 0, totalCantidad: 0 };
-        });
-
-        (datosProcesados as FilaVendedorComparativo[]).forEach(item => {
-            totales.totalGlobalImporte += item.totalGlobalImporte;
-            totales.totalGlobalCantidad += item.totalGlobalCantidad;
-
-            mesesSeleccionados.forEach(mes => {
-                if (item.meses[mes]) {
-                    totales.meses[mes].importeA += item.meses[mes].importeA;
-                    totales.meses[mes].importeX += item.meses[mes].importeX;
-                    totales.meses[mes].cantidadA += item.meses[mes].cantidadA;
-                    totales.meses[mes].cantidadX += item.meses[mes].cantidadX;
-                    totales.meses[mes].totalImporte += item.meses[mes].totalImporte;
-                    totales.meses[mes].totalCantidad += item.meses[mes].totalCantidad;
-                }
-            });
-        });
-
-        return totales;
-    }, [datosProcesados, modoVista, mesesSeleccionados]);
-
-
-    const formatCurrency = (value: number) => value.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
-    const formatQuantity = (value: number) => value.toLocaleString('es-AR');
-
-    const exportarDatos = async () => {
-        let headers: string[] = [];
-        let rows: (string | number)[][] = [];
-
-        if (modoVista === 'acumulado') {
-            headers = mostrarCantidad
-                ? ['Vendedor', 'Cant. Facturas', 'Cant. Remitos', 'Total Cantidad']
-                : ['Vendedor', 'Imp. Facturas', 'Imp. Remitos', 'Total Importe'];
-
-            rows = (datosProcesados as FilaVendedorAcumulado[]).map((item: FilaVendedorAcumulado) => mostrarCantidad
-                ? [item.vendedor, item.cantidadA, item.cantidadX, item.totalCantidad]
-                : [item.vendedor, item.importeA, item.importeX, item.total]
-            );
-
-            if (mostrarTotales && totalesAcumulados) {
-                rows.push(mostrarCantidad
-                    ? ['TOTAL', totalesAcumulados.cantidadA, totalesAcumulados.cantidadX, totalesAcumulados.totalCantidad]
-                    : ['TOTAL', totalesAcumulados.importeA, totalesAcumulados.importeX, totalesAcumulados.total]
-                );
-            }
-        } else {
-            // Modo Comparativo Exp
-            headers = ['Vendedor'];
-            mesesSeleccionados.forEach(mes => {
-                headers.push(`${mes} (Facturas)`);
-                headers.push(`${mes} (Remitos)`);
-                headers.push(`${mes} (Total)`);
-                if (mostrarVariacion) {
-                    headers.push(`${mes} (Var %)`);
-                }
-            });
-            headers.push('TOTAL GLOBAL');
-
-            rows = (datosProcesados as FilaVendedorComparativo[]).map((item: FilaVendedorComparativo) => {
-                const row: (string | number)[] = [item.vendedor];
-                mesesSeleccionados.forEach((mes, index) => {
-                    const d = item.meses[mes];
-                    if (mostrarCantidad) {
-                        row.push(d.cantidadA, d.cantidadX, d.totalCantidad);
-                    } else {
-                        row.push(d.importeA, d.importeX, d.totalImporte);
-                    }
-                    if (mostrarVariacion) {
-                        let variacionStr = '-';
-                        if (index > 0) {
-                            const dataAnt = item.meses[mesesSeleccionados[index - 1]];
-                            const valAct = mostrarCantidad ? d.totalCantidad : d.totalImporte;
-                            const valAnt = mostrarCantidad ? dataAnt.totalCantidad : dataAnt.totalImporte;
-                            if (valAnt > 0) variacionStr = (((valAct - valAnt) / valAnt) * 100).toFixed(1) + '%';
-                        }
-                        row.push(variacionStr);
-                    }
-                });
-                row.push(mostrarCantidad ? item.totalGlobalCantidad : item.totalGlobalImporte);
-                return row;
-            });
-
-            if (mostrarTotales && totalesComparativos) {
-                const totalRow: (string | number)[] = ['TOTAL'];
-                mesesSeleccionados.forEach((mes, index) => {
-                    const d = totalesComparativos.meses[mes];
-                    if (mostrarCantidad) {
-                        totalRow.push(d.cantidadA, d.cantidadX, d.totalCantidad);
-                    } else {
-                        totalRow.push(d.importeA, d.importeX, d.totalImporte);
-                    }
-                    if (mostrarVariacion) {
-                        let variacionStr = '-';
-                        if (index > 0) {
-                            const dataAnt = totalesComparativos.meses[mesesSeleccionados[index - 1]];
-                            const valAct = mostrarCantidad ? d.totalCantidad : d.totalImporte;
-                            const valAnt = mostrarCantidad ? dataAnt.totalCantidad : dataAnt.totalImporte;
-                            if (valAnt > 0) variacionStr = (((valAct - valAnt) / valAnt) * 100).toFixed(1) + '%';
-                        }
-                        totalRow.push(variacionStr);
-                    }
-                });
-                totalRow.push(mostrarCantidad ? totalesComparativos.totalGlobalCantidad : totalesComparativos.totalGlobalImporte);
-                rows.push(totalRow);
-            }
-        }
-
-        const workbook = new ExcelJS.Workbook();
-        const sheet = workbook.addWorksheet('Ventas');
-
-        // Estilo de encabezado básico (opcional)
-        const headerRow = sheet.addRow(headers);
-        headerRow.font = { bold: true };
-
-        rows.forEach(row => sheet.addRow(row));
-
-        const buffer = await workbook.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        saveAs(blob, `ventas-por-vendedor-${mostrarCantidad ? 'cantidad' : 'importe'}-${modoVista}.xlsx`);
-    };
-
-    return (
-        <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-            {/* Header con controles */}
-            <div className="bg-gray-50 dark:bg-gray-700 px-4 py-3">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                    <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-                        Ventas por Vendedor
-                    </h4>
-
-                    <div className="flex flex-wrap items-center gap-3">
-                        {/* Botón de debug log */}
-                        {vendedorDebugLog && vendedorDebugLog.length > 0 && (
-                            <button
-                                onClick={handleCopyLog}
-                                className="inline-flex items-center px-2 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 dark:bg-gray-600 dark:text-gray-400 dark:border-gray-500 dark:hover:bg-gray-500 transition-colors"
-                                title="Copiar log de cruce de vendedores al portapapeles"
-                            >
-                                {copied ? (
-                                    <><ClipboardDocumentCheckIcon className="w-3.5 h-3.5 mr-1 text-green-500" /> Copiado</>
-                                ) : (
-                                    <><ClipboardDocumentIcon className="w-3.5 h-3.5 mr-1" /> Log debug</>
-                                )}
-                            </button>
-                        )}
-
-                        {/* Filtro de Meses */}
-                        <MultiSelectDropdown
-                            label="Meses"
-                            options={meses}
-                            selected={mesesSeleccionados}
-                            onChange={setMesesSeleccionados}
-                            optionsWithData={mesesConDatos}
-                        />
-
-                        {/* Filtro de vendedores */}
-                        <MultiSelectDropdown
-                            label="Vendedores"
-                            options={todosLosVendedores}
-                            selected={vendedoresSeleccionados}
-                            onChange={setVendedoresSeleccionados}
-                        />
-
-                        {/* Switch ordenamiento */}
-                        <label className="flex items-center cursor-pointer">
-                            <input type="checkbox" checked={ordenAscendente} onChange={(e) => setOrdenAscendente(e.target.checked)} className="sr-only peer" />
-                            <div className="border border-gray-300 dark:border-gray-500 relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                            <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">{ordenAscendente ? '↑ Asc' : '↓ Desc'}</span>
-                        </label>
-
-                        {/* Switch cantidad/importe */}
-                        <label className="flex items-center cursor-pointer">
-                            <input type="checkbox" checked={mostrarCantidad} onChange={(e) => setMostrarCantidad(e.target.checked)} className="sr-only peer" />
-                            <div className="border border-gray-300 dark:border-gray-500 relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                            <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">{mostrarCantidad ? 'Cantidad' : 'Importe'}</span>
-                        </label>
-
-                        {/* Switch mostrar totales */}
-                        <label className="flex items-center cursor-pointer">
-                            <input type="checkbox" checked={mostrarTotales} onChange={(e) => setMostrarTotales(e.target.checked)} className="sr-only peer" />
-                            <div className="border border-gray-300 dark:border-gray-500 relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                            <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Totales</span>
-                        </label>
-
-                        {/* Switch mostrar variación (solo en modo comparativo) */}
-                        {modoVista === 'comparativo' && (
-                            <label className="flex items-center cursor-pointer">
-                                <input type="checkbox" checked={mostrarVariacion} onChange={(e) => setMostrarVariacion(e.target.checked)} className="sr-only peer" />
-                                <div className="border border-gray-300 dark:border-gray-500 relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                                <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Variación %</span>
-                            </label>
-                        )}
-
-                        {/* Toggle Acumulado/Comparativo */}
-                        <select
-                            value={modoVista}
-                            onChange={(e) => setModoVista(e.target.value as 'acumulado' | 'comparativo')}
-                            className="bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2"
-                        >
-                            <option value="acumulado">Acumulado</option>
-                            <option value="comparativo" disabled={mesesSeleccionados.length < 2}>Comparativo</option>
-                        </select>
-
-                        {/* Botón exportar */}
-                        <button onClick={exportarDatos} className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">
-                            📊 Exportar
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Tabla */}
-            <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead className="bg-gray-50 dark:bg-gray-700">
-                        {modoVista === 'acumulado' ? (
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                    Vendedor
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                    {mostrarCantidad ? 'Cant. Facturas' : 'Imp. Facturas'}
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                    {mostrarCantidad ? 'Cant. Remitos' : 'Imp. Remitos'}
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                    {mostrarCantidad ? 'Total Cantidad' : 'Total Importe'}
-                                </th>
-                            </tr>
-                        ) : (
-                            // Headers para comparativo
-                            <tr>
-                                <th rowSpan={2} className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 align-middle">
-                                    Vendedor
-                                </th>
-                                {mesesSeleccionados.map(mes => (
-                                    <th key={mes} colSpan={mostrarVariacion ? 4 : 3} className="px-4 py-2 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                                        {mes}
-                                    </th>
-                                ))}
-                                <th rowSpan={2} className="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 align-middle">
-                                    TOTAL GLOBAL
-                                </th>
-                            </tr>
-                        )}
-                        {modoVista === 'comparativo' && (
-                            <tr>
-                                {mesesSeleccionados.map(mes => (
-                                    <React.Fragment key={`${mes}-sub`}>
-                                        <th className="px-4 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                                            {mostrarCantidad ? 'Fact' : 'Fact'}
-                                        </th>
-                                        <th className="px-4 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                                            {mostrarCantidad ? 'Rem' : 'Rem'}
-                                        </th>
-                                        <th className="px-4 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                                            Total
-                                        </th>
-                                        {mostrarVariacion && (
-                                            <th className="px-4 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700">
-                                                Var %
-                                            </th>
-                                        )}
-                                    </React.Fragment>
-                                ))}
-                            </tr>
-                        )}
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
-                        {modoVista === 'acumulado' ? (
-                            (datosProcesados as FilaVendedorAcumulado[]).map((item, index) => (
-                                <tr key={item.vendedor} className={index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'}>
-                                    <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                                        👤 {item.vendedor}
-                                    </td>
-                                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                        {mostrarCantidad ? formatQuantity(item.cantidadA) : formatCurrency(item.importeA)}
-                                    </td>
-                                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                                        {mostrarCantidad ? formatQuantity(item.cantidadX) : formatCurrency(item.importeX)}
-                                    </td>
-                                    <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                                        {mostrarCantidad ? formatQuantity(item.totalCantidad) : formatCurrency(item.total)}
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
-                            (datosProcesados as FilaVendedorComparativo[]).map((item, index) => (
-                                <tr key={item.vendedor} className={index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'}>
-                                    <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-700">
-                                        👤 {item.vendedor}
-                                    </td>
-                                    {mesesSeleccionados.map((mes, mesIndex) => {
-                                        const mesData = item.meses[mes];
-                                        let variacion = 0;
-                                        let tieneVariacion = false;
-                                        if (mesIndex > 0) {
-                                            const dataAnt = item.meses[mesesSeleccionados[mesIndex - 1]];
-                                            const valAct = mostrarCantidad ? mesData.totalCantidad : mesData.totalImporte;
-                                            const valAnt = mostrarCantidad ? dataAnt.totalCantidad : dataAnt.totalImporte;
-                                            if (valAnt > 0) {
-                                                variacion = ((valAct - valAnt) / valAnt) * 100;
-                                                tieneVariacion = true;
-                                            }
-                                        }
-
-                                        return (
-                                            <React.Fragment key={`${item.vendedor}-${mes}`}>
-                                                <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-gray-500 dark:text-gray-400">
-                                                    {mostrarCantidad ? formatQuantity(mesData.cantidadA) : formatCurrency(mesData.importeA)}
-                                                </td>
-                                                <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-gray-500 dark:text-gray-400">
-                                                    {mostrarCantidad ? formatQuantity(mesData.cantidadX) : formatCurrency(mesData.importeX)}
-                                                </td>
-                                                <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium text-gray-900 dark:text-white">
-                                                    {mostrarCantidad ? formatQuantity(mesData.totalCantidad) : formatCurrency(mesData.totalImporte)}
-                                                </td>
-                                                {mostrarVariacion && (
-                                                    <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium border-r border-gray-200 dark:border-gray-700">
-                                                        {tieneVariacion ? (
-                                                            <span className={variacion > 0 ? 'text-green-600 dark:text-green-400' : variacion < 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}>
-                                                                {variacion > 0 ? '+' : ''}{variacion.toFixed(1)}%
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-gray-400 dark:text-gray-600">-</span>
-                                                        )}
-                                                    </td>
-                                                )}
-                                            </React.Fragment>
-                                        );
-                                    })}
-                                    <td className="whitespace-nowrap px-6 py-4 text-center text-sm font-bold text-blue-700 dark:text-blue-300">
-                                        {mostrarCantidad ? formatQuantity(item.totalGlobalCantidad) : formatCurrency(item.totalGlobalImporte)}
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-
-                        {/* Fila de totales */}
-                        {mostrarTotales && modoVista === 'acumulado' && totalesAcumulados && (
-                            <tr className="bg-blue-50 dark:bg-blue-900/20 border-t-2 border-blue-200 dark:border-blue-700">
-                                <td className="whitespace-nowrap px-6 py-4 text-sm font-bold text-blue-900 dark:text-blue-300">
-                                    TOTAL
-                                </td>
-                                <td className="whitespace-nowrap px-6 py-4 text-sm font-bold text-blue-900 dark:text-blue-300">
-                                    {mostrarCantidad ? formatQuantity(totalesAcumulados.cantidadA) : formatCurrency(totalesAcumulados.importeA)}
-                                </td>
-                                <td className="whitespace-nowrap px-6 py-4 text-sm font-bold text-blue-900 dark:text-blue-300">
-                                    {mostrarCantidad ? formatQuantity(totalesAcumulados.cantidadX) : formatCurrency(totalesAcumulados.importeX)}
-                                </td>
-                                <td className="whitespace-nowrap px-6 py-4 text-sm font-bold text-blue-900 dark:text-blue-300">
-                                    {mostrarCantidad ? formatQuantity(totalesAcumulados.totalCantidad) : formatCurrency(totalesAcumulados.total)}
-                                </td>
-                            </tr>
-                        )}
-                        {mostrarTotales && modoVista === 'comparativo' && totalesComparativos && (
-                            <tr className="bg-blue-50 dark:bg-blue-900/20 border-t-2 border-blue-200 dark:border-blue-700">
-                                <td className="whitespace-nowrap px-6 py-4 text-sm font-bold text-blue-900 dark:text-blue-300 border-r border-blue-200 dark:border-blue-700">
-                                    TOTAL
-                                </td>
-                                {mesesSeleccionados.map((mes, mesIndex) => {
-                                    const mesTotal = totalesComparativos.meses[mes];
-                                    let variacion = 0;
-                                    let tieneVariacion = false;
-                                    if (mesIndex > 0) {
-                                        const totalAnt = totalesComparativos.meses[mesesSeleccionados[mesIndex - 1]];
-                                        const valAct = mostrarCantidad ? mesTotal.totalCantidad : mesTotal.totalImporte;
-                                        const valAnt = mostrarCantidad ? totalAnt.totalCantidad : totalAnt.totalImporte;
-                                        if (valAnt > 0) {
-                                            variacion = ((valAct - valAnt) / valAnt) * 100;
-                                            tieneVariacion = true;
-                                        }
-                                    }
-
-                                    return (
-                                        <React.Fragment key={`total-${mes}`}>
-                                            <td className="whitespace-nowrap px-4 py-4 text-right text-sm font-bold text-blue-900 dark:text-blue-300">
-                                                {mostrarCantidad ? formatQuantity(mesTotal.cantidadA) : formatCurrency(mesTotal.importeA)}
-                                            </td>
-                                            <td className="whitespace-nowrap px-4 py-4 text-right text-sm font-bold text-blue-900 dark:text-blue-300">
-                                                {mostrarCantidad ? formatQuantity(mesTotal.cantidadX) : formatCurrency(mesTotal.importeX)}
-                                            </td>
-                                            <td className="whitespace-nowrap px-4 py-4 text-right text-sm font-bold text-blue-900 dark:text-blue-300">
-                                                {mostrarCantidad ? formatQuantity(mesTotal.totalCantidad) : formatCurrency(mesTotal.totalImporte)}
-                                            </td>
-                                            <td className="whitespace-nowrap px-4 py-4 text-right text-sm font-bold border-r border-blue-200 dark:border-blue-700">
-                                                {tieneVariacion ? (
-                                                    <span className={variacion > 0 ? 'text-green-600 dark:text-green-400' : variacion < 0 ? 'text-red-600 dark:text-red-400' : 'text-blue-800 dark:text-blue-400'}>
-                                                        {variacion > 0 ? '+' : ''}{variacion.toFixed(1)}%
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-blue-400 dark:text-blue-600">-</span>
-                                                )}
-                                            </td>
-                                        </React.Fragment>
-                                    );
-                                })}
-                                <td className="whitespace-nowrap px-6 py-4 text-center text-sm font-bold text-blue-900 dark:text-blue-300">
-                                    {mostrarCantidad ? formatQuantity(totalesComparativos.totalGlobalCantidad) : formatCurrency(totalesComparativos.totalGlobalImporte)}
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  const datosProcesados = useMemo(() => {
+    return procesarDatosTablaVendedor(
+      modoVista,
+      ventasPorVendedor,
+      cantidadesPorVendedor,
+      vendedoresSeleccionados,
+      mesesSeleccionados,
+      mostrarCantidad,
+      ordenAscendente
     );
-};
+  }, [modoVista, ventasPorVendedor, cantidadesPorVendedor, vendedoresSeleccionados, mesesSeleccionados, mostrarCantidad, ordenAscendente]);
 
+  const totalesAcumulados = useMemo(() => {
+    if (modoVista !== 'acumulado') return null;
+    return (datosProcesados as FilaVendedorAcumulado[]).reduce(
+      (acc, item) => ({
+        importeA: acc.importeA + item.importeA,
+        importeX: acc.importeX + item.importeX,
+        cantidadA: acc.cantidadA + item.cantidadA,
+        cantidadX: acc.cantidadX + item.cantidadX,
+        total: acc.total + item.total,
+        totalCantidad: acc.totalCantidad + item.totalCantidad,
+      }),
+      { importeA: 0, importeX: 0, cantidadA: 0, cantidadX: 0, total: 0, totalCantidad: 0 }
+    );
+  }, [datosProcesados, modoVista]);
+
+  const totalesComparativos = useMemo(() => {
+    if (modoVista !== 'comparativo') return null;
+    return calcularTotalesVendedorComparativo(
+      datosProcesados as FilaVendedorComparativo[],
+      mesesSeleccionados
+    );
+  }, [datosProcesados, modoVista, mesesSeleccionados]);
+
+  const formatCurrency = (value: number) =>
+    value.toLocaleString('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
+  const formatQuantity = (value: number) => value.toLocaleString('es-AR');
+
+  const handleExportar = () => {
+    exportarExcelVendedor(
+      modoVista,
+      datosProcesados,
+      totalesAcumulados,
+      totalesComparativos,
+      mesesSeleccionados,
+      mostrarCantidad,
+      mostrarTotales,
+      mostrarVariacion
+    );
+  };
+
+  return (
+    <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+      <ControlesTablaVendedor
+        vendedorDebugLog={vendedorDebugLog}
+        copied={copied}
+        onCopyLog={handleCopyLog}
+        meses={meses}
+        mesesSeleccionados={mesesSeleccionados}
+        setMesesSeleccionados={setMesesSeleccionados}
+        mesesConDatos={mesesConDatos}
+        todosLosVendedores={todosLosVendedores}
+        vendedoresSeleccionados={vendedoresSeleccionados}
+        setVendedoresSeleccionados={setVendedoresSeleccionados}
+        ordenAscendente={ordenAscendente}
+        setOrdenAscendente={setOrdenAscendente}
+        mostrarCantidad={mostrarCantidad}
+        setMostrarCantidad={setMostrarCantidad}
+        mostrarTotales={mostrarTotales}
+        setMostrarTotales={setMostrarTotales}
+        mostrarVariacion={mostrarVariacion}
+        setMostrarVariacion={setMostrarVariacion}
+        modoVista={modoVista}
+        setModoVista={setModoVista}
+        onExportar={handleExportar}
+      />
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          {modoVista === 'acumulado' ? (
+            <CuerpoTablaVendedorAcumulado
+              datos={datosProcesados as FilaVendedorAcumulado[]}
+              totales={totalesAcumulados}
+              mostrarCantidad={mostrarCantidad}
+              mostrarTotales={mostrarTotales}
+              formatCurrency={formatCurrency}
+              formatQuantity={formatQuantity}
+            />
+          ) : (
+            <CuerpoTablaVendedorComparativo
+              datos={datosProcesados as FilaVendedorComparativo[]}
+              totales={totalesComparativos}
+              mesesSeleccionados={mesesSeleccionados}
+              mostrarCantidad={mostrarCantidad}
+              mostrarTotales={mostrarTotales}
+              mostrarVariacion={mostrarVariacion}
+              formatCurrency={formatCurrency}
+              formatQuantity={formatQuantity}
+            />
+          )}
+        </table>
+      </div>
+    </div>
+  );
+};
