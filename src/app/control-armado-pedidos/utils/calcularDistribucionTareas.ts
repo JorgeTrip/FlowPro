@@ -96,7 +96,7 @@ export function calcularDistribucionTareasPorEmpleado(
     const porcOtros = calcPorcentaje(horasOtros);
 
     const itemsGrafico: ItemGraficoTorta[] = [
-      { name: 'Armado', value: horasArmado, color: COLORES_TAREAS.armado, porcentaje: porcArmado },
+      { name: 'Armado de Pedidos', value: horasArmado, color: COLORES_TAREAS.armado, porcentaje: porcArmado },
       { name: 'Atención al Cliente', value: horasAtencionCliente, color: COLORES_TAREAS.atencionCliente, porcentaje: porcAtencion },
       { name: 'Producción', value: horasProduccion, color: COLORES_TAREAS.produccion, porcentaje: porcProduccion },
       { name: 'Otras Tareas', value: horasOtros, color: COLORES_TAREAS.otros, porcentaje: porcOtros },

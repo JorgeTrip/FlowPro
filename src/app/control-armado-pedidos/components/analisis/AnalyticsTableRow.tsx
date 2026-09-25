@@ -5,6 +5,8 @@ import React from 'react';
 import { User } from 'lucide-react';
 import type { RendimientoEmpleado } from '../../types/armado';
 import type { InfoMes, MetricasMesEmpleado } from '../../utils/monthlyMetricsCalculator';
+import { formatearVariacionPorcentual } from '../../utils/calculadorVariacionMensual';
+import { CeldaVariacionPorcentual } from './CeldaVariacionPorcentual';
 
 interface AnalyticsTableRowProps {
   rendimiento: RendimientoEmpleado;
@@ -18,7 +20,6 @@ export function AnalyticsTableRow({
   detallePorMes,
 }: AnalyticsTableRowProps) {
   const tieneMultiplesMeses = meses.length > 1;
-
   const desgloseTooltip = `Desglose: Atención Cliente: ${r.desgloseOtrasTareas?.atencionClienteHs || 0} hs | Producción: ${r.desgloseOtrasTareas?.produccionHs || 0} hs | Otras Tareas: ${r.desgloseOtrasTareas?.otrosHs || 0} hs`;
 
   return (
@@ -52,10 +53,7 @@ export function AnalyticsTableRow({
       <td className="px-2.5 py-3 text-center font-bold text-gray-900 dark:text-gray-100">
         {r.horasTotales ?? r.horasTrabajadas} hs
       </td>
-      <td
-        className="px-2.5 py-3 text-center font-bold text-blue-600 dark:text-blue-400"
-        title="Calculada exclusivamente sobre horas de armado"
-      >
+      <td className="px-2.5 py-3 text-center font-bold text-blue-600 dark:text-blue-400" title="Calculada sobre horas de armado">
         {r.velocidadArtHs} Art/h
       </td>
       <td className="px-2.5 py-3 text-center">{r.tiempoMedioMin} min</td>
@@ -69,48 +67,83 @@ export function AnalyticsTableRow({
         )}
       </td>
 
-      {/* Bloques por cada mes (si hay múltiples meses) */}
+      {/* Bloques por cada mes */}
       {tieneMultiplesMeses &&
-        meses.map((mes) => {
+        meses.map((mes, idx) => {
           const stats = detallePorMes?.get(mes.clave);
+          const statsAnt = idx > 0 ? detallePorMes?.get(meses[idx - 1].clave) : undefined;
+          const esPrimerMes = idx === 0;
+
           if (!stats || (stats.pedidos === 0 && stats.horasTotales === 0)) {
+            const columnasVacias = esPrimerMes ? 5 : 10;
             return (
               <React.Fragment key={`td-${r.empleado}-${mes.clave}`}>
-                <td className="px-2 py-3 text-center text-gray-400 text-[11px]">-</td>
-                <td className="px-2 py-3 text-center text-gray-400 text-[11px]">-</td>
-                <td className="px-2 py-3 text-center text-gray-400 text-[11px]">-</td>
-                <td className="px-2 py-3 text-center text-gray-400 text-[11px]">-</td>
-                <td className="px-2 py-3 text-center text-gray-400 text-[11px] border-r border-gray-200 dark:border-gray-800 last:border-r-0">
-                  -
-                </td>
+                {Array.from({ length: columnasVacias }).map((_, cIdx) => (
+                  <td
+                    key={`td-empty-${cIdx}`}
+                    className={`px-1.5 py-3 text-center text-gray-400 text-[10px] ${
+                      cIdx === columnasVacias - 1 ? 'border-r border-gray-200 dark:border-gray-800 last:border-r-0' : ''
+                    }`}
+                  >
+                    -
+                  </td>
+                ))}
               </React.Fragment>
             );
           }
 
           const desgloseMesTooltip = `Desglose ${mes.etiqueta}: Atención Cliente: ${stats.desgloseOtrasTareas.atencionClienteHs} hs | Producción: ${stats.desgloseOtrasTareas.produccionHs} hs | Otras Tareas: ${stats.desgloseOtrasTareas.otrosHs} hs`;
 
+          // Primer mes: solo métricas base
+          if (esPrimerMes) {
+            return (
+              <React.Fragment key={`td-${r.empleado}-${mes.clave}`}>
+                <td className="px-2 py-3 text-center text-[11px] font-medium">{stats.pedidos}</td>
+                <td className="px-2 py-3 text-center text-[11px]">{stats.articulos}</td>
+                <td className="px-2 py-3 text-center text-[11px] font-semibold text-gray-800 dark:text-gray-200">{stats.horasArmado}h</td>
+                <td className="px-2 py-3 text-center text-[11px]">
+                  {stats.horasOtrasTareas > 0 ? (
+                    <span className="rounded bg-blue-50 px-1 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 cursor-help" title={desgloseMesTooltip}>
+                      {stats.horasOtrasTareas}h
+                    </span>
+                  ) : <span className="text-gray-400">0h</span>}
+                </td>
+                <td className="px-2 py-3 text-center text-[11px] font-bold text-emerald-600 dark:text-emerald-400 border-r border-gray-200 dark:border-gray-800">
+                  {stats.velocidadArtHs} Art/h
+                </td>
+              </React.Fragment>
+            );
+          }
+
+          // Meses posteriores: indicador + variación con mes anterior
+          const varPed = formatearVariacionPorcentual(stats.pedidos, statsAnt?.pedidos ?? 0);
+          const varArt = formatearVariacionPorcentual(stats.articulos, statsAnt?.articulos ?? 0);
+          const varArm = formatearVariacionPorcentual(stats.horasArmado, statsAnt?.horasArmado ?? 0);
+          const varOtr = formatearVariacionPorcentual(stats.horasOtrasTareas, statsAnt?.horasOtrasTareas ?? 0);
+          const varVel = formatearVariacionPorcentual(stats.velocidadArtHs, statsAnt?.velocidadArtHs ?? 0);
+
           return (
             <React.Fragment key={`td-${r.empleado}-${mes.clave}`}>
-              <td className="px-2 py-3 text-center text-[11px] font-medium">{stats.pedidos}</td>
-              <td className="px-2 py-3 text-center text-[11px]">{stats.articulos}</td>
-              <td className="px-2 py-3 text-center text-[11px] font-semibold text-gray-800 dark:text-gray-200">
-                {stats.horasArmado}h
-              </td>
-              <td className="px-2 py-3 text-center text-[11px]">
+              <td className="px-1.5 py-3 text-center text-[11px] font-medium">{stats.pedidos}</td>
+              <CeldaVariacionPorcentual variacion={varPed} />
+
+              <td className="px-1.5 py-3 text-center text-[11px]">{stats.articulos}</td>
+              <CeldaVariacionPorcentual variacion={varArt} />
+
+              <td className="px-1.5 py-3 text-center text-[11px] font-semibold text-gray-800 dark:text-gray-200">{stats.horasArmado}h</td>
+              <CeldaVariacionPorcentual variacion={varArm} />
+
+              <td className="px-1.5 py-3 text-center text-[11px]">
                 {stats.horasOtrasTareas > 0 ? (
-                  <span
-                    className="rounded bg-blue-50 px-1 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 cursor-help"
-                    title={desgloseMesTooltip}
-                  >
+                  <span className="rounded bg-blue-50 px-1 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 cursor-help" title={desgloseMesTooltip}>
                     {stats.horasOtrasTareas}h
                   </span>
-                ) : (
-                  <span className="text-gray-400">0h</span>
-                )}
+                ) : <span className="text-gray-400">0h</span>}
               </td>
-              <td className="px-2 py-3 text-center text-[11px] font-bold text-emerald-600 dark:text-emerald-400 border-r border-gray-200 dark:border-gray-800 last:border-r-0">
-                {stats.velocidadArtHs} Art/h
-              </td>
+              <CeldaVariacionPorcentual variacion={varOtr} />
+
+              <td className="px-1.5 py-3 text-center text-[11px] font-bold text-emerald-600 dark:text-emerald-400">{stats.velocidadArtHs}</td>
+              <CeldaVariacionPorcentual variacion={varVel} bordeDerecho />
             </React.Fragment>
           );
         })}

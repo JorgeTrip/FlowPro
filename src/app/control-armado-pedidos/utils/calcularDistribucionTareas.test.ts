@@ -81,6 +81,6 @@ test('calcularDistribucionTareasPorEmpleado desglosa con exactitud horas y porce
 
   // Comprobar items para el gráfico de torta
   assert.equal(carlos.itemsGrafico.length, 4);
-  assert.equal(carlos.itemsGrafico[0].name, 'Armado');
+  assert.equal(carlos.itemsGrafico[0].name, 'Armado de Pedidos');
   assert.equal(carlos.itemsGrafico[0].value, 2.0);
 });

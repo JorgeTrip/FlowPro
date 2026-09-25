@@ -44,7 +44,7 @@ export function AnalyticsTable({ rendimiento, registros }: AnalyticsTableProps) 
       });
   }, [rendimiento, busqueda, filtroArmador, criterioOrden]);
 
-  const totalColumnas = meses.length > 1 ? 9 + meses.length * 5 : 9;
+  const totalColumnas = meses.length > 1 ? 9 + 5 + (meses.length - 1) * 10 : 9;
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-800 dark:bg-[#1C1C1E] space-y-4">

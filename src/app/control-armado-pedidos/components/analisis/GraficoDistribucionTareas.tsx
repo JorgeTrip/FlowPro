@@ -5,7 +5,8 @@ import React, { useState, useMemo } from 'react';
 import type { RegistroArmadoDocumento } from '../../types/armado';
 import { calcularDistribucionTareasPorEmpleado, COLORES_TAREAS } from '../../utils/calcularDistribucionTareas';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
-import { PieChart as PieIcon, Clock, Users, User } from 'lucide-react';
+import { PieChart as PieIcon, Users, User } from 'lucide-react';
+import { TarjetasDesgloseTareas } from './TarjetasDesgloseTareas';
 
 interface GraficoDistribucionTareasProps {
   registros: RegistroArmadoDocumento[];
@@ -22,7 +23,6 @@ export function GraficoDistribucionTareas({ registros }: GraficoDistribucionTare
     return distribuciones.map((d) => d.empleado);
   }, [distribuciones]);
 
-  // Si se selecciona "todos", calcular consolidado
   const datosDistribucion = useMemo(() => {
     if (distribuciones.length === 0) return null;
 
@@ -30,12 +30,7 @@ export function GraficoDistribucionTareas({ registros }: GraficoDistribucionTare
       return distribuciones.find((d) => d.empleado === empleadoSeleccionado) || null;
     }
 
-    // Consolidado de todo el equipo
-    let armHs = 0;
-    let atenHs = 0;
-    let prodHs = 0;
-    let otrHs = 0;
-
+    let armHs = 0, atenHs = 0, prodHs = 0, otrHs = 0;
     distribuciones.forEach((d) => {
       armHs += d.horasArmado;
       atenHs += d.horasAtencionCliente;
@@ -58,12 +53,7 @@ export function GraficoDistribucionTareas({ registros }: GraficoDistribucionTare
       horasProduccion: prod,
       horasOtros: otr,
       horasTotales: tot,
-      porcentajes: {
-        armado: calcP(arm),
-        atencionCliente: calcP(aten),
-        produccion: calcP(prod),
-        otros: calcP(otr),
-      },
+      porcentajes: { armado: calcP(arm), atencionCliente: calcP(aten), produccion: calcP(prod), otros: calcP(otr) },
       itemsGrafico: [
         { name: 'Armado de Pedidos', value: arm, color: COLORES_TAREAS.armado, porcentaje: calcP(arm) },
         { name: 'Atención al Cliente', value: aten, color: COLORES_TAREAS.atencionCliente, porcentaje: calcP(aten) },
@@ -73,11 +63,32 @@ export function GraficoDistribucionTareas({ registros }: GraficoDistribucionTare
     };
   }, [distribuciones, empleadoSeleccionado]);
 
-  if (!datosDistribucion || datosDistribucion.horasTotales === 0) {
-    return null;
-  }
+  if (!datosDistribucion || datosDistribucion.horasTotales === 0) return null;
 
   const itemsConHoras = datosDistribucion.itemsGrafico.filter((it) => it.value > 0);
+
+  const renderEtiquetaPorcentaje = (props: any) => {
+    const { cx, cy, midAngle, innerRadius, outerRadius, payload, percent } = props;
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.55;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    const pVal = payload?.porcentaje ?? Math.round((percent || 0) * 100);
+    if (!pVal || pVal < 5) return null; // Evitar solapamiento en porciones diminutas (<5%)
+    return (
+      <text
+        x={x}
+        y={y}
+        fill="#FFFFFF"
+        textAnchor="middle"
+        dominantBaseline="central"
+        className="text-[11px] font-extrabold select-none"
+        style={{ filter: 'drop-shadow(0px 1px 2px rgba(0,0,0,0.8))' }}
+      >
+        {`${pVal}%`}
+      </text>
+    );
+  };
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-800 dark:bg-[#1C1C1E] space-y-4">
@@ -92,12 +103,11 @@ export function GraficoDistribucionTareas({ registros }: GraficoDistribucionTare
               Distribución del Tiempo por Tarea
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Proporción de horas dedicadas a armado vs. atención a clientes, producción y otras tareas
+              Proporción y porcentaje de horas dedicadas a cada tarea
             </p>
           </div>
         </div>
 
-        {/* Selector de armador */}
         <div className="flex items-center space-x-2">
           {empleadoSeleccionado === 'todos' ? (
             <Users className="h-4 w-4 text-blue-500" />
@@ -111,28 +121,29 @@ export function GraficoDistribucionTareas({ registros }: GraficoDistribucionTare
           >
             <option value="todos">Equipo Completo (Consolidado)</option>
             {empleadosDisponibles.map((emp) => (
-              <option key={emp} value={emp}>
-                {emp}
-              </option>
+              <option key={emp} value={emp}>{emp}</option>
             ))}
           </select>
         </div>
       </div>
 
-      {/* Contenido: Gráfico + Indicadores de Tareas */}
+      {/* Contenido: Donut con Etiquetas y Tarjetas */}
       <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-12">
-        {/* Gráfico de Torta */}
-        <div className="h-64 w-full lg:col-span-5">
+        <div className="relative h-64 w-full lg:col-span-5 flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
+            <PieChart key={`pie-chart-${empleadoSeleccionado}`}>
               <Pie
+                key={`pie-${empleadoSeleccionado}`}
                 data={itemsConHoras}
                 cx="50%"
                 cy="50%"
                 innerRadius={55}
                 outerRadius={85}
-                paddingAngle={4}
+                paddingAngle={3}
                 dataKey="value"
+                label={renderEtiquetaPorcentaje}
+                labelLine={false}
+                animationDuration={600}
               >
                 {itemsConHoras.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} stroke="#1C1C1E" strokeWidth={1.5} />
@@ -157,40 +168,18 @@ export function GraficoDistribucionTareas({ registros }: GraficoDistribucionTare
               />
             </PieChart>
           </ResponsiveContainer>
-        </div>
 
-        {/* Tarjetas / Chips de Desglose */}
-        <div className="space-y-3 lg:col-span-7">
-          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pb-1">
-            <span className="flex items-center gap-1.5 font-medium">
-              <Clock className="h-3.5 w-3.5 text-blue-500" />
-              Total de Horas Registradas:
-            </span>
-            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
-              {datosDistribucion.horasTotales} hs
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-            {datosDistribucion.itemsGrafico.map((item) => (
-              <div
-                key={item.name}
-                className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50/70 p-3 dark:border-gray-800/80 dark:bg-gray-900/40"
-              >
-                <div className="flex items-center space-x-2.5">
-                  <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                  <div>
-                    <div className="text-xs font-semibold text-gray-800 dark:text-gray-200">{item.name}</div>
-                    <div className="text-[11px] text-gray-500 dark:text-gray-400">{item.value} hs</div>
-                  </div>
-                </div>
-                <span className="rounded-lg bg-white px-2 py-0.5 text-xs font-bold text-gray-700 shadow-2xs dark:bg-gray-800 dark:text-gray-200">
-                  {item.porcentaje}%
-                </span>
-              </div>
-            ))}
+          {/* Resumen central del donut */}
+          <div className="absolute pointer-events-none flex flex-col items-center justify-center text-center">
+            <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Total</span>
+            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{datosDistribucion.horasTotales} hs</span>
           </div>
         </div>
+
+        <TarjetasDesgloseTareas
+          horasTotales={datosDistribucion.horasTotales}
+          items={datosDistribucion.itemsGrafico}
+        />
       </div>
     </div>
   );

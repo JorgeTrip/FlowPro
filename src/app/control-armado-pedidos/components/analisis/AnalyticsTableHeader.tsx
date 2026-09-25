@@ -42,13 +42,13 @@ export function AnalyticsTableHeader({ meses }: AnalyticsTableHeaderProps) {
         >
           Consolidado Período
         </th>
-        {meses.map((mes) => (
+        {meses.map((mes, idx) => (
           <th
             key={mes.clave}
-            colSpan={5}
+            colSpan={idx === 0 ? 5 : 10}
             className="px-3 py-2 text-center font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/20 border-r border-gray-200 dark:border-gray-700 last:border-r-0"
           >
-            {mes.etiqueta}
+            {idx === 0 ? mes.etiqueta : `${mes.etiqueta} (vs ${meses[idx - 1].etiquetaCorta})`}
           </th>
         ))}
       </tr>
@@ -66,17 +66,34 @@ export function AnalyticsTableHeader({ meses }: AnalyticsTableHeaderProps) {
         <th className="px-2.5 py-2 text-center bg-blue-50/30 dark:bg-blue-950/10 border-r-2 border-blue-200 dark:border-blue-900/60">Irreg.</th>
 
         {/* Cada Mes */}
-        {meses.map((mes) => (
-          <React.Fragment key={`sub-${mes.clave}`}>
-            <th className="px-2 py-2 text-center bg-emerald-50/20 dark:bg-emerald-950/10">Ped.</th>
-            <th className="px-2 py-2 text-center bg-emerald-50/20 dark:bg-emerald-950/10">Art.</th>
-            <th className="px-2 py-2 text-center bg-emerald-50/20 dark:bg-emerald-950/10">Hs. Arm.</th>
-            <th className="px-2 py-2 text-center bg-emerald-50/20 dark:bg-emerald-950/10">Hs. Otr.</th>
-            <th className="px-2 py-2 text-center bg-emerald-50/20 dark:bg-emerald-950/10 font-bold text-emerald-600 dark:text-emerald-400 border-r border-gray-200 dark:border-gray-700 last:border-r-0">
-              Vel. (Art/h)
-            </th>
-          </React.Fragment>
-        ))}
+        {meses.map((mes, idx) =>
+          idx === 0 ? (
+            <React.Fragment key={`sub-${mes.clave}`}>
+              <th className="px-2 py-2 text-center bg-emerald-50/20 dark:bg-emerald-950/10">Ped.</th>
+              <th className="px-2 py-2 text-center bg-emerald-50/20 dark:bg-emerald-950/10">Art.</th>
+              <th className="px-2 py-2 text-center bg-emerald-50/20 dark:bg-emerald-950/10">Hs. Arm.</th>
+              <th className="px-2 py-2 text-center bg-emerald-50/20 dark:bg-emerald-950/10">Hs. Otr.</th>
+              <th className="px-2 py-2 text-center bg-emerald-50/20 dark:bg-emerald-950/10 font-bold text-emerald-600 dark:text-emerald-400 border-r border-gray-200 dark:border-gray-700">
+                Vel. (Art/h)
+              </th>
+            </React.Fragment>
+          ) : (
+            <React.Fragment key={`sub-${mes.clave}`}>
+              <th className="px-1.5 py-2 text-center bg-emerald-50/20 dark:bg-emerald-950/10">Ped.</th>
+              <th className="px-1.5 py-2 text-center bg-emerald-100/40 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-bold">% Ped.</th>
+              <th className="px-1.5 py-2 text-center bg-emerald-50/20 dark:bg-emerald-950/10">Art.</th>
+              <th className="px-1.5 py-2 text-center bg-emerald-100/40 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-bold">% Art.</th>
+              <th className="px-1.5 py-2 text-center bg-emerald-50/20 dark:bg-emerald-950/10">Hs. Arm.</th>
+              <th className="px-1.5 py-2 text-center bg-emerald-100/40 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-bold">% Arm.</th>
+              <th className="px-1.5 py-2 text-center bg-emerald-50/20 dark:bg-emerald-950/10">Hs. Otr.</th>
+              <th className="px-1.5 py-2 text-center bg-emerald-100/40 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-bold">% Otr.</th>
+              <th className="px-1.5 py-2 text-center bg-emerald-50/20 dark:bg-emerald-950/10">Velocidad</th>
+              <th className="px-1.5 py-2 text-center bg-emerald-100/40 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-bold border-r border-gray-200 dark:border-gray-700 last:border-r-0">
+                % Vel.
+              </th>
+            </React.Fragment>
+          )
+        )}
       </tr>
     </thead>
   );
