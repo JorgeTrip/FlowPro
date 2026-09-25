@@ -170,3 +170,21 @@ test('parsearFechaExcel maneja seriales de Excel y cadenas de fecha estándar', 
   assert.match(parsedSerial.texto, /^\d{2}\/\d{2}\/\d{4}$/);
 });
 
+test('evaluarPedidosProducto soporta fechas deserializadas como strings desde IndexedDB', () => {
+  const registrosPersistidos: RegistroFilaCompra[] = [
+    {
+      fechaSolicitud: '2026-09-22T00:00:00.000Z',
+      fechaSolicitudTexto: '22/09/2026',
+      codigoProducto: 'MP-001',
+      cantidadSolicitada: 400,
+      cantidadRecibida: null,
+      hojaOrigen: 'Solicitud de compras',
+    },
+  ];
+
+  const resultado = evaluarPedidosProducto('MP-001', 'alta', registrosPersistidos);
+  assert.ok(resultado);
+  assert.equal(resultado?.cantidadSolicitadaUltima, 400);
+  assert.equal(resultado?.fechaUltimaSolicitud, '22/09/2026');
+});
+

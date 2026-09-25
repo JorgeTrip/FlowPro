@@ -62,6 +62,7 @@ function BarraProgreso({ pasoActual }: { pasoActual: number }) {
  */
 export default function PaginaGestionFormulas() {
   const step = useGestionFormulasStore((s) => s.step);
+  const hasHydrated = useGestionFormulasStore((s) => s.hasHydrated);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -71,7 +72,7 @@ export default function PaginaGestionFormulas() {
     }
   }, []);
 
-  if (!mounted) {
+  if (!mounted || !hasHydrated) {
     return (
       <div className="container mx-auto px-4 py-8 space-y-6 animate-pulse">
         <div className="text-center max-w-2xl mx-auto space-y-2">

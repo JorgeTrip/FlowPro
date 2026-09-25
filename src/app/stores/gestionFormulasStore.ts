@@ -33,6 +33,7 @@ export interface GestionFormulasState {
   mesesProyeccionTransferencia: number; mesesProyeccionCompra: number; setMesesProyeccionTransferencia: (meses: number) => void; setMesesProyeccionCompra: (meses: number) => void;
   modoMacro: boolean; toggleModoMacro: () => void;
   analisisSemielaborados: boolean; toggleAnalisisSemielaborados: () => void;
+  hasHydrated: boolean; setHasHydrated: (hasHydrated: boolean) => void;
 }
 
 const estadoInicial = {
@@ -46,7 +47,7 @@ const estadoInicial = {
   isLoading: false, error: null, formulasClasificadas: null, resultadosMRP: null, cargandoCalculo: false,
   datosCrudosPedidosCompra: [], columnasPedidosCompra: [], previewPedidosCompra: [],
   urlGoogleDriveFormulas: null, urlGoogleDriveStock: null, urlGoogleDrivePedidosCompra: null, mesesProyeccionTransferencia: 2, mesesProyeccionCompra: 3,
-  modoMacro: false, analisisSemielaborados: false,
+  modoMacro: false, analisisSemielaborados: false, hasHydrated: false,
 };
 
 export const useGestionFormulasStore = create<GestionFormulasState>()(
@@ -148,30 +149,28 @@ export const useGestionFormulasStore = create<GestionFormulasState>()(
         modoMacro: s.modoMacro,
         analisisSemielaborados: s.analisisSemielaborados,
       })),
+      setHasHydrated: (hasHydrated) => set({ hasHydrated }),
       reset: () => set(estadoInicial),
     }),
     {
       name: 'flowpro-gestion-formulas-store',
       storage: createJSONStorage(() => indexedDBStorage),
       partialize: (state) => ({
-        productos: state.productos,
-        formulas: state.formulas,
-        stocks: state.stocks,
-        consumos: state.consumos,
-        stockPT: state.stockPT,
-        step: state.step,
-        configuracionMapeo: state.configuracionMapeo,
-        resultadosMRP: state.resultadosMRP,
-        urlGoogleDriveFormulas: state.urlGoogleDriveFormulas,
-        urlGoogleDriveStock: state.urlGoogleDriveStock,
-        urlGoogleDrivePedidosCompra: state.urlGoogleDrivePedidosCompra,
-        mesesProyeccionTransferencia: state.mesesProyeccionTransferencia,
-        mesesProyeccionCompra: state.mesesProyeccionCompra,
-        modoMacro: state.modoMacro,
-        analisisSemielaborados: state.analisisSemielaborados,
-        columnasPedidosCompra: state.columnasPedidosCompra,
-        previewPedidosCompra: state.previewPedidosCompra,
+        productos: state.productos, formulas: state.formulas, stocks: state.stocks, consumos: state.consumos, stockPT: state.stockPT,
+        step: state.step, pestañaActiva: state.pestañaActiva, configuracionMapeo: state.configuracionMapeo, resultadosMRP: state.resultadosMRP,
+        urlGoogleDriveFormulas: state.urlGoogleDriveFormulas, urlGoogleDriveStock: state.urlGoogleDriveStock, urlGoogleDrivePedidosCompra: state.urlGoogleDrivePedidosCompra,
+        mesesProyeccionTransferencia: state.mesesProyeccionTransferencia, mesesProyeccionCompra: state.mesesProyeccionCompra,
+        modoMacro: state.modoMacro, analisisSemielaborados: state.analisisSemielaborados,
+        datosCrudosFormulas: state.datosCrudosFormulas, datosCrudosStock: state.datosCrudosStock, datosCrudosConsumo: state.datosCrudosConsumo,
+        datosCrudosStockPT: state.datosCrudosStockPT, datosCrudosRotacionSemiElab: state.datosCrudosRotacionSemiElab, datosCrudosPedidosCompra: state.datosCrudosPedidosCompra,
+        columnasFormulas: state.columnasFormulas, columnasStock: state.columnasStock, columnasConsumo: state.columnasConsumo,
+        columnasStockPT: state.columnasStockPT, columnasRotacionSemiElab: state.columnasRotacionSemiElab, columnasPedidosCompra: state.columnasPedidosCompra,
+        previewFormulas: state.previewFormulas, previewStock: state.previewStock, previewConsumo: state.previewConsumo,
+        previewStockPT: state.previewStockPT, previewRotacionSemiElab: state.previewRotacionSemiElab, previewPedidosCompra: state.previewPedidosCompra,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

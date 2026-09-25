@@ -1,10 +1,8 @@
 // © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
 
-/**
- * Representa una fila leída de las hojas de solicitud de compras
- */
+/** Representa una fila leída de las hojas de solicitud de compras */
 export interface RegistroFilaCompra {
-  fechaSolicitud: Date;
+  fechaSolicitud: Date | string;
   fechaSolicitudTexto: string;
   codigoProducto: string;
   cantidadSolicitada: number;
@@ -12,9 +10,14 @@ export interface RegistroFilaCompra {
   hojaOrigen: 'Solicitud de compras' | 'Solicitud Hierbas';
 }
 
-/**
- * Estado resuelto de pedidos pendientes para enriquecer la tabla de análisis
- */
+/** Obtiene el timestamp numérico compatible con instancias Date y cadenas ISO deserializadas */
+function obtenerTiempoFecha(val: any): number {
+  if (val instanceof Date) return isNaN(val.getTime()) ? 0 : val.getTime();
+  const t = new Date(val).getTime();
+  return isNaN(t) ? 0 : t;
+}
+
+/** Estado resuelto de pedidos pendientes para enriquecer la tabla de análisis */
 export interface EstadoPedidoCompraPendiente {
   fechaUltimaSolicitud: string | null;
   cantidadSolicitadaUltima: number | null;
@@ -109,7 +112,7 @@ export function evaluarPedidosProducto(
 
   // Ordenar de más reciente a más antigua
   const ordenadas = [...coincidencias].sort(
-    (a, b) => b.fechaSolicitud.getTime() - a.fechaSolicitud.getTime()
+    (a, b) => obtenerTiempoFecha(b.fechaSolicitud) - obtenerTiempoFecha(a.fechaSolicitud)
   );
 
   const masReciente = ordenadas[0];
