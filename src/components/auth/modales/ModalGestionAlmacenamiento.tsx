@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, HardDrive, Trash2, CheckCircle2, RefreshCw } from 'lucide-react';
+import { X, HardDrive, Trash2, CheckCircle2 } from 'lucide-react';
 import {
   estimarEspacioAlmacenamiento,
   limpiarCacheNoCritica,

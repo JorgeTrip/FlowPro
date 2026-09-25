@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import type { CommitHistorial, TipoCommit } from './typesConfiguracion';
-import { ChevronDown, ChevronUp, GitCommit } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 const BADGES_TIPO: Record<TipoCommit, { etiqueta: string; clases: string }> = {
   feat: { etiqueta: 'feat: 🚀', clases: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800' },

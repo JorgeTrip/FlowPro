@@ -129,7 +129,7 @@ export async function registrarUsuarioPorEmail(email: string, rol: RolUsuario, n
  */
 export async function listarUsuariosFirestore(): Promise<ResultadoListadoUsuarios> {
   try {
-    let colRef = collection(db, 'usuarios');
+    const colRef = collection(db, 'usuarios');
     let snapshot = await getDocs(colRef);
 
     // Si 'usuarios' está vacío, verificar 'users' como alternativa
