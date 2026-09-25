@@ -4,16 +4,26 @@
 import { useState } from 'react';
 import { useGestionFormulasStore } from '@/app/stores/gestionFormulasStore';
 import { useGoogleDriveSync } from '../hooks/useGoogleDriveSync';
+import { useSincronizacionEnlacesUsuario } from '../hooks/useSincronizacionEnlacesUsuario';
 import { VinculadorFuente } from './VinculadorFuente';
 import { usePrefijosStore } from '@/app/stores/prefijosStore';
+import { Cloud, Loader2 } from 'lucide-react';
 
 /**
  * Sección de sincronización unificada con Google Drive.
- * Permite gestionar los enlaces de las 3 planillas obligatorias y sincronizarlas de forma conjunta.
+ * Gestiona y persiste los enlaces vinculados a la cuenta del usuario en Firebase.
  */
 export function GoogleDriveSection() {
   const store = useGestionFormulasStore();
   const [errorLocal, setErrorLocal] = useState<string | null>(null);
+
+  const {
+    usuarioAutenticado,
+    usuarioEmail,
+    cargandoEnlaces,
+    guardarEnlace,
+    borrarEnlace,
+  } = useSincronizacionEnlacesUsuario();
 
   const {
     isSincronizando,
@@ -49,20 +59,17 @@ export function GoogleDriveSection() {
     await sincronizarTodo();
   };
 
-  // Indicadores de carga en tiempo real
-  const formulasCargadas = store.datosCrudosFormulas.length;
-  const statusFormulas = formulasCargadas > 0 ? (
+  const statusFormulas = store.datosCrudosFormulas.length > 0 ? (
     <div className="flex items-center space-x-2 text-xs font-semibold text-green-700 dark:text-green-400 bg-green-500/10 border border-green-500/20 px-2.5 py-1.5 rounded-lg shadow-2xs">
       <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-      <span>✓ {formulasCargadas.toLocaleString()} recetas cargadas correctamente</span>
+      <span>✓ {store.datosCrudosFormulas.length.toLocaleString()} recetas cargadas correctamente</span>
     </div>
   ) : null;
 
-  const pedidosCargados = store.datosCrudosPedidosCompra.length;
-  const statusPedidosCompra = pedidosCargados > 0 ? (
+  const statusPedidosCompra = store.datosCrudosPedidosCompra.length > 0 ? (
     <div className="flex items-center space-x-2 text-xs font-semibold text-green-700 dark:text-green-400 bg-green-500/10 border border-green-500/20 px-2.5 py-1.5 rounded-lg shadow-2xs">
       <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
-      <span>✓ {pedidosCargados.toLocaleString()} solicitudes de compra cargadas</span>
+      <span>✓ {store.datosCrudosPedidosCompra.length.toLocaleString()} solicitudes de compra cargadas</span>
     </div>
   ) : null;
 
@@ -70,7 +77,7 @@ export function GoogleDriveSection() {
   const consumoCargado = store.datosCrudosConsumo.length;
   const rotacionSemiElabCargada = store.datosCrudosRotacionSemiElab.length;
   const stockPTCargado = store.datosCrudosStockPT.length;
-  
+
   const statusStock = (stockCargado > 0 || consumoCargado > 0 || rotacionSemiElabCargada > 0 || stockPTCargado > 0) ? (
     <div className="space-y-1.5 p-2.5 rounded-lg bg-green-500/10 border border-green-500/20 shadow-2xs text-xs font-semibold">
       {stockCargado > 0 && <div className="text-green-700 dark:text-green-400">● Existencias de Stock: {stockCargado.toLocaleString()} filas</div>}
@@ -85,11 +92,20 @@ export function GoogleDriveSection() {
 
   return (
     <div className="p-5 rounded-xl bg-white dark:bg-[#1C1C1E] border border-gray-200 dark:border-gray-800 shadow-sm space-y-4">
-      <div>
-        <h3 className="text-lg font-bold text-gray-800 dark:text-white">Sincronización con Google Drive</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-          Vincula los enlaces de las 3 planillas de Google Drive para sincronizar en un solo paso.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-bold text-gray-800 dark:text-white">Sincronización con Google Drive</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            Vincula los enlaces de las 3 planillas de Google Drive para sincronizar en un solo paso.
+          </p>
+        </div>
+
+        {usuarioAutenticado && (
+          <div className="flex items-center space-x-1.5 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-3 py-1.5 rounded-full border border-blue-200 dark:border-blue-900/50 shadow-2xs">
+            {cargandoEnlaces ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Cloud className="w-3.5 h-3.5" />}
+            <span className="truncate max-w-[220px]">Sincronizado con cuenta: {usuarioEmail}</span>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-4">
@@ -97,9 +113,12 @@ export function GoogleDriveSection() {
           titulo="Fórmulas"
           descripcion="Hoja: BASE DE DATOS FORMULAS"
           urlGuardada={store.urlGoogleDriveFormulas}
-          onGuardarUrl={store.setUrlGoogleDriveFormulas}
+          onGuardarUrl={(url) => guardarEnlace('formulas', url)}
           onCambiarEnlace={limpiarEstado}
-          onBorrarUrl={() => { store.setUrlGoogleDriveFormulas(null); store.setDatosCrudosFormulas([], [], []); }}
+          onBorrarUrl={() => {
+            borrarEnlace('formulas');
+            store.setDatosCrudosFormulas([], [], []);
+          }}
           statusComponent={statusFormulas}
         />
 
@@ -107,10 +126,10 @@ export function GoogleDriveSection() {
           titulo="Stock y Rotación"
           descripcion="Hojas: BASE DE DATOS ROTACIÓN MENSUAL, BASE DE DATOS STOCK y ROTACION SEMI ELAB"
           urlGuardada={store.urlGoogleDriveStock}
-          onGuardarUrl={store.setUrlGoogleDriveStock}
+          onGuardarUrl={(url) => guardarEnlace('stock', url)}
           onCambiarEnlace={limpiarEstado}
           onBorrarUrl={() => {
-            store.setUrlGoogleDriveStock(null);
+            borrarEnlace('stock');
             store.setDatosCrudosStock([], [], []);
             store.setDatosCrudosConsumo([], [], []);
             store.setDatosCrudosStockPT([], [], []);
@@ -122,10 +141,10 @@ export function GoogleDriveSection() {
           titulo="Pedidos de Compra"
           descripcion="Hojas: Solicitud de compras y Solicitud Hierbas"
           urlGuardada={store.urlGoogleDrivePedidosCompra}
-          onGuardarUrl={store.setUrlGoogleDrivePedidosCompra}
+          onGuardarUrl={(url) => guardarEnlace('pedidosCompra', url)}
           onCambiarEnlace={limpiarEstado}
           onBorrarUrl={() => {
-            store.setUrlGoogleDrivePedidosCompra(null);
+            borrarEnlace('pedidosCompra');
             store.setDatosCrudosPedidosCompra([]);
           }}
           statusComponent={statusPedidosCompra}

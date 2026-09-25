@@ -1,6 +1,7 @@
-import { RegistroArmadoDocumento } from '../types/armado';
-import { calcularDiferenciaMinutos } from './metricsCalculator';
-import { normalizarFechaYYYYMMDD } from '../services/firestoreService';
+// © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados
+import type { RegistroArmadoDocumento } from '../types/armado.ts';
+import { calcularDiferenciaMinutos } from './metricsCalculator.ts';
+import { normalizarFechaYYYYMMDD } from './normalizadorFechas.ts';
 
 export interface InfoMes {
   clave: string; // ej: '2026-07'
@@ -9,23 +10,31 @@ export interface InfoMes {
   color: string;
 }
 
+export interface MetricasMesEmpleado {
+  pedidos: number;
+  articulos: number;
+  horasArmado: number;
+  horasOtrasTareas: number;
+  horasTotales: number;
+  velocidadArtHs: number;
+  tiempoMedioMin: number;
+  desgloseOtrasTareas: {
+    atencionClienteHs: number;
+    produccionHs: number;
+    otrosHs: number;
+  };
+}
+
 export interface ResultadoRendimientoMensual {
   meses: InfoMes[];
   datosVelocidad: Array<{ empleado: string; [claveMes: string]: any }>;
   datosPedidos: Array<{ empleado: string; [claveMes: string]: any }>;
+  mapaDetalleEmpleado: Map<string, Map<string, MetricasMesEmpleado>>;
 }
 
 const PALETA_COLORES_MESES = [
-  '#3B82F6', // Azul
-  '#10B981', // Esmeralda
-  '#8B5CF6', // Violeta
-  '#F59E0B', // Ámbar
-  '#EC4899', // Rosa
-  '#06B6D4', // Cyan
-  '#F97316', // Naranja
-  '#6366F1', // Índigo
-  '#14B8A6', // Teal
-  '#D946EF', // Fucsia
+  '#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EC4899',
+  '#06B6D4', '#F97316', '#6366F1', '#14B8A6', '#D946EF',
 ];
 
 const NOMBRES_MESES = [
@@ -41,13 +50,22 @@ export function formatearEtiquetaMes(claveMes: string): string {
   return `${NOMBRES_MESES[mesNum - 1]} ${anio}`;
 }
 
+interface AcumuladorMes {
+  pedidos: number;
+  articulos: number;
+  minutosArmado: number;
+  minutosAtencionCliente: number;
+  minutosProduccion: number;
+  minutosOtros: number;
+}
+
 export function calcularRendimientoMensualPorEmpleado(
   registros: RegistroArmadoDocumento[]
 ): ResultadoRendimientoMensual {
   const mapaMeses = new Set<string>();
-  const mapaEmpMes = new Map<string, Map<string, { pedidos: number; articulos: number; minutos: number }>>();
+  const mapaEmpMes = new Map<string, Map<string, AcumuladorMes>>();
 
-    registros.forEach((reg) => {
+  registros.forEach((reg) => {
     reg.filas?.forEach((f) => {
       if (f.accionIrregularidad === 'ignorar') return;
 
@@ -56,26 +74,39 @@ export function calcularRendimientoMensualPorEmpleado(
       const fechaNorm = normalizarFechaYYYYMMDD(fechaRaw);
       if (!fechaNorm || fechaNorm.length < 7) return;
 
-      const claveMes = fechaNorm.substring(0, 7); // 'YYYY-MM'
+      const claveMes = fechaNorm.substring(0, 7);
       mapaMeses.add(claveMes);
-
-      if (claveMes === '2026-06') {
-        console.log(`[DIAG-JUNIO] DocID: ${reg.id} | EmpHeader: "${reg.empleadoHeader}" | FilaEmp: "${emp}" | RowFechaRaw: "${f.fecha}" | DocFechaPrimera: "${reg.fechaPrimeraFila}" | FechaNorm: "${fechaNorm}"`);
-      }
 
       if (!mapaEmpMes.has(emp)) {
         mapaEmpMes.set(emp, new Map());
       }
       const mesMap = mapaEmpMes.get(emp)!;
-      const actual = mesMap.get(claveMes) || { pedidos: 0, articulos: 0, minutos: 0 };
-      actual.pedidos += 1;
-      actual.articulos += f.cantArticulos || 0;
-      actual.minutos += calcularDiferenciaMinutos(f.horaInicio, f.horaFin);
+      const actual = mesMap.get(claveMes) || {
+        pedidos: 0,
+        articulos: 0,
+        minutosArmado: 0,
+        minutosAtencionCliente: 0,
+        minutosProduccion: 0,
+        minutosOtros: 0,
+      };
+
+      const minutos = calcularDiferenciaMinutos(f.horaInicio, f.horaFin);
+
+      if (f.tipoTarea === 'atencion_cliente') {
+        actual.minutosAtencionCliente += minutos;
+      } else if (f.tipoTarea === 'produccion') {
+        actual.minutosProduccion += minutos;
+      } else if (f.tipoTarea === 'otros') {
+        actual.minutosOtros += minutos;
+      } else {
+        actual.pedidos += 1;
+        actual.articulos += f.cantArticulos || 0;
+        actual.minutosArmado += minutos;
+      }
+
       mesMap.set(claveMes, actual);
     });
   });
-
-  console.log('[DIAG-CALC-MENSUAL] Meses detectados:', Array.from(mapaMeses), 'Empleados:', Array.from(mapaEmpMes.keys()));
 
   const mesesOrdenados = Array.from(mapaMeses).sort();
   const infoMeses: InfoMes[] = mesesOrdenados.map((m, idx) => {
@@ -93,32 +124,68 @@ export function calcularRendimientoMensualPorEmpleado(
   const empleados = Array.from(mapaEmpMes.keys()).sort();
   const datosVelocidad: Array<{ empleado: string; [claveMes: string]: any }> = [];
   const datosPedidos: Array<{ empleado: string; [claveMes: string]: any }> = [];
+  const mapaDetalleEmpleado = new Map<string, Map<string, MetricasMesEmpleado>>();
 
   empleados.forEach((emp) => {
     const mesMap = mapaEmpMes.get(emp)!;
     const objVel: { empleado: string; [claveMes: string]: any } = { empleado: emp };
     const objPed: { empleado: string; [claveMes: string]: any } = { empleado: emp };
+    const detalleMesMap = new Map<string, MetricasMesEmpleado>();
 
     mesesOrdenados.forEach((m) => {
       const stats = mesMap.get(m);
       if (stats) {
-        const horas = Math.round((stats.minutos / 60) * 10) / 10;
-        const vel = horas > 0 ? Math.round(stats.articulos / horas) : 0;
+        const horasArmado = Math.round((stats.minutosArmado / 60) * 10) / 10;
+        const atencionHs = Math.round((stats.minutosAtencionCliente / 60) * 10) / 10;
+        const prodHs = Math.round((stats.minutosProduccion / 60) * 10) / 10;
+        const otrosHs = Math.round((stats.minutosOtros / 60) * 10) / 10;
+        const horasOtrasTareas = Math.round((atencionHs + prodHs + otrosHs) * 10) / 10;
+        const horasTotales = Math.round((horasArmado + horasOtrasTareas) * 10) / 10;
+        const vel = horasArmado > 0 ? Math.round(stats.articulos / horasArmado) : 0;
+        const tiempoMedio = stats.pedidos > 0 ? Math.round((stats.minutosArmado / stats.pedidos) * 10) / 10 : 0;
+
         objVel[m] = vel;
         objPed[m] = stats.pedidos;
+
+        detalleMesMap.set(m, {
+          pedidos: stats.pedidos,
+          articulos: stats.articulos,
+          horasArmado,
+          horasOtrasTareas,
+          horasTotales,
+          velocidadArtHs: vel,
+          tiempoMedioMin: tiempoMedio,
+          desgloseOtrasTareas: {
+            atencionClienteHs: atencionHs,
+            produccionHs: prodHs,
+            otrosHs,
+          },
+        });
       } else {
         objVel[m] = 0;
         objPed[m] = 0;
+        detalleMesMap.set(m, {
+          pedidos: 0,
+          articulos: 0,
+          horasArmado: 0,
+          horasOtrasTareas: 0,
+          horasTotales: 0,
+          velocidadArtHs: 0,
+          tiempoMedioMin: 0,
+          desgloseOtrasTareas: { atencionClienteHs: 0, produccionHs: 0, otrosHs: 0 },
+        });
       }
     });
 
     datosVelocidad.push(objVel);
     datosPedidos.push(objPed);
+    mapaDetalleEmpleado.set(emp, detalleMesMap);
   });
 
   return {
     meses: infoMeses,
     datosVelocidad,
     datosPedidos,
+    mapaDetalleEmpleado,
   };
 }

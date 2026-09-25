@@ -10,12 +10,7 @@ import { ModalVerificacionPlanilla } from './components/carga/ModalVerificacionP
 import { ModalFallosScan } from './components/carga/ModalFallosScan';
 import { DatabaseSyncFooterBar } from './components/carga/DatabaseSyncFooterBar';
 import { DataSheetsList } from './components/datos/DataSheetsList';
-import { BarraResumenDatos } from './components/datos/BarraResumenDatos';
-import { DashboardFilters } from './components/analisis/DashboardFilters';
-import { KPICards } from './components/analisis/KPICards';
-import { PerformanceCharts } from './components/analisis/PerformanceCharts';
-import { MonthlyPerformanceCharts } from './components/analisis/MonthlyPerformanceCharts';
-import { AnalyticsTable } from './components/analisis/AnalyticsTable';
+import { VistaAnalisisArmado } from './components/analisis/VistaAnalisisArmado';
 import { obtenerRegistrosVerificados, suscribirPlanillasPendientesFirestore } from './services/firestoreService';
 import { normalizarDatosHistoricosFirestore } from './services/firestoreMigrationService';
 import { RegistroArmadoDocumento, FiltrosAnalisis } from './types/armado';
@@ -25,7 +20,6 @@ import { ScanProgressWidget } from './components/carga/ScanProgressWidget';
 import { GeminiQuotaWidget } from './components/carga/GeminiQuotaWidget';
 import { ExternalJsonImporter } from './components/carga/ExternalJsonImporter';
 import { IrregularitiesModal } from './components/analisis/IrregularitiesModal';
-import { AnalisisSkeleton } from './components/analisis/AnalisisSkeleton';
 
 export default function ControlArmadoPedidosPage() {
   const { pestanaActiva, setPestanaActiva, alertaDuplicado, errorScan, itemsPendientes } = useArmadoStore();
@@ -164,26 +158,17 @@ export default function ControlArmadoPedidosPage() {
         {pestanaActiva === 'datos' && <DataSheetsList />}
 
         {pestanaActiva === 'analisis' && (
-          <div className="space-y-6">
-            <DashboardFilters filtros={filtros} empleadosDisponibles={empleadosList} registrosCompletos={registrosVerificados} onCambiarFiltros={setFiltros} />
-            {cargandoAnalisis ? (
-              <AnalisisSkeleton />
-            ) : (
-              <>
-                <BarraResumenDatos planillasFiltradas={registrosVerificados} hayFiltro={filtros.rango !== 'todos' || !!filtros.empleado} />
-                <KPICards metricas={metricas} />
-                <PerformanceCharts
-                  rendimiento={rendimiento}
-                  promedioEquipo={metricas.velocidadPromedioEq}
-                  registros={registrosVerificados}
-                  onVerIrregularidades={handleAbrirIrregularidades}
-                  onActualizado={cargarDatosAnalisis}
-                />
-                <MonthlyPerformanceCharts registros={registrosVerificados} onActualizado={cargarDatosAnalisis} />
-                <AnalyticsTable rendimiento={rendimiento} registros={registrosVerificados} />
-              </>
-            )}
-          </div>
+          <VistaAnalisisArmado
+            filtros={filtros}
+            empleadosList={empleadosList}
+            registrosVerificados={registrosVerificados}
+            cargandoAnalisis={cargandoAnalisis}
+            metricas={metricas}
+            rendimiento={rendimiento}
+            onCambiarFiltros={setFiltros}
+            onAbrirIrregularidades={handleAbrirIrregularidades}
+            onRecargarDatos={cargarDatosAnalisis}
+          />
         )}
       </div>
     </ModuleLayout>
