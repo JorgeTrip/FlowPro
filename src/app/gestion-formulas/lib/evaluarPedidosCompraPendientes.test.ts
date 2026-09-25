@@ -165,9 +165,14 @@ test('parsearFechaExcel maneja seriales de Excel y cadenas de fecha estándar', 
   assert.ok(parsedStr);
   assert.equal(parsedStr.texto, '25/12/2026');
 
-  const parsedSerial = parsearFechaExcel(45550);
+  // 46265 corresponde a 31/08/2026 en Excel, no debe desfasarse a 30/08 por UTC-3
+  const parsedSerial = parsearFechaExcel(46265);
   assert.ok(parsedSerial);
-  assert.match(parsedSerial.texto, /^\d{2}\/\d{2}\/\d{4}$/);
+  assert.equal(parsedSerial.texto, '31/08/2026');
+
+  const parsedIso = parsearFechaExcel('2026-08-31');
+  assert.ok(parsedIso);
+  assert.equal(parsedIso.texto, '31/08/2026');
 });
 
 test('evaluarPedidosProducto soporta fechas deserializadas como strings desde IndexedDB', () => {

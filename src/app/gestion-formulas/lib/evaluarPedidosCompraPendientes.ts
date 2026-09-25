@@ -33,45 +33,9 @@ function normalizarCodigo(codigo?: string | null): string {
   return String(codigo).trim().toUpperCase();
 }
 
-/**
- * Convierte un valor de fecha heterogéneo (serial de Excel, string, Date) a Date válido
- */
-export function parsearFechaExcel(valor: any): { fecha: Date; texto: string } | null {
-  if (valor === undefined || valor === null || valor === '') return null;
-
-  let d: Date | null = null;
-
-  if (valor instanceof Date) {
-    d = isNaN(valor.getTime()) ? null : valor;
-  } else if (typeof valor === 'number') {
-    // Conversión de número de serie de Excel a fecha UTC / local
-    const milisegundosPorDia = 86400 * 1000;
-    const fechaBase = new Date(Date.UTC(1899, 11, 30));
-    d = new Date(fechaBase.getTime() + valor * milisegundosPorDia);
-  } else if (typeof valor === 'string') {
-    const limpio = valor.trim();
-    if (limpio.includes('/')) {
-      const partes = limpio.split('/');
-      if (partes.length === 3) {
-        const dia = parseInt(partes[0], 10);
-        const mes = parseInt(partes[1], 10) - 1;
-        let anio = parseInt(partes[2], 10);
-        if (anio < 100) anio += 2000;
-        d = new Date(anio, mes, dia);
-      }
-    } else {
-      const parsed = new Date(limpio);
-      if (!isNaN(parsed.getTime())) d = parsed;
-    }
-  }
-
-  if (!d || isNaN(d.getTime())) return null;
-
-  const diaStr = String(d.getDate()).padStart(2, '0');
-  const mesStr = String(d.getMonth() + 1).padStart(2, '0');
-  const anioStr = d.getFullYear();
-  return { fecha: d, texto: `${diaStr}/${mesStr}/${anioStr}` };
-}
+import { parsearFechaExcel } from './parsearFechaExcel.ts';
+export { parsearFechaExcel };
+export type { FechaExcelParseada } from './parsearFechaExcel.ts';
 
 /**
  * Verifica si la columna V (cantidad recibida) tiene datos válidos de entrega
