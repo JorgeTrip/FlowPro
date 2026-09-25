@@ -11,6 +11,7 @@ import DropdownLinea from './DropdownLinea';
 import SelectorMeses from './SelectorMeses';
 import { TablaProductosPropios } from './TablaProductosPropios';
 import { TablaProductosTercerizados } from './TablaProductosTercerizados';
+import BadgeAlertaPedidosMultiples from './BadgeAlertaPedidosMultiples';
 
 export default function VistaResultados() {
   const {
@@ -25,7 +26,12 @@ export default function VistaResultados() {
   const getIndP = (k: any) => (sortPropios && sortPropios.key === k) ? (sortPropios.direction === 'asc' ? ' ▲' : ' ▼') : '';
   const getIndT = (k: any) => (sortTercerizados && sortTercerizados.key === k) ? (sortTercerizados.direction === 'asc' ? ' ▲' : ' ▼') : '';
 
-  // SelectorMeses se extrajo a su propio componente para modularidad y mantener el archivo < 200 líneas
+  const itemsConMultiples = (pestañaActiva === 'propios' ? resultadosFiltradosPropios : resultadosFiltradosTercerizados)
+    .filter((r) => r.pedidoCompraPendiente?.tieneMultiplesPendientes)
+    .map((r) => ({
+      codigo: 'codigoMP' in r ? r.codigoMP : r.codigoPT,
+      descripcion: 'descripcionMP' in r ? r.descripcionMP : r.descripcionPT,
+    }));
 
   return (
     <div className="space-y-6 w-full">
@@ -127,6 +133,11 @@ export default function VistaResultados() {
               </div>
               <Tooltip texto="Filtra productos que no terminen en 'K' y asume una relación de producción simplificada 1:1 (1 kg MP = 1 kg PT)." />
             </div>
+          </div>
+
+          {/* Extrema derecha: Estado de Pedidos Múltiples */}
+          <div className="ml-auto self-end flex items-center h-9">
+            <BadgeAlertaPedidosMultiples itemsConMultiples={itemsConMultiples} tipo={pestañaActiva} />
           </div>
         </div>
       </div>

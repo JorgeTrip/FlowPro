@@ -97,14 +97,14 @@ export function TablaProductosPropios({
           <th className={`${clsAccionHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>Producir PT E.R.</th>
           <th className={`${clsAccionHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>Compra MP</th>
           <th onClick={() => solicitarOrdenPropios('cantidadSugerida')} className={`${clsBlueHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800 cursor-pointer`}>Cantidad necesaria MP{getIndP('cantidadSugerida')}</th>
+          <th onClick={() => solicitarOrdenPropios('criticidad')} className={`${clsNormalHeader} px-2.5 py-2 text-center border-r border-gray-150 dark:border-gray-800 cursor-pointer`}>Criticidad{getIndP('criticidad')}</th>
           <th className={`${clsNormalHeader} px-2.5 py-2 text-center border-r border-gray-150 dark:border-gray-800`}>Fec. Últ. Pedido</th>
-          <th className={`${clsNormalHeader} px-2.5 py-2 text-right border-r border-gray-150 dark:border-gray-800`}>Cant. Pedida</th>
-          <th onClick={() => solicitarOrdenPropios('criticidad')} className={`${clsNormalHeader} pl-2.5 pr-8 py-2 cursor-pointer`}>Criticidad{getIndP('criticidad')}</th>
+          <th className={`${clsNormalHeader} pl-2.5 pr-8 py-2 text-right`}>Cant. Pedida</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-gray-200 dark:divide-gray-800 bg-white dark:bg-[#1C1C1E] text-gray-900 dark:text-gray-300">
         {resultadosFiltradosPropios.map((fila, idx) => (
-          <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-[#2C2C2E]/40 transition-colors divide-x divide-gray-100 dark:divide-gray-850 text-xs text-left align-top">
+          <tr key={idx} id={`fila-propio-${fila.codigoMP}`} className="hover:bg-gray-50 dark:hover:bg-[#2C2C2E]/40 transition-all duration-300 divide-x divide-gray-100 dark:divide-gray-850 text-xs text-left align-top">
             <td className={`${clsExcelCell} px-2.5 py-2 font-mono font-semibold`}>{fila.codigoMP}</td>
             <td className={`${clsExcelCell} px-2.5 py-2 group relative cursor-help`}><div className="truncate max-w-[150px] text-ellipsis">{fila.descripcionMP}</div><Tooltip texto={fila.descripcionMP} /></td>
             <td className={`${clsExcelCell} px-2.5 py-2`}>{fila.unidadMedida}</td>
@@ -153,7 +153,8 @@ export function TablaProductosPropios({
             <td className={`${clsAccionCell} px-2.5 py-2 text-right font-mono font-semibold`}>{fila.productosUsados?.map((p, i) => <div key={i} className="text-[10px] h-[15px]">{(p.produccionExistenteER ?? 0).toFixed(1)}</div>)}</td>
             <td className={`${clsAccionCell} px-2.5 py-2 text-right font-mono`}>{(fila.movimientoSugerido.compra ?? 0).toFixed(1)}</td>
             <td className={`${clsBlueCell} px-2.5 py-2 text-right font-semibold font-mono`}>{(fila.cantidadSugerida ?? 0).toFixed(1)}</td>
-            <td className="px-2.5 py-2 text-center font-mono text-[10px]">
+            <td className="px-2.5 py-2 text-center border-r border-gray-150 dark:border-gray-800"><BadgeCriticidad criticidad={fila.criticidad} /></td>
+            <td className="px-2.5 py-2 text-center font-mono text-[10px] border-r border-gray-150 dark:border-gray-800">
               {fila.pedidoCompraPendiente?.fechaUltimaSolicitud || '-'}
             </td>
             <td className="px-2.5 py-2 text-right font-mono text-[10px] whitespace-nowrap">
@@ -170,7 +171,6 @@ export function TablaProductosPropios({
                 '-'
               )}
             </td>
-            <td className="px-2.5 py-2 text-center"><BadgeCriticidad criticidad={fila.criticidad} /></td>
           </tr>
         ))}
       </tbody>
