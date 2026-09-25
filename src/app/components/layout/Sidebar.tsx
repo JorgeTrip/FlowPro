@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { MODULOS_DISPONIBLES, CATEGORIAS_MODULOS, type Modulo } from '@/app/lib/moduleRegistry';
 import { clsx } from 'clsx';
-import { ThemeSwitcher } from './ThemeSwitcher';
+import { BotonConfiguracion } from '../configuracion/BotonConfiguracion';
 import { Layers } from 'lucide-react';
 
 function ModuloNavItem({ modulo, estaColapsado }: { modulo: Modulo; estaColapsado: boolean }) {
@@ -128,9 +128,9 @@ export function Sidebar() {
           </div>
         ))}
 
-        {/* Cambiador de Tema integrado */}
+        {/* Botón de Configuración (Tema, Acerca de, Historial) */}
         <div className="pt-2 border-t border-gray-100 dark:border-gray-800/60 overflow-x-hidden">
-          <ThemeSwitcher estaColapsado={estaColapsado} />
+          <BotonConfiguracion estaColapsado={estaColapsado} />
         </div>
       </div>
     </aside>
