@@ -96,21 +96,25 @@ export function BotonConfiguracion({ estaColapsado }: BotonConfiguracionProps) {
         onClick={alternarPopover}
         title="Configuración"
         className={clsx(
-          'group relative flex items-center rounded-xl transition-all duration-200 text-sm font-medium whitespace-nowrap overflow-hidden',
-          estaColapsado ? 'h-10 w-10 justify-center mx-auto p-0' : 'space-x-3 p-2.5 w-full',
+          'group relative flex items-center h-10 w-full rounded-xl transition-colors duration-200 text-sm font-medium whitespace-nowrap overflow-hidden px-1.5',
           popoverAbierto
             ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400 font-semibold'
-            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800/60'
+            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/60 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800/50'
         )}
       >
-        <span className="relative text-xl shrink-0 flex items-center justify-center">
+        <span className="relative flex h-9 w-9 shrink-0 items-center justify-center text-xl">
           <Settings className={clsx('h-5 w-5 transition-transform duration-300', popoverAbierto && 'rotate-90 text-blue-500')} />
         </span>
-        {!estaColapsado && (
-          <span className="relative truncate transition-opacity duration-200 whitespace-nowrap">
-            Configuración
-          </span>
-        )}
+        <div
+          className={clsx(
+            'relative overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] whitespace-nowrap flex-1 text-left',
+            estaColapsado
+              ? 'max-w-0 opacity-0 -translate-x-2 pointer-events-none'
+              : 'max-w-[180px] opacity-100 translate-x-0 ml-3'
+          )}
+        >
+          <span className="truncate block">Configuración</span>
+        </div>
       </button>
 
       {/* Popover anclado directamente al botón */}
