@@ -6,6 +6,11 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
+    // Colección de Prefijos de Códigos PT
+    match /prefijos_codigos_pt/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
     // Colección de Usuarios y Gestión de Roles
     match /usuarios/{document=**} {
       allow read, write: if request.auth != null;

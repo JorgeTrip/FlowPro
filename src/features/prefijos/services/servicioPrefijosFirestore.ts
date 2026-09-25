@@ -42,7 +42,7 @@ export function suscribirPrefijosFirestore(
       onActualizacion(reglas);
     },
     (err) => {
-      console.error('[PrefijosFirestore] Error en suscripción:', err);
+      console.warn('[PrefijosFirestore] Acceso a Firestore no disponible o permisos pendientes:', err.message);
       if (onError) onError(err);
     }
   );
@@ -119,13 +119,17 @@ export async function migrarReglasLocalesAFirestore(
 ): Promise<boolean> {
   if (!reglasLocales || reglasLocales.length === 0) return false;
 
-  const colRef = collection(db, NOMBRE_COLECCION_PREFIJOS);
-  const snapshot = await getDocs(colRef);
+  try {
+    const colRef = collection(db, NOMBRE_COLECCION_PREFIJOS);
+    const snapshot = await getDocs(colRef);
 
-  if (snapshot.empty) {
-    console.info(`[PrefijosFirestore] Colección vacía. Migrando ${reglasLocales.length} reglas locales...`);
-    await importarLoteFirestore(reglasLocales, emailUsuario);
-    return true;
+    if (snapshot.empty) {
+      console.info(`[PrefijosFirestore] Colección vacía. Migrando ${reglasLocales.length} reglas locales...`);
+      await importarLoteFirestore(reglasLocales, emailUsuario);
+      return true;
+    }
+  } catch (err: any) {
+    console.warn('[PrefijosFirestore] No se pudo verificar o migrar a Firestore (permisos pendientes):', err?.message);
   }
 
   return false;

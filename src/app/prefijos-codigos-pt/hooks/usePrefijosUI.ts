@@ -30,13 +30,22 @@ export function usePrefijosUI() {
   const [procesando, setProcesando] = useState(false);
   const [mensajeNotificacion, setMensajeNotificacion] = useState<{ tipo: 'exito' | 'error'; texto: string } | null>(null);
 
-  // Inicia la suscripción reactiva a Firestore al montar la vista de manera segura
+  // Inicia la suscripción reactiva a Firestore al confirmar autenticación
   useEffect(() => {
     setMontado(true);
-    const emailUsuario = auth.currentUser?.email || undefined;
-    const desuscribir = iniciarSuscripcionNube(emailUsuario);
+    let desuscribirStore: (() => void) | null = null;
+
+    const desuscribirAuth = auth.onAuthStateChanged((usuario) => {
+      if (usuario) {
+        desuscribirStore = iniciarSuscripcionNube(usuario.email || undefined);
+      } else {
+        usePrefijosStore.setState({ cargandoNube: false });
+      }
+    });
+
     return () => {
-      desuscribir();
+      desuscribirAuth();
+      if (desuscribirStore) desuscribirStore();
     };
   }, [iniciarSuscripcionNube]);
 
