@@ -5,6 +5,7 @@ import React, { useRef, useState, useEffect } from 'react';
 
 interface CabeceraAccionesProps {
   ui: {
+    montado?: boolean;
     busqueda: string;
     setBusqueda: (v: string) => void;
     cargandoNube?: boolean;
@@ -50,8 +51,8 @@ export function CabeceraAcciones({ ui }: CabeceraAccionesProps) {
             Buscar Prefijos o Líneas
           </span>
           <span className="inline-flex items-center space-x-1 text-[10px] font-medium text-blue-600 dark:text-blue-400">
-            <span className={ui.cargandoNube ? 'animate-spin' : ''}>☁️</span>
-            <span>{ui.cargandoNube ? 'Sincronizando...' : 'Firestore'}</span>
+            <span className={!ui.montado || ui.cargandoNube ? 'animate-spin' : ''}>☁️</span>
+            <span>{!ui.montado || ui.cargandoNube ? 'Sincronizando...' : 'Firestore'}</span>
           </span>
         </div>
         <div className="relative">

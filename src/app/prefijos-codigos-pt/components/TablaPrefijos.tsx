@@ -5,6 +5,7 @@ import { EsqueletoTablaPrefijos } from './EsqueletoTablaPrefijos';
 
 interface TablaPrefijosProps {
   ui: {
+    montado?: boolean;
     reglasFiltradas: ReglaPrefijo[];
     cargandoNube?: boolean;
     abrirModalEditar: (regla: ReglaPrefijo) => void;
@@ -31,8 +32,8 @@ function BadgeSitio({ sitio }: { sitio: ReglaPrefijo['sitioFabricacion'] }) {
 }
 
 export function TablaPrefijos({ ui }: TablaPrefijosProps) {
-  // Loader Esqueleto durante la carga o sincronización inicial de la nube
-  if (ui.cargandoNube && ui.reglasFiltradas.length === 0) {
+  // Loader Esqueleto durante el montaje de la vista y la carga inicial desde Firestore
+  if (!ui.montado || (ui.cargandoNube && ui.reglasFiltradas.length === 0)) {
     return <EsqueletoTablaPrefijos />;
   }
 

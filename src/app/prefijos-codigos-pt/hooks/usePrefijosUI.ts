@@ -23,14 +23,16 @@ export function usePrefijosUI() {
     limpiarReglas,
   } = usePrefijosStore();
 
+  const [montado, setMontado] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   const [modalAbierto, setModalAbierto] = useState(false);
   const [reglaEnEdicion, setReglaEnEdicion] = useState<ReglaPrefijo | null>(null);
   const [procesando, setProcesando] = useState(false);
   const [mensajeNotificacion, setMensajeNotificacion] = useState<{ tipo: 'exito' | 'error'; texto: string } | null>(null);
 
-  // Inicia la suscripción reactiva a Firestore al montar la vista
+  // Inicia la suscripción reactiva a Firestore al montar la vista de manera segura
   useEffect(() => {
+    setMontado(true);
     const emailUsuario = auth.currentUser?.email || undefined;
     const desuscribir = iniciarSuscripcionNube(emailUsuario);
     return () => {
@@ -161,6 +163,7 @@ export function usePrefijosUI() {
   };
 
   return {
+    montado,
     busqueda,
     setBusqueda,
     reglasFiltradas,

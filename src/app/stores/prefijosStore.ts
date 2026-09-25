@@ -162,10 +162,3 @@ export const usePrefijosStore = create<PrefijosState>()(
   )
 );
 
-// Inicialización transparente de la suscripción reactiva en el cliente
-if (typeof window !== 'undefined') {
-  setTimeout(() => {
-    usePrefijosStore.getState().iniciarSuscripcionNube();
-  }, 100);
-}
-
