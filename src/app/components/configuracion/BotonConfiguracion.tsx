@@ -28,17 +28,10 @@ export function BotonConfiguracion({ estaColapsado }: BotonConfiguracionProps) {
   const actualizarPosicion = () => {
     if (contenedorRef.current) {
       const rect = contenedorRef.current.getBoundingClientRect();
-      if (estaColapsado) {
-        setPosicionPopover({
-          left: rect.right + 10,
-          bottom: Math.max(12, window.innerHeight - rect.bottom),
-        });
-      } else {
-        setPosicionPopover({
-          left: Math.max(8, rect.left),
-          bottom: window.innerHeight - rect.top + 6,
-        });
-      }
+      setPosicionPopover({
+        left: rect.right + 10,
+        bottom: Math.max(12, Math.min(window.innerHeight - 150, window.innerHeight - rect.bottom)),
+      });
     }
   };
 

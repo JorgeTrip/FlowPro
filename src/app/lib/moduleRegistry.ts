@@ -114,7 +114,7 @@ export const MODULOS_DISPONIBLES: Modulo[] = [
     icono: '📦',
     descripcion: 'Escaneo de planillas mejorado con inteligencia artificial (Gemini Vision OCR), verificación lado a lado, gestión de datos guardados y análisis de productividad.',
     activo: true,
-    categoria: 'inventario',
+    categoria: 'personal',
     tooltip: {
       descripcion: 'Escaneo de planillas mejorado con inteligencia artificial (Gemini Vision OCR), verificación lado a lado, gestión de datos guardados y análisis de productividad.',
       inputRequerido: 'Requiere imágenes escaneadas o fotos de planillas de armado de pedidos (JPG, PNG, WebP).'
@@ -136,5 +136,5 @@ export const CATEGORIAS_MODULOS = {
   inventario: { nombre: 'Inventario', color: 'green' },
   ventas: { nombre: 'Ventas', color: 'purple' },
   finanzas: { nombre: 'Finanzas', color: 'amber' },
-  personal: { nombre: 'Personal', color: 'red' }
+  personal: { nombre: 'RRHH', color: 'red' }
 } as const;
