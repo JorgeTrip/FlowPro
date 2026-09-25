@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import { X, Layers, History, ShieldCheck, User } from 'lucide-react';
+import { X, Layers, History, ShieldCheck, User, ArrowRight } from 'lucide-react';
 
 interface ModalAcercaDeProps {
   abierto: boolean;
@@ -73,31 +73,35 @@ export function ModalAcercaDe({
             </div>
           </div>
 
-          <p className="text-[11px] text-gray-500 dark:text-gray-400 text-center pt-1 font-medium">
-            © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados.
-          </p>
-        </div>
-
-        {/* Acciones */}
-        <div className="mt-6 flex items-center justify-between gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
+          {/* Botón destacado para acceder al Historial de Cambios */}
           <button
             type="button"
             onClick={() => {
               onCerrar();
               onAbrirHistorial();
             }}
-            className="flex items-center space-x-1.5 rounded-xl border border-gray-300 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 transition-all shadow-sm"
+            className="flex w-full items-center justify-between rounded-xl border border-blue-200 bg-blue-50/70 p-3 text-xs font-semibold text-blue-900 hover:bg-blue-100 dark:border-blue-900/50 dark:bg-blue-950/40 dark:text-blue-200 transition-all shadow-sm group"
           >
-            <History className="h-4 w-4 text-blue-500" />
-            <span>Historial de cambios</span>
+            <div className="flex items-center space-x-2.5">
+              <History className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <span>Ver Historial de Cambios (Commits)</span>
+            </div>
+            <ArrowRight className="h-3.5 w-3.5 text-blue-500 group-hover:translate-x-0.5 transition-transform" />
           </button>
 
+          <p className="text-[11px] text-gray-500 dark:text-gray-400 text-center pt-1 font-medium">
+            © 2026 J.O.T. (Jorge Osvaldo Tripodi) - Todos los derechos reservados.
+          </p>
+        </div>
+
+        {/* Acciones */}
+        <div className="mt-5 flex justify-end pt-3 border-t border-gray-100 dark:border-gray-800">
           <button
             type="button"
             onClick={onCerrar}
-            className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-md hover:bg-blue-700 transition-all"
+            className="rounded-xl bg-gray-100 px-4 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 transition-all"
           >
-            Entendido
+            Cerrar
           </button>
         </div>
       </div>

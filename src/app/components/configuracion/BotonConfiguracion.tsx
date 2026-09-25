@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Settings, Info, History } from 'lucide-react';
+import { Settings, Info } from 'lucide-react';
 import { clsx } from 'clsx';
 import { ThemeSwitcher } from '../layout/ThemeSwitcher';
 import { ModalAcercaDe } from './ModalAcercaDe';
@@ -23,6 +23,31 @@ export function BotonConfiguracion({ estaColapsado }: BotonConfiguracionProps) {
   const [cargando, setCargando] = useState(false);
 
   const contenedorRef = useRef<HTMLDivElement>(null);
+  const [posicionPopover, setPosicionPopover] = useState<{ left: number; bottom: number }>({ left: 0, bottom: 0 });
+
+  const actualizarPosicion = () => {
+    if (contenedorRef.current) {
+      const rect = contenedorRef.current.getBoundingClientRect();
+      if (estaColapsado) {
+        setPosicionPopover({
+          left: rect.right + 10,
+          bottom: Math.max(12, window.innerHeight - rect.bottom),
+        });
+      } else {
+        setPosicionPopover({
+          left: Math.max(8, rect.left),
+          bottom: window.innerHeight - rect.top + 6,
+        });
+      }
+    }
+  };
+
+  const alternarPopover = () => {
+    if (!popoverAbierto) {
+      actualizarPosicion();
+    }
+    setPopoverAbierto((prev) => !prev);
+  };
 
   const cargarChangelog = async () => {
     setCargando(true);
@@ -44,6 +69,19 @@ export function BotonConfiguracion({ estaColapsado }: BotonConfiguracionProps) {
     cargarChangelog();
   }, []);
 
+  // Mantener posición alineada ante scroll o resize
+  useEffect(() => {
+    if (popoverAbierto) {
+      actualizarPosicion();
+      window.addEventListener('resize', actualizarPosicion);
+      window.addEventListener('scroll', actualizarPosicion, true);
+      return () => {
+        window.removeEventListener('resize', actualizarPosicion);
+        window.removeEventListener('scroll', actualizarPosicion, true);
+      };
+    }
+  }, [popoverAbierto, estaColapsado]);
+
   // Cerrar popover al hacer clic fuera
   useEffect(() => {
     const handleClicFuera = (e: MouseEvent) => {
@@ -62,7 +100,7 @@ export function BotonConfiguracion({ estaColapsado }: BotonConfiguracionProps) {
       {/* Botón en Sidebar */}
       <button
         type="button"
-        onClick={() => setPopoverAbierto(!popoverAbierto)}
+        onClick={alternarPopover}
         title="Configuración"
         className={clsx(
           'group relative flex items-center rounded-xl transition-all duration-200 text-sm font-medium whitespace-nowrap overflow-hidden',
@@ -82,53 +120,44 @@ export function BotonConfiguracion({ estaColapsado }: BotonConfiguracionProps) {
         )}
       </button>
 
-      {/* Popover Desplegable Estilo Apple */}
+      {/* Popover anclado directamente al botón */}
       {popoverAbierto && (
         <div
-          className={clsx(
-            'fixed z-50 w-64 rounded-2xl border border-gray-200 bg-white/95 p-3 shadow-2xl backdrop-blur-md dark:border-gray-800 dark:bg-[#1C1C1E]/95 animate-fadeIn',
-            estaColapsado ? 'left-20 bottom-4' : 'left-4 bottom-16'
-          )}
+          style={{
+            left: `${posicionPopover.left}px`,
+            bottom: `${posicionPopover.bottom}px`,
+          }}
+          className="fixed z-50 w-64 rounded-2xl border border-gray-200 bg-white/95 p-3 shadow-2xl backdrop-blur-md dark:border-gray-800 dark:bg-[#1C1C1E]/95 animate-fadeIn"
         >
           <div className="mb-2 px-2 pb-2 border-b border-gray-100 dark:border-gray-800/80 flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-              Preferencias
+              Configuración
             </span>
             <span className="text-[10px] font-mono font-bold rounded bg-gray-100 px-1.5 py-0.5 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
               v{version}
             </span>
           </div>
 
-          <div className="space-y-1">
-            {/* Control de Tema */}
+          <div className="space-y-1.5">
+            {/* Control de Modo Oscuro / Claro */}
             <div className="py-1">
               <ThemeSwitcher estaColapsado={false} />
             </div>
 
-            {/* Acerca de */}
+            {/* Acerca de FlowPro */}
             <button
               type="button"
               onClick={() => {
                 setPopoverAbierto(false);
                 setModalAcercaDe(true);
               }}
-              className="flex w-full items-center space-x-2.5 rounded-xl px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
+              className="flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
             >
-              <Info className="h-4 w-4 text-blue-500 shrink-0" />
-              <span>Acerca de FlowPro</span>
-            </button>
-
-            {/* Historial de Cambios */}
-            <button
-              type="button"
-              onClick={() => {
-                setPopoverAbierto(false);
-                setModalHistorial(true);
-              }}
-              className="flex w-full items-center space-x-2.5 rounded-xl px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors"
-            >
-              <History className="h-4 w-4 text-indigo-500 shrink-0" />
-              <span>Historial de cambios</span>
+              <div className="flex items-center space-x-2.5">
+                <Info className="h-4 w-4 text-blue-500 shrink-0" />
+                <span>Acerca de FlowPro</span>
+              </div>
+              <span className="text-[10px] text-gray-400 font-mono">v{version}</span>
             </button>
           </div>
         </div>
