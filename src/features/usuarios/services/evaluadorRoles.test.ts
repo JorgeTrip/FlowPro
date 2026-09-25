@@ -8,10 +8,12 @@ import {
   formatearNombreRol,
 } from './evaluadorRoles.ts';
 
-test('deducirRolPorEmail asigna superadmin a correos de la lista blanca de Jorge y operador al resto', () => {
+test('deducirRolPorEmail asigna superadmin a correos de Jorge, admin a correos admin y operador al resto', () => {
   assert.equal(deducirRolPorEmail('jorgeotripodi@gmail.com'), 'superadmin');
   assert.equal(deducirRolPorEmail('jorge.tripodi@flowpro.com'), 'superadmin');
   assert.equal(deducirRolPorEmail('JORGEOTRIPODI@GMAIL.COM'), 'superadmin');
+  assert.equal(deducirRolPorEmail('roma1516@hotmail.com'), 'admin');
+  assert.equal(deducirRolPorEmail('ROMA1516@HOTMAIL.COM'), 'admin');
   assert.equal(deducirRolPorEmail('operario1@flowpro.com'), 'operador');
   assert.equal(deducirRolPorEmail(null), 'operador');
   assert.equal(deducirRolPorEmail(undefined), 'operador');

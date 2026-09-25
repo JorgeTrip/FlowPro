@@ -8,6 +8,11 @@ export const CORREOS_SUPERADMIN: readonly string[] = [
   'jorgeotripodi@hotmail.com',
 ];
 
+// Lista blanca de correos electrónicos con acceso Administrador inmediato
+export const CORREOS_ADMIN: readonly string[] = [
+  'roma1516@hotmail.com',
+];
+
 // Jerarquía numérica de roles (mayor número = mayores privilegios)
 export const JERARQUIA_ROLES: Record<RolUsuario, number> = {
   superadmin: 4,
@@ -54,7 +59,10 @@ export function deducirRolPorEmail(email: string | null | undefined): RolUsuario
   if (!email) return 'operador';
   const emailNormalizado = email.trim().toLowerCase();
   const esSuper = CORREOS_SUPERADMIN.some((correo) => correo.toLowerCase() === emailNormalizado);
-  return esSuper ? 'superadmin' : 'operador';
+  if (esSuper) return 'superadmin';
+  const esAdmin = CORREOS_ADMIN.some((correo) => correo.toLowerCase() === emailNormalizado);
+  if (esAdmin) return 'admin';
+  return 'operador';
 }
 
 export function tienePermiso(rol: RolUsuario, permiso: PermisoSistema): boolean {

@@ -5,5 +5,15 @@ service cloud.firestore {
     match /control_armado_pedidos/{document=**} {
       allow read, write: if request.auth != null;
     }
+
+    // Colección de Usuarios y Gestión de Roles
+    match /usuarios/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Colección alternativa en inglés si existiese
+    match /users/{document=**} {
+      allow read, write: if request.auth != null;
+    }
   }
 }
