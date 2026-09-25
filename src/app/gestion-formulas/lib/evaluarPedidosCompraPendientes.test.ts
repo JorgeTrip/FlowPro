@@ -8,23 +8,23 @@ import {
 } from './evaluarPedidosCompraPendientes.ts';
 import type { RegistroFilaCompra } from './evaluarPedidosCompraPendientes.ts';
 
-test('Retorna null si la criticidad no es alta', () => {
-  const registros: RegistroFilaCompra[] = [
-    {
-      fechaSolicitud: new Date('2026-09-20'),
-      fechaSolicitudTexto: '20/09/2026',
-      codigoProducto: 'MP-001',
-      cantidadSolicitada: 500,
-      cantidadRecibida: null,
-      hojaOrigen: 'Solicitud de compras',
-    },
-  ];
+test('Retorna pedidos pendientes independientemente de la criticidad (media, baja o alta)', () => {
+  const registros: RegistroFilaCompra[] = [{
+    fechaSolicitud: new Date('2026-09-20'),
+    fechaSolicitudTexto: '20/09/2026',
+    codigoProducto: 'MP-001',
+    cantidadSolicitada: 500,
+    cantidadRecibida: null,
+    hojaOrigen: 'Solicitud de compras',
+  }];
 
   const resultadoBaja = evaluarPedidosProducto('MP-001', 'baja', registros);
   const resultadoMedia = evaluarPedidosProducto('MP-001', 'media', registros);
 
-  assert.equal(resultadoBaja, null);
-  assert.equal(resultadoMedia, null);
+  assert.equal(resultadoBaja?.fechaUltimaSolicitud, '20/09/2026');
+  assert.equal(resultadoBaja?.cantidadSolicitadaUltima, 500);
+  assert.equal(resultadoMedia?.fechaUltimaSolicitud, '20/09/2026');
+  assert.equal(resultadoMedia?.cantidadSolicitadaUltima, 500);
 });
 
 test('Retorna null si el código de producto no existe en los registros', () => {

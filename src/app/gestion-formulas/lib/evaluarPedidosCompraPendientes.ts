@@ -49,22 +49,19 @@ function tieneRecepcionEfectiva(val: any): boolean {
 }
 
 /**
- * Evalúa los pedidos de compra para un producto con criticidad alta.
+ * Evalúa los pedidos de compra para un producto, independientemente de su criticidad.
  * 
  * Regla de negocio:
- * 1. Solo aplica si criticidad === 'alta'.
- * 2. Busca todas las filas con el código de producto.
- * 3. Si la fila con fecha más reciente NO tiene recepción (columna V vacía), devuelve los datos.
- * 4. Si la fila con fecha más reciente YA tiene recepción, no devuelve nada.
- * 5. Si hay más de un pedido con columna V vacía, activa 'tieneMultiplesPendientes'.
+ * 1. Busca todas las filas con el código de producto.
+ * 2. Si la fila con fecha más reciente NO tiene recepción (columna V vacía), devuelve los datos.
+ * 3. Si la fila con fecha más reciente YA tiene recepción, no devuelve nada.
+ * 4. Si hay más de un pedido con columna V vacía, activa 'tieneMultiplesPendientes'.
  */
 export function evaluarPedidosProducto(
   codigoProducto: string,
-  criticidad: string,
-  registros: RegistroFilaCompra[]
+  criticidad?: string,
+  registros: RegistroFilaCompra[] = []
 ): EstadoPedidoCompraPendiente | null {
-  if (criticidad !== 'alta') return null;
-
   const codigoNorm = normalizarCodigo(codigoProducto);
   if (!codigoNorm) return null;
 
