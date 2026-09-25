@@ -21,8 +21,8 @@ function abrirNavegador(url) {
   });
 }
 
-// Inicia el proceso de desarrollo de Next.js
-const procesoDev = spawn('npx', ['next', 'dev'], {
+// Inicia el proceso de desarrollo de Next.js sin array de argumentos para evitar DEP0190
+const procesoDev = spawn('npx next dev', {
   stdio: ['inherit', 'pipe', 'pipe'],
   shell: true,
   env: process.env,
