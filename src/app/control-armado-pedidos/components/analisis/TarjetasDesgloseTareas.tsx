@@ -37,7 +37,7 @@ export function TarjetasDesgloseTareas({ horasTotales, items }: TarjetasDesglose
               </div>
             </div>
             <span className="rounded-lg bg-white px-2 py-0.5 text-xs font-bold text-gray-700 shadow-2xs dark:bg-gray-800 dark:text-gray-200">
-              {item.porcentaje}%
+              {item.porcentajeTexto}
             </span>
           </div>
         ))}

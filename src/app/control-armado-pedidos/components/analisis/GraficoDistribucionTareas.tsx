@@ -3,7 +3,10 @@
 
 import React, { useState, useMemo } from 'react';
 import type { RegistroArmadoDocumento } from '../../types/armado';
-import { calcularDistribucionTareasPorEmpleado, COLORES_TAREAS } from '../../utils/calcularDistribucionTareas';
+import {
+  calcularDistribucionTareasPorEmpleado,
+  calcularConsolidadoEquipo,
+} from '../../utils/calcularDistribucionTareas';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { PieChart as PieIcon, Users, User } from 'lucide-react';
 import { TarjetasDesgloseTareas } from './TarjetasDesgloseTareas';
@@ -25,42 +28,10 @@ export function GraficoDistribucionTareas({ registros }: GraficoDistribucionTare
 
   const datosDistribucion = useMemo(() => {
     if (distribuciones.length === 0) return null;
-
     if (empleadoSeleccionado !== 'todos') {
       return distribuciones.find((d) => d.empleado === empleadoSeleccionado) || null;
     }
-
-    let armHs = 0, atenHs = 0, prodHs = 0, otrHs = 0;
-    distribuciones.forEach((d) => {
-      armHs += d.horasArmado;
-      atenHs += d.horasAtencionCliente;
-      prodHs += d.horasProduccion;
-      otrHs += d.horasOtros;
-    });
-
-    const arm = Math.round(armHs * 10) / 10;
-    const aten = Math.round(atenHs * 10) / 10;
-    const prod = Math.round(prodHs * 10) / 10;
-    const otr = Math.round(otrHs * 10) / 10;
-    const tot = Math.round((arm + aten + prod + otr) * 10) / 10;
-
-    const calcP = (v: number) => (tot > 0 ? Math.round((v / tot) * 100) : 0);
-
-    return {
-      empleado: 'Equipo Completo',
-      horasArmado: arm,
-      horasAtencionCliente: aten,
-      horasProduccion: prod,
-      horasOtros: otr,
-      horasTotales: tot,
-      porcentajes: { armado: calcP(arm), atencionCliente: calcP(aten), produccion: calcP(prod), otros: calcP(otr) },
-      itemsGrafico: [
-        { name: 'Armado de Pedidos', value: arm, color: COLORES_TAREAS.armado, porcentaje: calcP(arm) },
-        { name: 'Atención al Cliente', value: aten, color: COLORES_TAREAS.atencionCliente, porcentaje: calcP(aten) },
-        { name: 'Producción', value: prod, color: COLORES_TAREAS.produccion, porcentaje: calcP(prod) },
-        { name: 'Otras Tareas', value: otr, color: COLORES_TAREAS.otros, porcentaje: calcP(otr) },
-      ],
-    };
+    return calcularConsolidadoEquipo(distribuciones);
   }, [distribuciones, empleadoSeleccionado]);
 
   if (!datosDistribucion || datosDistribucion.horasTotales === 0) return null;
@@ -68,13 +39,13 @@ export function GraficoDistribucionTareas({ registros }: GraficoDistribucionTare
   const itemsConHoras = datosDistribucion.itemsGrafico.filter((it) => it.value > 0);
 
   const renderEtiquetaPorcentaje = (props: any) => {
-    const { cx, cy, midAngle, innerRadius, outerRadius, payload, percent } = props;
+    const { cx, cy, midAngle, innerRadius, outerRadius, payload } = props;
     const RADIAN = Math.PI / 180;
     const radius = innerRadius + (outerRadius - innerRadius) * 0.55;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
-    const pVal = payload?.porcentaje ?? Math.round((percent || 0) * 100);
-    if (!pVal || pVal < 5) return null; // Evitar solapamiento en porciones diminutas (<5%)
+    const textoP = payload?.porcentajeTexto;
+    if (!textoP || textoP === '0%') return null;
     return (
       <text
         x={x}
@@ -83,9 +54,9 @@ export function GraficoDistribucionTareas({ registros }: GraficoDistribucionTare
         textAnchor="middle"
         dominantBaseline="central"
         className="text-[11px] font-extrabold select-none"
-        style={{ filter: 'drop-shadow(0px 1px 2px rgba(0,0,0,0.8))' }}
+        style={{ filter: 'drop-shadow(0px 1px 2px rgba(0,0,0,0.85))' }}
       >
-        {`${pVal}%`}
+        {textoP}
       </text>
     );
   };
@@ -109,11 +80,7 @@ export function GraficoDistribucionTareas({ registros }: GraficoDistribucionTare
         </div>
 
         <div className="flex items-center space-x-2">
-          {empleadoSeleccionado === 'todos' ? (
-            <Users className="h-4 w-4 text-blue-500" />
-          ) : (
-            <User className="h-4 w-4 text-blue-500" />
-          )}
+          {empleadoSeleccionado === 'todos' ? <Users className="h-4 w-4 text-blue-500" /> : <User className="h-4 w-4 text-blue-500" />}
           <select
             value={empleadoSeleccionado}
             onChange={(e) => setEmpleadoSeleccionado(e.target.value)}
@@ -159,7 +126,7 @@ export function GraficoDistribucionTareas({ registros }: GraficoDistribucionTare
                           <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: data.color }} />
                           {data.name}
                         </p>
-                        <p className="text-gray-300 mt-1">{data.value} horas ({data.porcentaje}%)</p>
+                        <p className="text-gray-300 mt-1">{data.value} horas ({data.porcentajeTexto || `${data.porcentaje}%`})</p>
                       </div>
                     );
                   }
@@ -169,7 +136,6 @@ export function GraficoDistribucionTareas({ registros }: GraficoDistribucionTare
             </PieChart>
           </ResponsiveContainer>
 
-          {/* Resumen central del donut */}
           <div className="absolute pointer-events-none flex flex-col items-center justify-center text-center">
             <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Total</span>
             <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{datosDistribucion.horasTotales} hs</span>

@@ -87,7 +87,7 @@ export function AnalyticsTableHeader({ meses }: AnalyticsTableHeaderProps) {
               <th className="px-1.5 py-2 text-center bg-emerald-100/40 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-bold">% Arm.</th>
               <th className="px-1.5 py-2 text-center bg-emerald-50/20 dark:bg-emerald-950/10">Hs. Otr.</th>
               <th className="px-1.5 py-2 text-center bg-emerald-100/40 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-bold">% Otr.</th>
-              <th className="px-1.5 py-2 text-center bg-emerald-50/20 dark:bg-emerald-950/10">Velocidad</th>
+              <th className="px-1.5 py-2 text-center bg-emerald-50/20 dark:bg-emerald-950/10">Vel. (Art/h)</th>
               <th className="px-1.5 py-2 text-center bg-emerald-100/40 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 font-bold border-r border-gray-200 dark:border-gray-700 last:border-r-0">
                 % Vel.
               </th>
